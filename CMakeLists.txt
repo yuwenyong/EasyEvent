@@ -1,0 +1,66 @@
+cmake_minimum_required(VERSION 3.17)
+
+
+set(CMAKE_DISABLE_SOURCE_CHANGES ON)
+set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
+
+project(EasyEvent)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/macros")
+
+include(CheckPlatform)
+include(AutoCollect)
+
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+
+set(BUILD_EasyEvent_AS_STATIC_LIB FALSE)
+option(EasyEvent_BUILD_ASAN "Build net4cxx with address sanitizer (gcc/clang)" ON)
+option(EasyEvent_BUILD_UBSAN "Build net4cxx with undefined behavior sanitizer (gcc/clang)" ON)
+
+message(STATUS "CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
+message(STATUS "CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID}")
+message(STATUS "CMAKE_CXX_COMPILER_VERSION: ${CMAKE_CXX_COMPILER_VERSION}")
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wconversion -Wextra -Wno-shadow -Wno-unused-parameter")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wconversion -Wextra -Wno-shadow -Wno-unused-parameter")
+    if (EasyEvent_BUILD_ASAN)
+        if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.8.0")
+            message(STATUS "GCC < 4.8 doesn't support the address sanitizer")
+        else()
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+        endif()
+    endif()
+    if(EasyEvent_BUILD_UBSAN)
+        if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.9.0")
+            message(STATUS "GCC < 4.9 doesn't support the undefined behavior sanitizer")
+        else()
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=undefined")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined")
+        endif()
+    endif()
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-conversion -Wsign-compare -Wno-shadow")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-conversion -Wsign-compare -Wno-shadow")
+    if (EasyEvent_BUILD_ASAN)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+    endif()
+    if(EasyEvent_BUILD_UBSAN)
+        if (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=undefined-trap -fsanitize-undefined-trap-on-error")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined-trap -fsanitize-undefined-trap-on-error")
+        else()
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=undefined")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined")
+        endif()
+    endif()
+endif()
+
+add_subdirectory(src)
