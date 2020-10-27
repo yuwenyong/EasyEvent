@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.17)
 
-
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
@@ -14,17 +13,22 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/macros")
 include(CheckPlatform)
 include(AutoCollect)
 
-
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
 set(BUILD_EasyEvent_AS_STATIC_LIB FALSE)
-option(EasyEvent_BUILD_ASAN "Build net4cxx with address sanitizer (gcc/clang)" ON)
-option(EasyEvent_BUILD_UBSAN "Build net4cxx with undefined behavior sanitizer (gcc/clang)" ON)
+option(EasyEvent_BUILD_ASAN "Build EasyEvent with address sanitizer (gcc/clang)" ON)
+option(EasyEvent_BUILD_UBSAN "Build EasyEvent with undefined behavior sanitizer (gcc/clang)" ON)
 
 message(STATUS "CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
 message(STATUS "CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "CMAKE_CXX_COMPILER_VERSION: ${CMAKE_CXX_COMPILER_VERSION}")
+
+if (NOT BUILD_EasyEvent_AS_STATIC_LIB)
+    add_definitions(-DEASY_EVENT_USE_DYNAMIC_LINKING)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wconversion -Wextra -Wno-shadow -Wno-unused-parameter")
@@ -64,3 +68,4 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 add_subdirectory(src)
+add_subdirectory(example)
