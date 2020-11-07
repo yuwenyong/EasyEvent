@@ -13,8 +13,8 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/macros")
 include(CheckPlatform)
 include(AutoCollect)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror -Wconversion -Wshadow")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wconversion -Wshadow")
 
 set(BUILD_EasyEvent_AS_STATIC_LIB FALSE)
 option(EasyEvent_BUILD_ASAN "Build EasyEvent with address sanitizer (gcc/clang)" ON)

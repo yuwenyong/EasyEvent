@@ -7,16 +7,14 @@
 
 #include "EasyEvent/Common/Config.h"
 
-namespace EasyEvent
-{
+namespace EasyEvent {
 
-    enum class CommonErrc
-    {
+    enum class CommonErrc {
         InvalidArgument = 1,
+        NotFound = 2,
     };
 
-    class EASY_EVENT_API CommonErrCategory: public std::error_category
-    {
+    class EASY_EVENT_API CommonErrCategory: public std::error_category {
     public:
         [[nodiscard]] const char* name() const noexcept override;
         [[nodiscard]] std::string message(int ev) const override;
@@ -24,14 +22,12 @@ namespace EasyEvent
 
     extern const CommonErrCategory gCommonErrCategory;
 
-    inline std::error_code make_error_code(CommonErrc err)
-    {
+    inline std::error_code make_error_code(CommonErrc err) {
         return {static_cast<int>(err), gCommonErrCategory};
     }
 }
 
-namespace std
-{
+namespace std {
     template <>
     struct is_error_code_enum<EasyEvent::CommonErrc>: public true_type {};
 

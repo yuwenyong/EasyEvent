@@ -56,16 +56,57 @@
 
 #endif
 
+#ifdef _MSC_VER
+
+#   ifdef _WIN64
+#      define EASY_EVENT_64
+#   else
+#      define EASY_EVENT_32
+#   endif
+
+#else
+#   include <stdint.h>
+
+#   if defined(__WORDSIZE) && (__WORDSIZE == 64)
+#      define EASY_EVENT_64
+#   elif defined(__WORDSIZE) && (__WORDSIZE == 32)
+#      define ICE_32
+#   elif defined(__sun) && (defined(__sparcv9) || defined(__x86_64))  || \
+         defined(__linux__) && defined(__x86_64)                      || \
+         defined(__APPLE__) && defined(__x86_64)                      || \
+         defined(__hppa) && defined(__LP64__)                         || \
+         defined(_ARCH_COM) && defined(__64BIT__)                     || \
+         defined(__alpha__)                                           || \
+         defined(_WIN64)
+#      define EASY_EVENT_64
+#   else
+#      define EASY_EVENT_32
+#   endif
+#endif
+
+#if defined(_WIN32) && defined(_MSC_VER)
+#    define INT64(n) n##i64
+#    define INT64_FORMAT "%lld"
+#elif defined(EASY_EVENT_64) && !defined(_WIN32)
+#    define INT64(n) n##L
+#    define INT64_FORMAT "%ld"
+#else
+#    define INT64(n) n##LL
+#    define INT64_FORMAT "%lld"
+#endif
+
 #include <cassert>
 #include <iostream>
 #include <sstream>
 #include <exception>
 #include <stdexcept>
 
+
 #ifndef _WIN32
 #   include <pthread.h>
 #   include <errno.h>
 #   include <unistd.h>
+#   include <sys/time.h>
 #endif
 
 #define EASY_EVENT_PLATFORM_WINDOWS     0
@@ -118,15 +159,14 @@ typedef uint8_t uint8;
 
 #include <algorithm>
 #include <array>
-#include <exception>
-#include <iostream>
+#include <iomanip>
 #include <list>
 #include <map>
 #include <memory>
 #include <queue>
 #include <set>
-#include <sstream>
 #include <stack>
+#include <string_view>
 #include <string>
 #include <system_error>
 #include <type_traits>
@@ -137,6 +177,12 @@ typedef uint8_t uint8;
 #include <chrono>
 #include <random>
 #include <tuple>
+#include <optional>
+#include <variant>
+#include <thread>
+#include <condition_variable>
+#include <mutex>
+#include <future>
 
 #include <cmath>
 #include <cstdio>

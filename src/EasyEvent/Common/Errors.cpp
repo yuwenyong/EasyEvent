@@ -4,17 +4,16 @@
 
 #include "EasyEvent/Common/Errors.h"
 
-const char * EasyEvent::CommonErrCategory::name() const noexcept
-{
+const char * EasyEvent::CommonErrCategory::name() const noexcept {
     return "common";
 }
 
-std::string EasyEvent::CommonErrCategory::message(int ev) const
-{
-    switch (static_cast<CommonErrc>(ev))
-    {
+std::string EasyEvent::CommonErrCategory::message(int ev) const {
+    switch (static_cast<CommonErrc>(ev)) {
         case CommonErrc::InvalidArgument:
             return "invalid argument";
+        case CommonErrc::NotFound:
+            return "not found";
         default:
             return "(unrecognized error)";
     }

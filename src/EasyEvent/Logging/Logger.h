@@ -1,0 +1,8 @@
+//
+// Created by yuwenyong on 2020/11/7.
+//
+
+#ifndef EASYEVENT_LOGGING_LOGGER_H
+#define EASYEVENT_LOGGING_LOGGER_H
+
+#endif //EASYEVENT_LOGGING_LOGGER_H
