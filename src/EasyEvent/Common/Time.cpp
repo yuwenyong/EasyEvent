@@ -5,6 +5,34 @@
 #include "EasyEvent/Common/Time.h"
 
 
+struct tm EasyEvent::Time::utcTime() const {
+    time_t time = static_cast<long>(_usec / 1000000);
+
+    struct tm* t;
+#if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
+    t = gmtime(&time);
+#else
+    struct tm tr;
+    gmtime_r(&time, &tr);
+    t = &tr;
+#endif
+    return *t;
+}
+
+struct tm EasyEvent::Time::localTime() const {
+    time_t time = static_cast<long>(_usec / 1000000);
+
+    struct tm* t;
+#if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
+    t = localtime(&time);
+#else
+    struct tm tr;
+    localtime_r(&time, &tr);
+    t = &tr;
+#endif
+    return *t;
+}
+
 std::string EasyEvent::Time::toDateTimeString() const {
     std::ostringstream os;
     os << toString("%y-%m-%d %H:%M:%S") << ".";
@@ -38,19 +66,9 @@ std::string EasyEvent::Time::toDurationString() const {
 }
 
 std::string EasyEvent::Time::toString(const char *format) const {
-    time_t time = static_cast<long>(_usec / 1000000);
-
-    struct tm* t;
-#if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
-    t = localtime(&time);
-#else
-    struct tm tr;
-    localtime_r(&time, &tr);
-    t = &tr;
-#endif
-
+    struct tm t = localTime();
     char buf[32];
-    if(strftime(buf, sizeof(buf), format, t) == 0)
+    if(strftime(buf, sizeof(buf), format, &t) == 0)
     {
         return std::string();
     }
@@ -67,4 +85,22 @@ EasyEvent::Time EasyEvent::Time::now() {
     gettimeofday(&tv, 0);
     return Time(tv.tv_sec * INT64(1000000) + tv.tv_usec);
 #endif
+}
+
+EasyEvent::Time EasyEvent::Time::makeTime(struct tm &tm) {
+    time_t t = mktime(&tm);
+    return seconds(static_cast<int64>(t));
+}
+
+EasyEvent::Time EasyEvent::Time::makeTime(int year, int mon, int day, int hour, int min, int sec, int isdst) {
+    struct tm t;
+    memset(&t, 0, sizeof(t));
+    t.tm_year = year - 1900;
+    t.tm_mon = mon - 1;
+    t.tm_mday = day;
+    t.tm_hour = hour;
+    t.tm_min = min;
+    t.tm_sec = sec;
+    t.tm_isdst = isdst;
+    return makeTime(t);
 }

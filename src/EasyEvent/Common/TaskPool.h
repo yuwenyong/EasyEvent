@@ -14,6 +14,9 @@ namespace EasyEvent {
 
     class EASY_EVENT_API TaskPool {
     public:
+        TaskPool(const TaskPool&) = delete;
+        TaskPool& operator=(const TaskPool&) = delete;
+
         ~TaskPool();
 
         bool start() {

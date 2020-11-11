@@ -13,6 +13,9 @@ namespace EasyEvent {
     template <typename ValueT>
     class ConcurrentQueue {
     public:
+        ConcurrentQueue(const ConcurrentQueue&) = delete;
+        ConcurrentQueue& operator=(const ConcurrentQueue&) = delete;
+
         bool empty() const {
             std::lock_guard<std::mutex> lock(_mut);
             return _queue.empty();
