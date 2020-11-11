@@ -70,7 +70,7 @@
 #   if defined(__WORDSIZE) && (__WORDSIZE == 64)
 #      define EASY_EVENT_64
 #   elif defined(__WORDSIZE) && (__WORDSIZE == 32)
-#      define ICE_32
+#      define EASY_EVENT_32
 #   elif defined(__sun) && (defined(__sparcv9) || defined(__x86_64))  || \
          defined(__linux__) && defined(__x86_64)                      || \
          defined(__APPLE__) && defined(__x86_64)                      || \
@@ -85,15 +85,45 @@
 #endif
 
 #if defined(_WIN32) && defined(_MSC_VER)
-#    define INT64(n) n##i64
-#    define INT64_FORMAT "%lld"
+typedef __int64 Int64;
+#   define INT64(n) n##i64
+#   define INT64_FORMAT "%lld"
+
+typedef unsigned __int64 UInt64;
+#   define UINT64(n) n##ui64
+#   define UINT64_FORMAT "%llu"
 #elif defined(EASY_EVENT_64) && !defined(_WIN32)
-#    define INT64(n) n##L
-#    define INT64_FORMAT "%ld"
+typedef long Int64;
+#   define INT64(n) n##L
+#   define INT64_FORMAT "%ld"
+
+typedef unsigned long UInt64;
+#   define UINT64(n) n##UL
+#   define UINT64_FORMAT "%lu"
 #else
-#    define INT64(n) n##LL
-#    define INT64_FORMAT "%lld"
+typedef long long Int64;
+#   define INT64(n) n##LL
+#   define INT64_FORMAT "%lld"
+
+typedef unsigned long long UInt64;
+#   define UINT64(n) n##ULL
+#   define UINT64_FORMAT "%llu"
 #endif
+
+
+#ifndef NDEBUG
+#	ifndef _DEBUG
+#		define _DEBUG
+#	endif
+#	ifndef DEBUG
+#		define DEBUG
+#	endif
+#   ifndef _GLIBCXX_DEBUG
+#       define _GLIBCXX_DEBUG
+#   endif
+#   define EASY_EVENT_DEBUG
+#endif
+
 
 #include <cassert>
 #include <iostream>
@@ -111,8 +141,9 @@
 
 #define EASY_EVENT_PLATFORM_WINDOWS     0
 #define EASY_EVENT_PLATFORM_LINUX       1
-#define EASY_EVENT_PLATFORM_OTHER       2
-
+#define EASY_EVENT_PLATFORM_APPLE       2
+#define EASY_EVENT_PLATFORM_INTEL       3
+#define EASY_EVENT_PLATFORM_UNIX        4
 
 // must be first (win 64 also define _WIN32)
 #if defined( _WIN64 )
@@ -121,8 +152,12 @@
 #  define EASY_EVENT_PLATFORM EASY_EVENT_PLATFORM_WINDOWS
 #elif defined( __linux__ )
 #  define EASY_EVENT_PLATFORM EASY_EVENT_PLATFORM_LINUX
+#elif defined( __APPLE_CC__ )
+#  define EASY_EVENT_PLATFORM EASY_EVENT_PLATFORM_APPLE
+#elif defined( __INTEL_COMPILER )
+#  define EASY_EVENT_PLATFORM EASY_EVENT_PLATFORM_INTEL
 #else
-#  define EASY_EVENT_PLATFORM EASY_EVENT_PLATFORM_OTHER
+#  define EASY_EVENT_PLATFORM EASY_EVENT_PLATFORM_UNIX
 #endif
 
 #include <cstddef>

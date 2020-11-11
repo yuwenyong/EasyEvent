@@ -5,6 +5,8 @@
 #ifndef EASYEVENT_LOGGING_LOGCOMMON_H
 #define EASYEVENT_LOGGING_LOGCOMMON_H
 
+#include "EasyEvent/Common/Config.h"
+
 namespace EasyEvent {
 
     enum LogLevel {
@@ -12,7 +14,8 @@ namespace EasyEvent {
         LOG_LEVEL_INFO                               = 2,
         LOG_LEVEL_WARN                               = 3,
         LOG_LEVEL_ERROR                              = 4,
-        LOG_LEVEL_DISABLE                            = 5
+        LOG_LEVEL_DISABLE                            = 5,
+        LOG_LEVEL_DEFAULT                            = LOG_LEVEL_INFO
     };
 
     enum LoggerFlags {
@@ -30,6 +33,12 @@ namespace EasyEvent {
         SINK_FLAGS_MULTI_THREAD                     = 0x08,
         SINK_FLAGS_DEFAULT                          = SINK_FLAGS_PREFIX_TIMESTAMP | SINK_FLAGS_PREFIX_LOG_LEVEL
     };
+
+    class LogMessage;
+    class Logger;
+    class Sink;
+
+    using SinkPtr = std::shared_ptr<Sink>;
 }
 
 #endif //EASYEVENT_LOGGING_LOGCOMMON_H

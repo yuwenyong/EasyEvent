@@ -37,8 +37,14 @@ namespace EasyEvent {
             return static_cast<double>(_usec);
         }
 
+        struct tm utcTime() const;
+
+        struct tm localTime() const;
+
         std::string toDateTimeString() const;
+
         std::string toDurationString() const;
+
         std::string toString(const char *format) const;
 
         Time operator-() const {
@@ -158,6 +164,10 @@ namespace EasyEvent {
         }
 
         static Time now();
+
+        static Time makeTime(struct tm &tm);
+
+        static Time makeTime(int year, int mon, int day, int hour=0, int min=0, int sec=0, int isdst=0);
 
         static Time seconds(int64 t) {
             return Time(t * INT64(1000000));
