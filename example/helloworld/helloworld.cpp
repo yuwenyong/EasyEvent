@@ -27,6 +27,9 @@ int main (int argc, char **argv) {
         printf("Task 4\n");
         return 8;
     });
+    taskPool.post([]() {
+        printf("Last task\n");
+    });
     taskPool.stop();
 //    taskPool.wait();
     printf("Task 1: %d\n", v1.get());

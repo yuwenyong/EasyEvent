@@ -12,6 +12,7 @@ namespace EasyEvent {
     enum class CommonErrc {
         InvalidArgument = 1,
         NotFound = 2,
+        AlreadyRegistered = 3,
     };
 
     class EASY_EVENT_API CommonErrCategory: public std::error_category {

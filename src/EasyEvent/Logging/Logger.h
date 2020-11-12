@@ -16,8 +16,8 @@ namespace EasyEvent {
         Logger(const Logger&) = delete;
         Logger& operator=(const Logger&) = delete;
 
-        explicit Logger(std::string name, LogLevel level, LoggerFlags flags)
-            : _name(std::move(name))
+        explicit Logger(const std::string& name, LogLevel level, LoggerFlags flags)
+            : _name(name)
             , _level(level)
             , _flags(flags) {
             if ((_flags & LOGGER_FLAGS_MULTI_THREAD) != 0) {
@@ -37,13 +37,14 @@ namespace EasyEvent {
 
         }
     protected:
-        void write(LogMessage *message);
+        void write(LogMessage *message) {
+
+        }
 
         std::string _name;
         LogLevel _level;
         LoggerFlags _flags;
         std::unique_ptr<std::mutex> _mutex;
-        std::vector<
     };
 
 }

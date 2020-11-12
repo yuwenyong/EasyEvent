@@ -112,24 +112,25 @@ typedef unsigned long long UInt64;
 
 
 #ifndef NDEBUG
-#	ifndef _DEBUG
-#		define _DEBUG
-#	endif
-#	ifndef DEBUG
-#		define DEBUG
-#	endif
-#   ifndef _GLIBCXX_DEBUG
-#       define _GLIBCXX_DEBUG
+#   ifndef _DEBUG
+#       define _DEBUG
 #   endif
+#   ifndef DEBUG
+#       define DEBUG
+#   endif
+//#   ifndef _GLIBCXX_DEBUG
+//#       define _GLIBCXX_DEBUG
+//#   endif
 #   define EASY_EVENT_DEBUG
 #endif
 
 
 #include <cassert>
-#include <iostream>
-#include <sstream>
 #include <exception>
 #include <stdexcept>
+#include <iostream>
+#include <sstream>
+#include <iomanip>
 
 
 #ifndef _WIN32
@@ -192,28 +193,29 @@ typedef uint32_t uint32;
 typedef uint16_t uint16;
 typedef uint8_t uint8;
 
-#include <algorithm>
-#include <array>
-#include <iomanip>
-#include <list>
-#include <map>
-#include <memory>
-#include <queue>
-#include <set>
-#include <stack>
-#include <string_view>
-#include <string>
-#include <system_error>
+#include <utility>
 #include <type_traits>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 #include <numeric>
-#include <chrono>
+#include <algorithm>
 #include <random>
+#include <memory>
+#include <vector>
+#include <array>
+#include <list>
+#include <deque>
+#include <set>
+#include <unordered_set>
+#include <map>
+#include <unordered_map>
+#include <queue>
+#include <stack>
 #include <tuple>
 #include <optional>
 #include <variant>
+#include <string_view>
+#include <string>
+#include <system_error>
+#include <chrono>
 #include <thread>
 #include <condition_variable>
 #include <mutex>

@@ -14,6 +14,7 @@ namespace EasyEvent {
 
     class EASY_EVENT_API TaskPool {
     public:
+        TaskPool() = default;
         TaskPool(const TaskPool&) = delete;
         TaskPool& operator=(const TaskPool&) = delete;
 
@@ -29,12 +30,17 @@ namespace EasyEvent {
         std::future<typename std::result_of<FuncT()>::type> submit(FuncT &&func) {
             using ResultType = typename std::result_of<FuncT()>::type;
             std::packaged_task<ResultType ()> task(std::forward<FuncT>(func));
-            std::future<ResultType > res(task.get_future());
+            std::future<ResultType> res(task.get_future());
             if (_tasks.enqueue(makeTask(std::move(task)))) {
                 return res;
             } else {
                 return {};
             }
+        }
+
+        template<typename FuncT>
+        bool post(FuncT &&func) {
+            return _tasks.enqueue(makeTask(std::forward<FuncT>(func)));
         }
 
         bool empty() const {
@@ -73,7 +79,7 @@ namespace EasyEvent {
 
         class TaskBase {
         public:
-            virtual void execute() = 0;
+            virtual void call() = 0;
             virtual ~TaskBase() = default;
         };
 
@@ -82,7 +88,7 @@ namespace EasyEvent {
         public:
             explicit Task(FuncT &&func): _func(std::forward<FuncT>(func)) {}
 
-            void execute() override {
+            void call() override {
                 _func();
             }
         protected:

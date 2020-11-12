@@ -43,6 +43,7 @@ namespace EasyEvent {
         if (stream.shouldLog()) {
             stream.stream() << val;
         }
+        return stream;
     }
 
 }

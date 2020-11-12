@@ -14,6 +14,8 @@ std::string EasyEvent::CommonErrCategory::message(int ev) const {
             return "invalid argument";
         case CommonErrc::NotFound:
             return "not found";
+        case CommonErrc::AlreadyRegistered:
+            return "already registered";
         default:
             return "(unrecognized error)";
     }

@@ -202,7 +202,7 @@ namespace EasyEvent {
         int64 _usec{0};
     };
 
-    std::ostream& operator<<(std::ostream& out, const Time& tm) {
+    inline std::ostream& operator<<(std::ostream& out, const Time& tm) {
         return out << tm.secondsAsDouble();
     }
 }
