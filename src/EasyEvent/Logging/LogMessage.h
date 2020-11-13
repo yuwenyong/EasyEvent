@@ -15,10 +15,15 @@ namespace EasyEvent {
 
     class EASY_EVENT_API LogMessage {
     public:
-        LogMessage(LogLevel level, Time timestamp, std::string text)
-            : _level(level)
+        LogMessage(Logger* logger, LogLevel level, Time timestamp, std::string text)
+            : _logger(logger)
+            , _level(level)
             , _timestamp(timestamp)
             , _text(std::move(text)) {
+        }
+
+        Logger* getLogger() const {
+            return _logger;
         }
 
         LogLevel getLevel() const {
@@ -34,6 +39,7 @@ namespace EasyEvent {
         }
 
     protected:
+        Logger* _logger;
         LogLevel _level;
         Time _timestamp;
         std::string _text;

@@ -7,16 +7,17 @@
 
 #include "EasyEvent/Common/Config.h"
 #include "EasyEvent/Logging/LogCommon.h"
+#include "EasyEvent/Common/TaskPool.h"
 
 
 namespace EasyEvent {
-
-    class TaskPool;
 
     class EASY_EVENT_API Log {
     public:
         Log(const Log&) = delete;
         Log& operator=(const Log&) = delete;
+
+        ~Log();
 
         Logger* getLogger(const std::string& name) const {
             std::lock_guard<std::mutex> lock(_mutex);
@@ -29,6 +30,8 @@ namespace EasyEvent {
                                   LoggerFlags flags=LOGGER_FLAGS_DEFAULT);
 
         Logger* createLogger(const std::string& name, LogLevel level, LoggerFlags flags, std::error_code &ec);
+
+        void write(std::unique_ptr<LogMessage> &&message);
 
         static Log& instance() {
             static Log log;

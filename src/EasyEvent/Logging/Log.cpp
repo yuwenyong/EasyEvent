@@ -4,9 +4,16 @@
 
 #include "EasyEvent/Logging/Log.h"
 #include "EasyEvent/Common/Errors.h"
-#include "EasyEvent/Common/TaskPool.h"
 #include "EasyEvent/Logging/Logger.h"
+#include "EasyEvent/Logging/LogMessage.h"
 
+
+EasyEvent::Log::~Log() {
+    if (_thread) {
+        _thread->stop();
+        _thread->wait();
+    }
+}
 
 EasyEvent::Logger * EasyEvent::Log::getOrCreateLogger(const std::string &name, LogLevel level, LoggerFlags flags) {
     std::lock_guard<std::mutex> lock(_mutex);
@@ -31,5 +38,26 @@ EasyEvent::Logger * EasyEvent::Log::createLogger(const std::string &name,LogLeve
     } else {
         ec = make_error_code(CommonErrc::AlreadyRegistered);
         return nullptr;
+    }
+}
+
+
+void EasyEvent::Log::write(std::unique_ptr<LogMessage> &&message) {
+    Logger* logger = message->getLogger();
+    assert(logger != nullptr);
+    assert(getLogger(logger->getName()) == logger);
+    if (logger->isAsync()) {
+        if (!_thread) {
+            std::lock_guard<std::mutex> lock(_mutex);
+            if (!_thread) {
+                _thread = std::make_unique<TaskPool>();
+                _thread->start(1);
+            }
+        }
+        _thread->post([logger, message=std::move(message)]() mutable {
+            logger->write(std::move(message));
+        });
+    } else {
+        logger->write(std::move(message));
     }
 }
