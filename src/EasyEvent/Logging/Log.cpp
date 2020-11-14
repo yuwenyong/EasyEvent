@@ -34,6 +34,7 @@ EasyEvent::Logger * EasyEvent::Log::createLogger(const std::string &name,LogLeve
         _loggers[name] = std::make_unique<Logger>(name, level, flags);
         iter = _loggers.find(name);
         assert(iter != _loggers.end());
+        ec = {0, ec.category()};
         return iter->second.get();
     } else {
         ec = make_error_code(CommonErrc::AlreadyRegistered);

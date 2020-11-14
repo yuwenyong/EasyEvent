@@ -21,7 +21,7 @@ std::string EasyEvent::CommonErrCategory::message(int ev) const {
     }
 }
 
-const EasyEvent::CommonErrCategory EasyEvent::gCommonErrCategory{};
-
-
-
+const std::error_category& EasyEvent::getCommonErrCategory() {
+    static const EasyEvent::CommonErrCategory errCategory{};
+    return errCategory;
+}

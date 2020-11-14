@@ -8,6 +8,7 @@
 #include "EasyEvent/Common/Config.h"
 #include "EasyEvent/Common/Time.h"
 #include "EasyEvent/Logging/LogCommon.h"
+#include "EasyEvent/Logging/Logger.h"
 
 
 namespace EasyEvent {
@@ -24,28 +25,36 @@ namespace EasyEvent {
             _timestamp = Time::now();
         }
 
+        template <typename ValueT>
+        LogStream& operator<<(ValueT &&val) {
+            if (shouldLog()) {
+                stream() << std::forward<ValueT>(val);
+            }
+            return *this;
+        }
+
+        ~LogStream();
+    protected:
         std::ostringstream& stream() {
             return _os;
         }
 
-        bool shouldLog() const;
+        bool shouldLog() const {
+            return _logger != nullptr && _level >= _logger->getLevel();
+        }
 
-        ~LogStream();
-    protected:
         Logger* _logger;
         LogLevel _level;
         Time _timestamp;
         std::ostringstream _os;
     };
 
-    template <typename ValueT>
-    LogStream& operator<<(LogStream& stream, const ValueT &val) {
-        if (stream.shouldLog()) {
-            stream.stream() << val;
-        }
-        return stream;
-    }
-
 }
+
+#define LOG_DEBUG(logger)       EasyEvent::LogStream(logger, EasyEvent::LOG_LEVEL_DEBUG)
+#define LOG_INFO(logger)        EasyEvent::LogStream(logger, EasyEvent::LOG_LEVEL_INFO)
+#define LOG_WARN(logger)        EasyEvent::LogStream(logger, EasyEvent::LOG_LEVEL_WARN)
+#define LOG_ERROR(logger)       EasyEvent::LogStream(logger, EasyEvent::LOG_LEVEL_ERROR)
+#define LOG_CRITICAL(logger)    EasyEvent::LogStream(logger, EasyEvent::LOG_LEVEL_CRITICAL)
 
 #endif //EASYEVENT_LOGGING_LOGSTREAM_H

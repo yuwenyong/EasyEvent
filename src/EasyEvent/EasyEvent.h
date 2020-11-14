@@ -9,4 +9,8 @@
 #include "EasyEvent/Common/TaskPool.h"
 #include "EasyEvent/Common/Time.h"
 
+#include "EasyEvent/Logging/Log.h"
+#include "EasyEvent/Logging/LogStream.h"
+#include "EasyEvent/Logging/ConsoleSink.h"
+
 #endif //EASYEVENT_EASYEVENT_H
