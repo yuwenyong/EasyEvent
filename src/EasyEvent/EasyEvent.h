@@ -12,5 +12,6 @@
 #include "EasyEvent/Logging/Log.h"
 #include "EasyEvent/Logging/LogStream.h"
 #include "EasyEvent/Logging/ConsoleSink.h"
+#include "EasyEvent/Logging/FileSink.h"
 
 #endif //EASYEVENT_EASYEVENT_H

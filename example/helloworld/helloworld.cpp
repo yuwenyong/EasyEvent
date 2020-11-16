@@ -9,31 +9,42 @@ using namespace EasyEvent;
 
 
 int main (int argc, char **argv) {
+    std::error_code ec = {};
+    Logger* logger = Log::instance().createLogger("Test", LOG_LEVEL_DEBUG, LOGGER_FLAGS_ASYNC, ec);
+    assert(logger != nullptr);
+    logger->addSink(ConsoleSink::create(true, LOG_LEVEL_DEBUG, (SinkFlags)(SINK_FLAGS_DEFAULT|SINK_FLAGS_PREFIX_LOGGER_NAME)));
+    // logger->addSink(FileSink::create("./test.log", true));
     EasyEvent::TaskPool taskPool;
     taskPool.start(1);
-    auto v1 = taskPool.submit([]() {
-       printf("Task 1\n");
-       return 5;
+    auto v1 = taskPool.submit([logger]() {
+        int i = 1;
+        LOG_DEBUG(logger) << "Task " << i;
+        return 5;
     });
-    auto v2 = taskPool.submit([]() {
-        printf("Task 2\n");
+    auto v2 = taskPool.submit([logger]() {
+        int i = 2;
+        LOG_INFO(logger) << "Task " << i;
         return 6;
     });
-    auto v3 = taskPool.submit([]() {
-       printf("Task 3\n");
+    auto v3 = taskPool.submit([logger]() {
+        int i = 3;
+        LOG_WARN(logger) << "Task " << i;
     });
 
-    taskPool.submit([]() {
-        printf("Task 4\n");
+    taskPool.submit([logger]() {
+        int i = 4;
+        LOG_ERROR(logger) << "Task " << i;
         return 8;
     });
-    taskPool.post([]() {
-        printf("Last task\n");
+    auto result = taskPool.post([logger]() {
+        LOG_CRITICAL(logger) << "Last task";
     });
+    assert(result);
     taskPool.stop();
-//    taskPool.wait();
-    printf("Task 1: %d\n", v1.get());
-    printf("Task 2: %d\n", v2.get());
-    printf("Task 3: %d\n", isReady(v3) ? 1 : 0);
+    LOG_INFO(logger) << "Task 1: " << v1.get();
+    LOG_INFO(logger) << "Task 2: " << v2.get();
+    LOG_INFO(logger) << "Task 3: " << (isReady(v3) ? 1 : 0);
+    LOG_CRITICAL(logger) << "Last ....";
+    taskPool.wait();
     return 0;
 }

@@ -14,6 +14,9 @@ namespace EasyEvent {
 
     class EASY_EVENT_API Sink {
     public:
+        Sink(const Sink&) = delete;
+        Sink& operator=(const Sink&) = delete;
+
         virtual ~Sink() = default;
 
         LogLevel getLevel() const {
