@@ -220,6 +220,7 @@ typedef uint8_t uint8;
 #include <condition_variable>
 #include <mutex>
 #include <future>
+#include <filesystem>
 
 #include <cmath>
 #include <cstdio>
