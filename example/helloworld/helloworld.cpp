@@ -13,7 +13,9 @@ int main (int argc, char **argv) {
     Logger* logger = Log::instance().createLogger("Test", LOG_LEVEL_DEBUG, LOGGER_FLAGS_ASYNC, ec);
     assert(logger != nullptr);
     logger->addSink(ConsoleSink::create(true, LOG_LEVEL_DEBUG, (SinkFlags)(SINK_FLAGS_DEFAULT|SINK_FLAGS_PREFIX_LOGGER_NAME)));
-    // logger->addSink(FileSink::create("./test.log", true));
+//    logger->addSink(FileSink::create("./test.log", true));
+//    logger->addSink(RotatingFileSink::create("./rtest.log", 1024, 3));
+    logger->addSink(TimedRotatingFileSink::create("./trtest.log", TimedRotatingWhen::Minute));
     EasyEvent::TaskPool taskPool;
     taskPool.start(1);
     auto v1 = taskPool.submit([logger]() {
@@ -46,5 +48,13 @@ int main (int argc, char **argv) {
     LOG_INFO(logger) << "Task 3: " << (isReady(v3) ? 1 : 0);
     LOG_CRITICAL(logger) << "Last ....";
     taskPool.wait();
+    int  i = 0;
+    while (true) {
+        LOG_ERROR(logger) << "This is a test log " << ++i << ";";
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        if (i > 100) {
+            break;
+        }
+    }
     return 0;
 }

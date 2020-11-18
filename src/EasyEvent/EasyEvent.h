@@ -13,5 +13,7 @@
 #include "EasyEvent/Logging/LogStream.h"
 #include "EasyEvent/Logging/ConsoleSink.h"
 #include "EasyEvent/Logging/FileSink.h"
+#include "EasyEvent/Logging/RotatingFileSink.h"
+#include "EasyEvent/Logging/TimedRotatingFileSink.h"
 
 #endif //EASYEVENT_EASYEVENT_H

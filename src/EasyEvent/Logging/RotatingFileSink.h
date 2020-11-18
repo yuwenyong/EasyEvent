@@ -52,6 +52,7 @@ namespace EasyEvent {
             if (_logFile) {
                 fclose(_logFile);
                 _logFile = nullptr;
+                _fileSize = 0;
             }
         }
 
