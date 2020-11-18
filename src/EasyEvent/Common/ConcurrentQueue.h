@@ -13,6 +13,7 @@ namespace EasyEvent {
     template <typename ValueT>
     class ConcurrentQueue {
     public:
+        ConcurrentQueue() = default;
         ConcurrentQueue(const ConcurrentQueue&) = delete;
         ConcurrentQueue& operator=(const ConcurrentQueue&) = delete;
 
@@ -130,8 +131,8 @@ namespace EasyEvent {
         mutable std::mutex _mut;
         std::condition_variable _cond;
         std::deque<ValueT> _queue;
-        bool _stopped{false};
-        bool _terminated{false};
+        volatile bool _stopped{false};
+        volatile bool _terminated{false};
     };
 }
 

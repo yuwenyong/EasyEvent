@@ -47,6 +47,14 @@ namespace EasyEvent {
 
         std::string toString(const char *format) const;
 
+        explicit operator bool() const {
+            return _usec != 0;
+        }
+
+        bool operator!() const {
+            return _usec == 0;
+        }
+
         Time operator-() const {
             return Time(_usec);
         }
@@ -202,7 +210,7 @@ namespace EasyEvent {
         int64 _usec{0};
     };
 
-    std::ostream& operator<<(std::ostream& out, const Time& tm) {
+    inline std::ostream& operator<<(std::ostream& out, const Time& tm) {
         return out << tm.secondsAsDouble();
     }
 }

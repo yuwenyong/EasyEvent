@@ -14,8 +14,10 @@ namespace EasyEvent {
         LOG_LEVEL_INFO                               = 2,
         LOG_LEVEL_WARN                               = 3,
         LOG_LEVEL_ERROR                              = 4,
-        LOG_LEVEL_DISABLE                            = 5,
-        LOG_LEVEL_DEFAULT                            = LOG_LEVEL_INFO
+        LOG_LEVEL_CRITICAL                           = 5,
+        LOG_LEVEL_DISABLE                            = 6,
+        LOG_LEVEL_DEFAULT                            = LOG_LEVEL_INFO,
+        NUM_ENABLED_LOG_LEVELS                       = 5,
     };
 
     enum LoggerFlags {

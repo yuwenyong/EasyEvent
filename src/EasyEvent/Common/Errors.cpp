@@ -14,12 +14,14 @@ std::string EasyEvent::CommonErrCategory::message(int ev) const {
             return "invalid argument";
         case CommonErrc::NotFound:
             return "not found";
+        case CommonErrc::AlreadyRegistered:
+            return "already registered";
         default:
             return "(unrecognized error)";
     }
 }
 
-const EasyEvent::CommonErrCategory EasyEvent::gCommonErrCategory{};
-
-
-
+const std::error_category& EasyEvent::getCommonErrCategory() {
+    static const EasyEvent::CommonErrCategory errCategory{};
+    return errCategory;
+}

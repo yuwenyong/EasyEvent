@@ -12,6 +12,7 @@ namespace EasyEvent {
     enum class CommonErrc {
         InvalidArgument = 1,
         NotFound = 2,
+        AlreadyRegistered = 3,
     };
 
     class EASY_EVENT_API CommonErrCategory: public std::error_category {
@@ -20,10 +21,11 @@ namespace EasyEvent {
         [[nodiscard]] std::string message(int ev) const override;
     };
 
-    extern const CommonErrCategory gCommonErrCategory;
+    EASY_EVENT_API const std::error_category& getCommonErrCategory();
+
 
     inline std::error_code make_error_code(CommonErrc err) {
-        return {static_cast<int>(err), gCommonErrCategory};
+        return {static_cast<int>(err), getCommonErrCategory()};
     }
 }
 

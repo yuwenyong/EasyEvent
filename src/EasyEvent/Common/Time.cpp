@@ -35,7 +35,7 @@ struct tm EasyEvent::Time::localTime() const {
 
 std::string EasyEvent::Time::toDateTimeString() const {
     std::ostringstream os;
-    os << toString("%y-%m-%d %H:%M:%S") << ".";
+    os << toString("%Y-%m-%d %H:%M:%S") << ".";
     os.fill('0');
     os.width(3);
     os << static_cast<long>(_usec % 1000000 / 1000);
