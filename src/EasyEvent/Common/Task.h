@@ -239,16 +239,27 @@ namespace EasyEvent {
         }
     };
 
+
     template <typename FromT, typename ToT>
-    using CheckFuncReturnType = std::conditional<
-            std::is_void_v<ToT>, std::true_type,
-            std::conditional<std::is_same_v<FromT, ToT>, std::true_type,
-            std::is_convertible<FromT, ToT>>>;
+    using CheckFuncReturnType = typename std::conditional<
+            std::is_void_v<ToT>,
+            std::is_void<ToT>,
+            typename std::conditional<
+                std::is_same_v<FromT, ToT>,
+                std::is_same<FromT, ToT>,
+                std::is_convertible<FromT, ToT>
+            >::type
+    >::type;
 
     template <typename ResT, typename... ArgsT>
     class Task<ResT(ArgsT...)>: public MaybeUnaryOrBinaryFunction<ResT, ArgsT...>, private TaskBase {
         template<typename FuncT, typename Res2T = typename std::invoke_result<FuncT&, ArgsT...>::type>
         struct Callable: CheckFuncReturnType<Res2T, ResT> {
+
+        };
+
+        template<typename Tp>
+        struct Callable<Task, Tp>: std::false_type {
 
         };
 
@@ -276,15 +287,7 @@ namespace EasyEvent {
         template<typename FunctorT,
                 typename = RequiresNot<std::is_same<FunctorT, Task>, void>,
                 typename = Requires<Callable<FunctorT>, void>>
-        Task(FunctorT func): TaskBase() {
-            typedef TaskHandler<ResT(ArgsT...), FunctorT> HandlerType;
-
-            if (HandlerType::notEmpty(func)) {
-                HandlerType::initFunctor(_functor, std::move(func));
-                _invoker = &HandlerType::invoke;
-                _manager = &HandlerType::manager;
-            }
-        }
+        Task(FunctorT func);
 
         Task& operator=(const Task&) = delete;
 
@@ -332,18 +335,18 @@ namespace EasyEvent {
         InvokerType  _invoker;
     };
 
-//    template <typename ResT, typename... ArgsT>
-//    template <typename FunctorT,  typename>
-//    Task<ResT(ArgsT...)>::Task(FunctorT func)
-//        :TaskBase() {
-//        typedef TaskHandler<ResT(ArgsT...), FunctorT> HandlerType;
-//
-//        if (HandlerType::notEmpty(func)) {
-//            HandlerType::initFunctor(_functor, std::move(func));
-//            _invoker = &HandlerType::invoke;
-//            _manager = &HandlerType::manager;
-//        }
-//    }
+    template <typename ResT, typename... ArgsT>
+    template <typename FunctorT,  typename, typename>
+    Task<ResT(ArgsT...)>::Task(FunctorT func)
+        :TaskBase() {
+        typedef TaskHandler<ResT(ArgsT...), FunctorT> HandlerType;
+
+        if (HandlerType::notEmpty(func)) {
+            HandlerType::initFunctor(_functor, std::move(func));
+            _invoker = &HandlerType::invoke;
+            _manager = &HandlerType::manager;
+        }
+    }
 
     template <typename ResT, typename... ArgsT>
     ResT Task<ResT(ArgsT...)>::operator()(ArgsT... args) const {

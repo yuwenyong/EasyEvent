@@ -7,13 +7,6 @@
 
 using namespace EasyEvent;
 
-template <typename FuncT>
-void test(FuncT &&func) {
-    using Res = typename std::invoke_result<FuncT&>::type;
-    using ResT = CheckFuncReturnType<Res, int>;
-    printf("%s", typeid(ResT).name());
-}
-
 
 int main (int argc, char **argv) {
     std::error_code ec = {};
@@ -57,18 +50,11 @@ int main (int argc, char **argv) {
     taskPool.wait();
 
     std::unique_ptr<int> a = std::make_unique<int>(6);
-//    Task<void ()> t = [logger, a=std::move(a)]() {
-//        LOG_INFO(logger) << "Custom task: " << *a;
-//        return 0;
-//    };
-//    t();
-    auto t = [logger, a=std::move(a)]() {
+    Task<void ()> t = [logger, a=std::move(a)]() {
         LOG_INFO(logger) << "Custom task: " << *a;
         return 0;
     };
-    test(std::move(t));
-
-
+    t();
 
 //    int  i = 0;
 //    while (true) {
