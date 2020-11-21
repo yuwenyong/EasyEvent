@@ -31,6 +31,10 @@ namespace EasyEvent {
 
         Logger* createLogger(const std::string& name, LogLevel level, LoggerFlags flags, std::error_code &ec);
 
+        Logger* createLogger(const std::string& name,
+                             LogLevel level=LOG_LEVEL_DEFAULT,
+                             LoggerFlags flags=LOGGER_FLAGS_DEFAULT);
+
         void write(std::unique_ptr<LogMessage> &&message);
 
         static Log& instance() {

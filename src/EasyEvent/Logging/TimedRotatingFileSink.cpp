@@ -40,7 +40,7 @@ void EasyEvent::TimedRotatingFileSink::_write(LogMessage *message, const std::st
 
 bool EasyEvent::TimedRotatingFileSink::shouldRollover() {
     Time t = Time::now();
-    if (t > _rolloverAt) {
+    if (t.seconds() > _rolloverAt.seconds()) {
         struct tm dt = t.localTime();
         struct tm dt2 = _rolloverAt.localTime();
         switch (_when) {

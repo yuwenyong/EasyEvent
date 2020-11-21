@@ -37,11 +37,17 @@ EasyEvent::Logger * EasyEvent::Log::createLogger(const std::string &name,LogLeve
         ec = {0, ec.category()};
         return iter->second.get();
     } else {
-        ec = make_error_code(CommonErrc::AlreadyRegistered);
+        ec = make_error_code(LoggingErrorCode::LoggerAlreadyRegistered);
         return nullptr;
     }
 }
 
+EasyEvent::Logger * EasyEvent::Log::createLogger(const std::string &name, LogLevel level, LoggerFlags flags) {
+    std::error_code ec;
+    auto logger = createLogger(name, level, flags, ec);
+    throwError(ec);
+    return logger;
+}
 
 void EasyEvent::Log::write(std::unique_ptr<LogMessage> &&message) {
     Logger* logger = message->getLogger();

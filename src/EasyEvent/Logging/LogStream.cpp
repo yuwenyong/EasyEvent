@@ -9,7 +9,10 @@
 
 EasyEvent::LogStream::~LogStream() {
     if (shouldLog()) {
-        auto message = std::make_unique<LogMessage>(_logger, _level, _timestamp, _os.str());
-        Log::instance().write(std::move(message));
+        auto text = _os.str();
+        if (!text.empty()) {
+            auto message = std::make_unique<LogMessage>(_logger, _level, _timestamp, std::move(text));
+            Log::instance().write(std::move(message));
+        }
     }
 }
