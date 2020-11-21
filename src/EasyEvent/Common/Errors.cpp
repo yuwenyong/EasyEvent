@@ -4,24 +4,37 @@
 
 #include "EasyEvent/Common/Errors.h"
 
-const char * EasyEvent::CommonErrCategory::name() const noexcept {
-    return "common";
+const char * EasyEvent::UserErrorCategory::name() const noexcept {
+    return "user error";
 }
 
-std::string EasyEvent::CommonErrCategory::message(int ev) const {
-    switch (static_cast<CommonErrc>(ev)) {
-        case CommonErrc::InvalidArgument:
+std::string EasyEvent::UserErrorCategory::message(int ev) const {
+    switch (static_cast<UserErrorCode>(ev)) {
+        case UserErrorCode::InvalidArgument:
             return "invalid argument";
-        case CommonErrc::NotFound:
+        case UserErrorCode::NotFound:
             return "not found";
-        case CommonErrc::AlreadyRegistered:
+        case UserErrorCode::AlreadyRegistered:
             return "already registered";
         default:
             return "(unrecognized error)";
     }
 }
 
-const std::error_category& EasyEvent::getCommonErrCategory() {
-    static const EasyEvent::CommonErrCategory errCategory{};
+const std::error_category& EasyEvent::getUserErrorCategory() {
+    static const EasyEvent::UserErrorCategory errCategory{};
     return errCategory;
+}
+
+void EasyEvent::doThrowError(const std::error_code &err) {
+    std::system_error e(err);
+    throw e;
+}
+
+void EasyEvent::doThrowError(const std::error_code &err, const char *location) {
+    std::string whatMsg = location;
+    whatMsg += ": ";
+    whatMsg += err.message();
+    std::system_error e(err, whatMsg);
+    throw e;
 }

@@ -9,8 +9,7 @@ using namespace EasyEvent;
 
 
 int main (int argc, char **argv) {
-    std::error_code ec = {};
-    Logger* logger = Log::instance().createLogger("Test", LOG_LEVEL_DEBUG, LOGGER_FLAGS_ASYNC, ec);
+    Logger* logger = Log::instance().createLogger("Test", LOG_LEVEL_DEBUG, LOGGER_FLAGS_ASYNC);
     assert(logger != nullptr);
     logger->addSink(ConsoleSink::create(true, LOG_LEVEL_DEBUG, (SinkFlags)(SINK_FLAGS_DEFAULT|SINK_FLAGS_PREFIX_LOGGER_NAME)));
 //    logger->addSink(FileSink::create("./test.log", true));

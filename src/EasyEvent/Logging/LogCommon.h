@@ -41,6 +41,29 @@ namespace EasyEvent {
     class Sink;
 
     using SinkPtr = std::shared_ptr<Sink>;
+
+    enum class LoggingErrorCode {
+        LoggerAlreadyRegistered = 1,
+    };
+
+    class EASY_EVENT_API LoggingErrorCategory: public std::error_category {
+    public:
+        [[nodiscard]] const char* name() const noexcept override;
+        [[nodiscard]] std::string message(int ev) const override;
+    };
+
+    EASY_EVENT_API const std::error_category& getLoggingErrorCategory();
+
+    inline std::error_code make_error_code(LoggingErrorCode err) {
+        return {static_cast<int>(err), getLoggingErrorCategory()};
+    }
+}
+
+namespace std {
+
+    template <>
+    struct is_error_code_enum<EasyEvent::LoggingErrorCode>: public true_type {};
+
 }
 
 #endif //EASYEVENT_LOGGING_LOGCOMMON_H
