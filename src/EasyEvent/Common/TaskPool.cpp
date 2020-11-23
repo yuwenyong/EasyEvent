@@ -34,6 +34,6 @@ void EasyEvent::TaskPool::process() {
         if (!task) {
             break;
         }
-        (*task)->call();
+        (*task)();
     }
 }

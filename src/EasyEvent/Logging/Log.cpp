@@ -37,7 +37,7 @@ EasyEvent::Logger * EasyEvent::Log::createLogger(const std::string &name,LogLeve
         ec = {0, ec.category()};
         return iter->second.get();
     } else {
-        ec = make_error_code(LoggingErrorCode::LoggerAlreadyRegistered);
+        ec = make_error_code(LoggingErrors::AlreadyRegistered);
         return nullptr;
     }
 }
