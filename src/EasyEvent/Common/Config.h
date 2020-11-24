@@ -131,13 +131,15 @@ typedef unsigned long long UInt64;
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <cerrno>
 
 
-#ifndef _WIN32
+#ifdef _WIN32
+#   include <windows.h>
+#else
 #   include <pthread.h>
-#   include <errno.h>
 #   include <unistd.h>
-#   include <sys/time.h>
+# include <sys/time.h>
 #endif
 
 #define EASY_EVENT_PLATFORM_WINDOWS     0

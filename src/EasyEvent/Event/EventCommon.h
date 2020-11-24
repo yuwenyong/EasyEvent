@@ -9,8 +9,24 @@
 
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
 #   include <winerror.h>
+#   include <winsock2.h>
+#   include <ws2tcpip.h>
+#   pragma comment(lib, "ws2_32.lib")
 #else
+#   include <sys/ioctl.h>
+#   include <poll.h>
+#   include <sys/types.h>
+#   include <sys/stat.h>
+#   include <fcntl.h>
+#   include <sys/select.h>
+#   include <sys/socket.h>
+#   include <sys/uio.h>
+#   include <sys/un.h>
+#   include <netinet/in.h>
+#   include <netinet/tcp.h>
+#   include <arpa/inet.h>
 #   include <netdb.h>
+#   include <net/if.h>
 #endif
 
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
@@ -19,12 +35,20 @@
 #   define NETDB_ERROR(e) WSA ## e
 #   define GETADDRINFO_ERROR(e) WSA ## e
 #   define WIN_OR_POSIX(e_win, e_posix) e_win
+
+typedef SOCKET SocketType;
+const SOCKET InvalidSocket = INVALID_SOCKET;
+const int SocketErrorRetVal = SOCKET_ERROR;
 #else
 #   define NATIVE_ERROR(e) e
 #   define SOCKET_ERROR(e) e
 #   define NETDB_ERROR(e) e
 #   define GETADDRINFO_ERROR(e) e
 #   define WIN_OR_POSIX(e_win, e_posix) e_posix
+
+typedef int SocketType;
+const int InvalidSocket = -1;
+const int SocketErrorRetVal = -1;
 #endif
 
 
@@ -100,6 +124,26 @@ namespace EasyEvent {
         /// The socket is marked non-blocking and the requested operation would block.
         WouldBlock = SOCKET_ERROR(EWOULDBLOCK)
     };
+
+    class EASY_EVENT_API SocketErrorCategory: public std::error_category {
+    public:
+        [[nodiscard]] const char* name() const noexcept override;
+        [[nodiscard]] std::string message(int ev) const override;
+    };
+
+    EASY_EVENT_API const std::error_category& getSocketErrorCategory();
+
+
+    inline std::error_code make_error_code(SocketErrors err) {
+        return {static_cast<int>(err), getSocketErrorCategory()};
+    }
+}
+
+namespace std {
+
+    template <>
+    struct is_error_code_enum<EasyEvent::SocketErrors>: public true_type {};
+
 }
 
 #endif //EASYEVENT_EVENT_EVENTCOMMON_H
