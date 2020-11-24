@@ -9,12 +9,12 @@ const char * EasyEvent::UserErrorCategory::name() const noexcept {
 }
 
 std::string EasyEvent::UserErrorCategory::message(int ev) const {
-    switch (static_cast<UserErrorCode>(ev)) {
-        case UserErrorCode::InvalidArgument:
+    switch (static_cast<UserErrors>(ev)) {
+        case UserErrors::InvalidArgument:
             return "invalid argument";
-        case UserErrorCode::NotFound:
+        case UserErrors::NotFound:
             return "not found";
-        case UserErrorCode::AlreadyRegistered:
+        case UserErrors::AlreadyRegistered:
             return "already registered";
         default:
             return "(unrecognized error)";

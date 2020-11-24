@@ -10,7 +10,7 @@ EasyEvent::RotatingFileSink::RotatingFileSink(std::string fileName, size_t maxBy
                                               : Sink(level, flags)
                                               , _fileName(std::move(fileName))
                                               , _maxBytes(maxBytes)
-                                              , _backupCount(std::max(backupCount, 1ul)) {
+                                              , _backupCount(std::max(backupCount, (size_t)1ul)) {
     if (isThreadSafe()) {
         _mutex = std::make_unique<std::mutex>();
     }

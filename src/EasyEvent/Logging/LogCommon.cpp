@@ -10,9 +10,9 @@ const char * EasyEvent::LoggingErrorCategory::name() const noexcept {
 }
 
 std::string EasyEvent::LoggingErrorCategory::message(int ev) const {
-    switch (static_cast<LoggingErrorCode>(ev)) {
-        case LoggingErrorCode::LoggerAlreadyRegistered:
-            return "logger already registered";
+    switch (static_cast<LoggingErrors>(ev)) {
+        case LoggingErrors::AlreadyRegistered:
+            return "already registered";
         default:
             return "(unrecognized error)";
     }

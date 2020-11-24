@@ -7,6 +7,7 @@
 
 #include "EasyEvent/Common/Config.h"
 #include "EasyEvent/Common/ConcurrentQueue.h"
+#include "EasyEvent/Common/Task.h"
 
 
 namespace EasyEvent {
@@ -31,7 +32,7 @@ namespace EasyEvent {
             using ResultType = typename std::result_of<FuncT()>::type;
             std::packaged_task<ResultType ()> task(std::forward<FuncT>(func));
             std::future<ResultType> res(task.get_future());
-            if (_tasks.enqueue(makeTask(std::move(task)))) {
+            if (_tasks.enqueue(std::move(task))) {
                 return res;
             } else {
                 return {};
@@ -40,7 +41,7 @@ namespace EasyEvent {
 
         template<typename FuncT>
         bool post(FuncT &&func) {
-            return _tasks.enqueue(makeTask(std::forward<FuncT>(func)));
+            return _tasks.enqueue(std::forward<FuncT>(func));
         }
 
         bool empty() const {
@@ -76,33 +77,9 @@ namespace EasyEvent {
             _threads.clear();
         }
     protected:
-
-        class TaskBase {
-        public:
-            virtual void call() = 0;
-            virtual ~TaskBase() = default;
-        };
-
-        template <typename FuncT>
-        class Task: public TaskBase {
-        public:
-            explicit Task(FuncT &&func): _func(std::forward<FuncT>(func)) {}
-
-            void call() override {
-                _func();
-            }
-        protected:
-            FuncT _func;
-        };
-
         void process();
 
-        template <typename FuncT>
-        static std::unique_ptr<TaskBase> makeTask(FuncT &&func) {
-            return std::make_unique<Task<FuncT>>(std::forward<FuncT>(func));
-        }
-
-        ConcurrentQueue<std::unique_ptr<TaskBase>> _tasks;
+        ConcurrentQueue<Task<void()>> _tasks;
         std::vector<std::thread> _threads;
     };
 

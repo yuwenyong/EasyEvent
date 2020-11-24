@@ -9,7 +9,7 @@
 
 namespace EasyEvent {
 
-    enum class UserErrorCode {
+    enum class UserErrors {
         InvalidArgument = 1,
         NotFound = 2,
         AlreadyRegistered = 3,
@@ -24,7 +24,7 @@ namespace EasyEvent {
     EASY_EVENT_API const std::error_category& getUserErrorCategory();
 
 
-    inline std::error_code make_error_code(UserErrorCode err) {
+    inline std::error_code make_error_code(UserErrors err) {
         return {static_cast<int>(err), getUserErrorCategory()};
     }
 
@@ -48,7 +48,7 @@ namespace EasyEvent {
 namespace std {
 
     template <>
-    struct is_error_code_enum<EasyEvent::UserErrorCode>: public true_type {};
+    struct is_error_code_enum<EasyEvent::UserErrors>: public true_type {};
 
 }
 

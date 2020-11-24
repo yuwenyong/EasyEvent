@@ -42,8 +42,8 @@ namespace EasyEvent {
 
     using SinkPtr = std::shared_ptr<Sink>;
 
-    enum class LoggingErrorCode {
-        LoggerAlreadyRegistered = 1,
+    enum class LoggingErrors {
+        AlreadyRegistered = 1,
     };
 
     class EASY_EVENT_API LoggingErrorCategory: public std::error_category {
@@ -54,7 +54,7 @@ namespace EasyEvent {
 
     EASY_EVENT_API const std::error_category& getLoggingErrorCategory();
 
-    inline std::error_code make_error_code(LoggingErrorCode err) {
+    inline std::error_code make_error_code(LoggingErrors err) {
         return {static_cast<int>(err), getLoggingErrorCategory()};
     }
 }
@@ -62,7 +62,7 @@ namespace EasyEvent {
 namespace std {
 
     template <>
-    struct is_error_code_enum<EasyEvent::LoggingErrorCode>: public true_type {};
+    struct is_error_code_enum<EasyEvent::LoggingErrors>: public true_type {};
 
 }
 
