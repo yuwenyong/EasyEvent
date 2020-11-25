@@ -9,10 +9,7 @@
 
 
 EasyEvent::Log::~Log() {
-    if (_thread) {
-        _thread->stop();
-        _thread->wait();
-    }
+    stop();
 }
 
 EasyEvent::Logger * EasyEvent::Log::getOrCreateLogger(const std::string &name, LogLevel level, LoggerFlags flags) {

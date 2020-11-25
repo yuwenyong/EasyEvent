@@ -16,13 +16,16 @@ namespace EasyEvent {
     };
 
     template <typename ResT, typename T1>
-    struct MaybeUnaryOrBinaryFunction<ResT, T1>: std::unary_function<T1, ResT> {
-
+    struct MaybeUnaryOrBinaryFunction<ResT, T1> {
+        typedef T1 argument_type;
+        typedef ResT result_type;
     };
 
     template <typename ResT, typename T1, typename T2>
-    struct MaybeUnaryOrBinaryFunction<ResT, T1, T2>: std::binary_function<T1, T2, ResT> {
-
+    struct MaybeUnaryOrBinaryFunction<ResT, T1, T2> {
+        typedef T1 first_argument_type;
+        typedef T2 second_argument_type;
+        typedef ResT result_type;
     };
 
     class EASY_EVENT_API BadTaskCall: public std::exception {

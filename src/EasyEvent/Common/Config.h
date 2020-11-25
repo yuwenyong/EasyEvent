@@ -136,10 +136,12 @@ typedef unsigned long long UInt64;
 
 #ifdef _WIN32
 #   include <windows.h>
+#   include <sys/timeb.h>
+#   include <sys/types.h>
 #else
 #   include <pthread.h>
 #   include <unistd.h>
-# include <sys/time.h>
+#   include <sys/time.h>
 #endif
 
 #define EASY_EVENT_PLATFORM_WINDOWS     0

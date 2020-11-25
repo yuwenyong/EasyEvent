@@ -16,7 +16,7 @@ include(AutoCollect)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror -Wconversion -Wshadow")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wconversion -Wshadow")
 
-set(BUILD_EasyEvent_AS_STATIC_LIB FALSE)
+set(BUILD_EasyEvent_AS_STATIC_LIB TRUE)
 option(EasyEvent_BUILD_ASAN "Build EasyEvent with address sanitizer (gcc/clang)" ON)
 option(EasyEvent_BUILD_UBSAN "Build EasyEvent with undefined behavior sanitizer (gcc/clang)" ON)
 
