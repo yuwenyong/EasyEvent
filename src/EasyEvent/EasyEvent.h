@@ -17,4 +17,6 @@
 #include "EasyEvent/Logging/RotatingFileSink.h"
 #include "EasyEvent/Logging/TimedRotatingFileSink.h"
 
+#include "EasyEvent/Event/SocketInit.h"
+
 #endif //EASYEVENT_EASYEVENT_H

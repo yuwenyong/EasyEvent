@@ -37,6 +37,13 @@ namespace EasyEvent {
 
         void write(std::unique_ptr<LogMessage> &&message);
 
+        void stop() {
+            if (_thread) {
+                _thread->stop();
+                _thread->wait();
+            }
+        }
+
         static Log& instance() {
             static Log log;
             return log;

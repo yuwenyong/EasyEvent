@@ -5,7 +5,7 @@
 #include "EasyEvent/Logging/ConsoleSink.h"
 
 
-std::mutex EasyEvent::ConsoleSink::gMutex = {};
+std::shared_ptr<std::mutex> EasyEvent::ConsoleSink::gMutex = std::make_shared<std::mutex>();
 
 EasyEvent::ColorTypes EasyEvent::ConsoleSink::gColors[EasyEvent::NUM_ENABLED_LOG_LEVELS] = {
     EasyEvent::ColorTypes::LGRAY,
@@ -17,7 +17,7 @@ EasyEvent::ColorTypes EasyEvent::ConsoleSink::gColors[EasyEvent::NUM_ENABLED_LOG
 
 void EasyEvent::ConsoleSink::write(LogMessage *message, const std::string &text) {
     if (isThreadSafe()) {
-        std::lock_guard<std::mutex> lock(gMutex);
+        std::lock_guard<std::mutex> lock(*_mutex);
         _write(message, text);
     } else {
         _write(message, text);

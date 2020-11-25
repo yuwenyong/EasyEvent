@@ -53,7 +53,9 @@ namespace EasyEvent {
         ConsoleSink(bool colored, LogLevel level, SinkFlags flags)
             : Sink(level, flags)
             , _colored(colored) {
-
+            if (isThreadSafe()) {
+                _mutex = gMutex;
+            }
         }
 
         void write(LogMessage *message, const std::string &text) override;
@@ -65,8 +67,9 @@ namespace EasyEvent {
         void resetColor(LogLevel level);
 
         bool _colored;
+        std::shared_ptr<std::mutex> _mutex;
 
-        static std::mutex gMutex;
+        static std::shared_ptr<std::mutex> gMutex;
         static ColorTypes gColors[NUM_ENABLED_LOG_LEVELS];
     };
 
