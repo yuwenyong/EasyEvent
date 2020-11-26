@@ -46,13 +46,17 @@ namespace EasyEvent {
         SignalHandle add(int sigNum, Task<void(int)> &&callback) {
             std::error_code ec;
             auto res = add(sigNum, std::move(callback), ec);
-            throwError(ec, "register signal handler");
+            throwError(ec, "add signal handler");
             return res;
         }
 
-        void remove(SignalHandle handle);
+        void remove(SignalHandle handle, std::error_code &ec);
 
-        static void signalHandler(int sigNum);
+        void remove(SignalHandle handle) {
+            std::error_code ec;
+            remove(std::move(handle), ec);
+            throwError(ec, "remove signal handler");
+        }
 
         static SignalCtrl& instance() {
             static SignalCtrl sc;
@@ -63,7 +67,24 @@ namespace EasyEvent {
 
         ~SignalCtrl();
 
-        std::recursive_mutex _mutex;
+        void registerSignal(int sigNum, std::error_code &ec);
+
+        void unregisterSignal(int sigNum, std::error_code &ec);
+
+        std::vector<SignalOpPtr> getOperations(int sigNum) const {
+            std::lock_guard<std::mutex> lock(_mutex);
+            return _registrations.at(sigNum);
+        }
+
+        size_t getOperationCount(int sigNum) const {
+            std::lock_guard<std::mutex> lock(_mutex);
+            auto iter = _registrations.find(sigNum);
+            return iter != _registrations.end() ? iter->second.size() : 0;
+        }
+
+        static void signalHandler(int sigNum);
+
+        mutable std::mutex _mutex;
         std::map<int, std::vector<SignalOpPtr>> _registrations;
     };
 

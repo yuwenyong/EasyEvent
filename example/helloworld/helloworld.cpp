@@ -55,13 +55,17 @@ int main (int argc, char **argv) {
     };
     t();
 
-//    int  i = 0;
-//    while (true) {
-//        LOG_ERROR(logger) << "This is a test log " << ++i << ";";
-//        std::this_thread::sleep_for(std::chrono::seconds(1));
-//        if (i > 100) {
-//            break;
-//        }
-//    }
+    bool running = true;
+    int i = 0;
+
+    SignalCtrl::instance().add(SIGINT, [&running, logger](int sig){
+        LOG_CRITICAL(logger) << "Exit!!!";
+        running = false;
+    });
+
+    while (running) {
+        LOG_ERROR(logger) << "This is a test log " << ++i << ";";
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
     return 0;
 }
