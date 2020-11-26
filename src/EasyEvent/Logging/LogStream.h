@@ -5,9 +5,8 @@
 #ifndef EASYEVENT_LOGGING_LOGSTREAM_H
 #define EASYEVENT_LOGGING_LOGSTREAM_H
 
-#include "EasyEvent/Common/Config.h"
-#include "EasyEvent/Common/Time.h"
 #include "EasyEvent/Logging/LogCommon.h"
+#include "EasyEvent/Common/Time.h"
 #include "EasyEvent/Logging/Logger.h"
 
 

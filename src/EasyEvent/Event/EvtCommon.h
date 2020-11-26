@@ -2,8 +2,8 @@
 // Created by yuwenyong on 2020/11/23.
 //
 
-#ifndef EASYEVENT_EVENT_EVENTCOMMON_H
-#define EASYEVENT_EVENT_EVENTCOMMON_H
+#ifndef EASYEVENT_EVENT_EVTCOMMON_H
+#define EASYEVENT_EVENT_EVTCOMMON_H
 
 #include "EasyEvent/Common/Config.h"
 
@@ -146,4 +146,4 @@ namespace std {
 
 }
 
-#endif //EASYEVENT_EVENT_EVENTCOMMON_H
+#endif //EASYEVENT_EVENT_EVTCOMMON_H

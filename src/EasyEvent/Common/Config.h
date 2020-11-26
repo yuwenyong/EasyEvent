@@ -126,12 +126,13 @@ typedef unsigned long long UInt64;
 
 
 #include <cassert>
-#include <exception>
-#include <stdexcept>
-#include <iostream>
-#include <sstream>
-#include <iomanip>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 #include <cerrno>
+#include <csignal>
 
 
 #ifdef _WIN32
@@ -197,6 +198,11 @@ typedef uint32_t uint32;
 typedef uint16_t uint16;
 typedef uint8_t uint8;
 
+#include <exception>
+#include <stdexcept>
+#include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <utility>
 #include <type_traits>
 #include <numeric>
@@ -226,13 +232,6 @@ typedef uint8_t uint8;
 #include <future>
 #include <filesystem>
 
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <ctime>
-#include <cerrno>
-#include <csignal>
 
 #ifdef max
 #undef max

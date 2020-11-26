@@ -42,7 +42,7 @@ EasyEvent::Logger * EasyEvent::Log::createLogger(const std::string &name,LogLeve
 EasyEvent::Logger * EasyEvent::Log::createLogger(const std::string &name, LogLevel level, LoggerFlags flags) {
     std::error_code ec;
     auto logger = createLogger(name, level, flags, ec);
-    throwError(ec);
+    throwError(ec, "create logger");
     return logger;
 }
 
@@ -58,7 +58,8 @@ void EasyEvent::Log::write(std::unique_ptr<LogMessage> &&message) {
                 _thread->start(1);
             }
         }
-        _thread->post([logger, message=std::move(message)]() mutable {
+        _thread->post([message=std::move(message)]() mutable {
+            auto logger = message->getLogger();
             logger->write(std::move(message));
         });
     } else {

@@ -5,7 +5,7 @@
 #ifndef EASYEVENT_LOGGING_ROTATINGFILESINK_H
 #define EASYEVENT_LOGGING_ROTATINGFILESINK_H
 
-#include "EasyEvent/Common/Config.h"
+#include "EasyEvent/Logging/LogCommon.h"
 #include "EasyEvent/Logging/Sink.h"
 
 
