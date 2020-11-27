@@ -14,11 +14,10 @@
 #   pragma comment(lib, "ws2_32.lib")
 #else
 #   include <sys/ioctl.h>
-#   include <poll.h>
 #   include <sys/types.h>
 #   include <sys/stat.h>
+#   include <poll.h>
 #   include <fcntl.h>
-#   include <sys/select.h>
 #   include <sys/socket.h>
 #   include <sys/uio.h>
 #   include <sys/un.h>
@@ -28,6 +27,16 @@
 #   include <netdb.h>
 #   include <net/if.h>
 #endif
+
+#if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
+#   define EASY_EVENT_USE_SELECT
+#elif EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_LINUX
+#   define EASY_EVENT_USE_EPOLL
+#   include <sys/epoll.h>
+#else
+#   define EASY_EVENT_E_POLL
+#endif
+
 
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
 #   define NATIVE_ERROR(e) e
@@ -137,6 +146,45 @@ namespace EasyEvent {
     inline std::error_code make_error_code(SocketErrors err) {
         return {static_cast<int>(err), getSocketErrorCategory()};
     }
+
+#if defined(EASY_EVENT_USE_SELECT)
+    enum IOEvents: uint16 {
+        IO_EVENT_NONE = 0,
+        IO_EVENT_READ = 0x01,
+        IO_EVENT_WRITE = 0x02,
+        IO_EVENT_ERROR = 0x04,
+    };
+#elif defined(EASY_EVENT_USE_EPOLL)
+    enum class IOEvents: uint16 {
+        IO_EVENT_NONE = 0,
+        IO_EVENT_READ = EPOLLIN,
+        IO_EVENT_WRITE = EPOLLOUT,
+        IO_EVENT_ERROR = EPOLLERR | EPOLLHUP,
+    };
+#else
+    enum class IOEvents: uint16 {
+        IO_EVENT_NONE = 0,
+        IO_EVENT_READ = POLLIN,
+        IO_EVENT_WRITE = POLLOUT,
+        IO_EVENT_ERROR = POLLERR | POLLHUP,
+    };
+#endif
+
+    class EASY_EVENT_API Selectable {
+    public:
+        virtual void handleEvents(IOEvents events) = 0;
+        virtual SocketType ive() const = 0;
+        virtual void closeSocket() = 0;
+        virtual ~Selectable() = default;
+    };
+
+    using SelectablePtr = std::shared_ptr<Selectable>;
+
+    class EASY_EVENT_API SelectableData {
+    public:
+        virtual ~SelectableData() = default;
+    };
+
 }
 
 namespace std {
