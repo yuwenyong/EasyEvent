@@ -173,7 +173,7 @@ namespace EasyEvent {
     class EASY_EVENT_API Selectable {
     public:
         virtual void handleEvents(IOEvents events) = 0;
-        virtual SocketType ive() const = 0;
+        virtual SocketType getSocket() const = 0;
         virtual void closeSocket() = 0;
         virtual ~Selectable() = default;
     };

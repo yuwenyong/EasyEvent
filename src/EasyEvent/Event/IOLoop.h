@@ -17,6 +17,9 @@ namespace EasyEvent {
 
     class EASY_EVENT_API IOLoop {
     public:
+        IOLoop(const IOLoop&) = delete;
+        IOLoop& operator=(const IOLoop&) = delete;
+
         explicit IOLoop(Logger* logger=nullptr, bool makeCurrent=false)
             : _logger(logger) {
             if (makeCurrent) {
@@ -36,10 +39,6 @@ namespace EasyEvent {
 
         void stop() {
 
-        }
-
-        Time time() const {
-            return Time::now();
         }
 
         // callLater
