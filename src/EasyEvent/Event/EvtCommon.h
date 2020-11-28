@@ -19,13 +19,10 @@
 #   include <poll.h>
 #   include <fcntl.h>
 #   include <sys/socket.h>
-#   include <sys/uio.h>
-#   include <sys/un.h>
 #   include <netinet/in.h>
 #   include <netinet/tcp.h>
 #   include <arpa/inet.h>
 #   include <netdb.h>
-#   include <net/if.h>
 #endif
 
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
