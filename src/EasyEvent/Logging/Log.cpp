@@ -3,7 +3,6 @@
 //
 
 #include "EasyEvent/Logging/Log.h"
-#include "EasyEvent/Common/Errors.h"
 #include "EasyEvent/Logging/Logger.h"
 #include "EasyEvent/Logging/LogMessage.h"
 

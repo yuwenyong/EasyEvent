@@ -3,7 +3,20 @@
 //
 
 #include "EasyEvent/Event/Address.h"
+#include "EasyEvent/Event/SocketOps.h"
 
+
+EasyEvent::Address::Address(const char *addr, unsigned short port, ProtocolSupport protocol)
+    : Address() {
+    if (protocol == EnableIPv4 || (protocol == EnableBoth && isIPv4Address(addr))) {
+        initIPv4(addr, port);
+    } else if (protocol == EnableIPv6 || (protocol == EnableBoth && isIPv6Address(addr))) {
+        initIPv6(addr, port);
+    } else {
+        std::error_code ec = std::make_error_code(std::errc::invalid_argument);
+        doThrowError(ec);
+    }
+}
 
 bool EasyEvent::Address::operator<(const Address &rhs) const {
     if (_addr.saStorage.ss_family < rhs._addr.saStorage.ss_family) {
@@ -27,6 +40,11 @@ bool EasyEvent::Address::operator<(const Address &rhs) const {
             return false;
         }
     } else {
+        if (_addr.saIn6.sin6_scope_id < rhs._addr.saIn6.sin6_scope_id) {
+            return true;
+        } else if (_addr.saIn6.sin6_scope_id > rhs._addr.saIn6.sin6_scope_id) {
+            return false;
+        }
         if (_addr.saIn6.sin6_port < rhs._addr.saIn6.sin6_port) {
             return true;
         } else if (_addr.saIn6.sin6_port > rhs._addr.saIn6.sin6_port) {
@@ -58,6 +76,9 @@ bool EasyEvent::Address::operator==(const Address &rhs) const {
         }
         return true;
     } else {
+        if (_addr.saIn6.sin6_scope_id != rhs._addr.saIn6.sin6_scope_id) {
+            return false;
+        }
         if (_addr.saIn6.sin6_port != rhs._addr.saIn6.sin6_port) {
             return false;
         }
@@ -66,6 +87,28 @@ bool EasyEvent::Address::operator==(const Address &rhs) const {
             return false;
         }
         return true;
+    }
+}
+
+std::string EasyEvent::Address::getAddrString(std::error_code &ec) const {
+    if (_addr.saStorage.ss_family != AF_INET && _addr.saStorage.ss_family != AF_INET6) {
+        ec = std::make_error_code(std::errc::not_supported);
+        return {};
+    }
+    if (_addr.saStorage.ss_family == AF_INET) {
+        char addrStr[MaxAddrV4StrLen];
+        const char* addr = SocketOps::InetNtop(AF_INET, &_addr.saIn.sin_addr, addrStr, MaxAddrV4StrLen, 0, ec);
+        if (addr == nullptr) {
+            return {};
+        }
+        return addr;
+    } else {
+        char addrStr[MaxAddrV6StrLen];
+        const char* addr = SocketOps::InetNtop(AF_INET6, &_addr.saIn6.sin6_addr, addrStr, MaxAddrV6StrLen, 0, ec);
+        if (addr == nullptr) {
+            return {};
+        }
+        return addr;
     }
 }
 
@@ -106,3 +149,67 @@ std::vector<EasyEvent::Address> EasyEvent::Address::getWildAddresses(ProtocolSup
     }
     return result;
 }
+
+bool EasyEvent::Address::isIPv4Address(const char* addr) {
+    std::error_code ec;
+    in_addr addr4;
+    return SocketOps::InetPton(AF_INET, addr, &addr4, nullptr, ec) > 0;
+}
+
+bool EasyEvent::Address::isIPv6Address(const char* addr) {
+    std::error_code ec;
+    in6_addr addr6;
+    return SocketOps::InetPton(AF_INET6, addr, &addr6, nullptr, ec) > 0;
+}
+
+void EasyEvent::Address::initIPv4(const char *addr, unsigned short port) {
+    _addr.saIn.sin_family = AF_INET;
+    _addr.saIn.sin_port = htons(port);
+    if (addr != nullptr) {
+        SocketOps::InetPton(AF_INET, addr, &_addr.saIn.sin_addr, nullptr);
+    } else {
+        _addr.saIn.sin_addr.s_addr = htonl(INADDR_ANY);
+    }
+}
+
+void EasyEvent::Address::initIPv6(const char *addr, unsigned short port) {
+    unsigned long scopeId;
+    _addr.saIn6.sin6_family = AF_INET6;
+    _addr.saIn6.sin6_port = htons(port);
+    if (addr != nullptr) {
+        SocketOps::InetPton(AF_INET6, addr, &_addr.saIn6.sin6_addr, &scopeId);
+        _addr.saIn6.sin6_scope_id = (uint32_t)scopeId;
+    } else {
+        _addr.saIn6.sin6_addr = in6addr_any;
+    }
+}
+
+EasyEvent::Address EasyEvent::Address::makeIPv4Address(const char *str, unsigned short port, std::error_code &ec) {
+    IPv4Bytes bytes;
+    if (SocketOps::InetPton(AF_INET, str, &bytes[0], 0, ec) <= 0) {
+        return {};
+    }
+    return Address(bytes, port);
+}
+
+EasyEvent::Address EasyEvent::Address::makeIPv6Address(const char *str, unsigned short port, std::error_code &ec) {
+    IPv6Bytes bytes;
+    unsigned long scopeId = 0;
+    if (SocketOps::InetPton(AF_INET6, str, &bytes[0], &scopeId, ec) <= 0) {
+        return {};
+    }
+    return Address(bytes, scopeId, port);
+}
+
+EasyEvent::Address EasyEvent::Address::makeAddress(const char *str, unsigned short port, std::error_code &ec) {
+    auto addr6 = makeIPv6Address(str, port, ec);
+    if (!ec) {
+        return addr6;
+    }
+    auto addr4 = makeIPv4Address(str, port, ec);
+    if (!ec) {
+        return addr4;
+    }
+    return {};
+}
+

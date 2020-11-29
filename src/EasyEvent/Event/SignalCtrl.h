@@ -6,7 +6,6 @@
 #define EASYEVENT_EVENT_SIGNALCTRL_H
 
 #include "EasyEvent/Event/EvtCommon.h"
-#include "EasyEvent/Common/Errors.h"
 #include "EasyEvent/Common/Task.h"
 
 

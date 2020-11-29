@@ -6,6 +6,7 @@
 #define EASYEVENT_EVENT_EVTCOMMON_H
 
 #include "EasyEvent/Common/Config.h"
+#include "EasyEvent/Common/Errors.h"
 
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
 #   include <winerror.h>
@@ -23,6 +24,7 @@
 #   include <netinet/tcp.h>
 #   include <arpa/inet.h>
 #   include <netdb.h>
+#   include <net/if.h>
 #endif
 
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
@@ -45,6 +47,8 @@
 typedef SOCKET SocketType;
 const SOCKET InvalidSocket = INVALID_SOCKET;
 const int SocketErrorRetVal = SOCKET_ERROR;
+const int MaxAddrV4StrLen = 256;
+const int MaxAddrV6StrLen = 256;
 #else
 #   define NATIVE_ERROR(e) e
 #   define SOCKET_ERROR(e) e
@@ -55,6 +59,12 @@ const int SocketErrorRetVal = SOCKET_ERROR;
 typedef int SocketType;
 const int InvalidSocket = -1;
 const int SocketErrorRetVal = -1;
+const int MaxAddrV4StrLen = INET_ADDRSTRLEN;
+#   if defined(INET6_ADDRSTRLEN)
+const int MaxAddrV6StrLen = INET6_ADDRSTRLEN + 1 + IF_NAMESIZE;
+#   else // defined(INET6_ADDRSTRLEN)
+const int MaxAddrV6StrLen = 256;
+#   endif
 #endif
 
 

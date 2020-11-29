@@ -5,9 +5,8 @@
 #ifndef EASYEVENT_LOGGING_LOGMESSAGE_H
 #define EASYEVENT_LOGGING_LOGMESSAGE_H
 
-#include "EasyEvent/Common/Config.h"
-#include "EasyEvent/Common/Time.h"
 #include "EasyEvent/Logging/LogCommon.h"
+#include "EasyEvent/Common/Time.h"
 
 
 namespace EasyEvent {
