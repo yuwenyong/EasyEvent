@@ -143,7 +143,7 @@ namespace EasyEvent {
             throwError(ec);
         }
 
-        IPv4Bytes getIPv4Bytes(std::error_code& ec) const {
+        IPv4Bytes getBytesIPv4(std::error_code& ec) const {
             IPv4Bytes bytes;
             if (_addr.saStorage.ss_family != AF_INET) {
                 ec = std::make_error_code(std::errc::not_supported);
@@ -154,14 +154,14 @@ namespace EasyEvent {
             return bytes;
         }
 
-        IPv4Bytes getIPv4Bytes() const {
+        IPv4Bytes getBytesIPv4() const {
             std::error_code ec;
-            auto  ret = getIPv4Bytes(ec);
+            auto  ret = getBytesIPv4(ec);
             throwError(ec);
             return ret;
         }
 
-        uint32_t getIPv4UInt(std::error_code& ec) const {
+        uint32_t getUIntIPv4(std::error_code& ec) const {
             if (_addr.saStorage.ss_family != AF_INET) {
                 ec = std::make_error_code(std::errc::not_supported);
                 return 0;
@@ -170,14 +170,14 @@ namespace EasyEvent {
             return ntohl(_addr.saIn.sin_addr.s_addr);
         }
 
-        uint32 getIPv4UInt() const {
+        uint32 getUIntIPv4() const {
             std::error_code ec;
-            auto  ret = getIPv4UInt(ec);
+            auto  ret = getUIntIPv4(ec);
             throwError(ec);
             return ret;
         }
 
-        IPv6Bytes getIPv6Bytes(std::error_code& ec) const {
+        IPv6Bytes getBytesIPv6(std::error_code& ec) const {
             IPv6Bytes bytes;
             if (_addr.saStorage.ss_family != AF_INET6) {
                 ec = std::make_error_code(std::errc::not_supported);
@@ -188,9 +188,9 @@ namespace EasyEvent {
             return bytes;
         }
 
-        IPv6Bytes getIPv6Bytes() const {
+        IPv6Bytes getBytesIPv6() const {
             std::error_code ec;
-            auto  ret = getIPv6Bytes(ec);
+            auto  ret = getBytesIPv6(ec);
             throwError(ec);
             return ret;
         }
@@ -235,7 +235,7 @@ namespace EasyEvent {
             return ret;
         }
 
-        std::string getString(std::error_code& ec) const {
+        std::string toString(std::error_code& ec) const {
             std::string addr = getAddrString(ec);
             if (ec) {
                 return {};
@@ -249,47 +249,63 @@ namespace EasyEvent {
             return s.str();
         }
 
-        std::string getString() const {
+        std::string toString() const {
             std::error_code ec;
-            auto ret = getString(ec);
+            auto ret = toString(ec);
             throwError(ec);
             return ret;
         }
 
-        static std::vector<Address> getLoopbackAddresses(ProtocolSupport protocol, unsigned short port=0);
+        static std::vector<Address> loopbackAddresses(ProtocolSupport protocol, unsigned short port=0);
 
-        static std::vector<Address> getWildAddresses(ProtocolSupport protocol, unsigned short port=0);
+        static std::vector<Address> anyAddresses(ProtocolSupport protocol, unsigned short port=0);
 
-        static bool isIPv4Address(const char* addr);
+        static bool isAddressIPv4(const char* addr);
 
-        static bool isIPv6Address(const char* addr);
+        static bool isAddressIPv6(const char* addr);
 
-        static bool isIPAddress(const char* addr) {
-            return isIPv4Address(addr) || isIPv6Address(addr);
+        static bool isAddress(const char* addr) {
+            return isAddressIPv4(addr) || isAddressIPv6(addr);
         }
 
-        static Address anyIPv4Address(unsigned short port) {
+        static Address loopbackAddressIPv4(unsigned short port) {
+            Address addr;
+            addr._addr.saIn.sin_family = AF_INET;
+            addr._addr.saIn.sin_port = htons(port);
+            addr._addr.saIn.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+            return addr;
+        }
+
+        static Address loopbackAddressIPv6(unsigned short port) {
+            Address addr;
+            addr._addr.saIn6.sin6_family = AF_INET6;
+            addr._addr.saIn6.sin6_port = htons(port);
+            addr._addr.saIn6.sin6_addr = in6addr_loopback;
+            return addr;
+        }
+
+        static Address anyAddressIPv4(unsigned short port) {
             return Address(port, EnableIPv4);
         }
 
-        static Address anyIPv6Address(unsigned short port) {
+        static Address anyAddressIPv6(unsigned short port) {
             return Address(port, EnableIPv6);
         }
 
-        static Address makeIPv4Address(const char* str, unsigned short port, std::error_code& ec);
+        static Address makeAddressIPv4(const char* str, unsigned short port, std::error_code& ec);
 
-        static Address makeIPv4Address(const char* str, unsigned short port) {
+        static Address makeAddressIPv4(const char* str, unsigned short port) {
             std::error_code ec;
-            auto ret = makeIPv4Address(str, port, ec);
+            auto ret = makeAddressIPv4(str, port, ec);
             throwError(ec);
             return ret;
         }
 
-        static Address makeIPv6Address(const char* str, unsigned short port, std::error_code& ec);
+        static Address makeAddressIPv6(const char* str, unsigned short port, std::error_code& ec);
 
-        static Address makeIPv6Address(const char* str, unsigned short port) {
+        static Address makeAddressIPv6(const char* str, unsigned short port) {
             std::error_code ec;
-            auto ret = makeIPv6Address(str, port, ec);
+            auto ret = makeAddressIPv6(str, port, ec);
             throwError(ec);
             return ret;
         }
@@ -303,9 +319,9 @@ namespace EasyEvent {
             return ret;
         }
     private:
-        void initIPv4(const char* addr, unsigned short port);
+        void initAddressIPv4(const char* addr, unsigned short port);
 
-        void initIPv6(const char* addr, unsigned short port);
+        void initAddressIPv6(const char* addr, unsigned short port);
 
         union SockAddr {
 
@@ -325,7 +341,7 @@ namespace EasyEvent {
 
     template <typename Elem, typename Traits>
     std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& os, const Address& addr) {
-        return os << addr.getString().c_str();
+        return os << addr.toString().c_str();
     }
 
 }

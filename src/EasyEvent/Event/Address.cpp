@@ -8,10 +8,10 @@
 
 EasyEvent::Address::Address(const char *addr, unsigned short port, ProtocolSupport protocol)
     : Address() {
-    if (protocol == EnableIPv4 || (protocol == EnableBoth && isIPv4Address(addr))) {
-        initIPv4(addr, port);
-    } else if (protocol == EnableIPv6 || (protocol == EnableBoth && isIPv6Address(addr))) {
-        initIPv6(addr, port);
+    if (protocol == EnableIPv4 || (protocol == EnableBoth && isAddressIPv4(addr))) {
+        initAddressIPv4(addr, port);
+    } else if (protocol == EnableIPv6 || (protocol == EnableBoth && isAddressIPv6(addr))) {
+        initAddressIPv6(addr, port);
     } else {
         std::error_code ec = std::make_error_code(std::errc::invalid_argument);
         doThrowError(ec);
@@ -112,7 +112,7 @@ std::string EasyEvent::Address::getAddrString(std::error_code &ec) const {
     }
 }
 
-std::vector<EasyEvent::Address> EasyEvent::Address::getLoopbackAddresses(
+std::vector<EasyEvent::Address> EasyEvent::Address::loopbackAddresses(
         ProtocolSupport protocol, unsigned short port) {
 
     std::vector<Address> result;
@@ -132,7 +132,7 @@ std::vector<EasyEvent::Address> EasyEvent::Address::getLoopbackAddresses(
     return result;
 }
 
-std::vector<EasyEvent::Address> EasyEvent::Address::getWildAddresses(ProtocolSupport protocol, unsigned short port) {
+std::vector<EasyEvent::Address> EasyEvent::Address::anyAddresses(ProtocolSupport protocol, unsigned short port) {
     std::vector<Address> result;
     Address addr;
     if (protocol != EnableIPv4) {
@@ -150,19 +150,19 @@ std::vector<EasyEvent::Address> EasyEvent::Address::getWildAddresses(ProtocolSup
     return result;
 }
 
-bool EasyEvent::Address::isIPv4Address(const char* addr) {
+bool EasyEvent::Address::isAddressIPv4(const char* addr) {
     std::error_code ec;
     in_addr addr4;
     return SocketOps::InetPton(AF_INET, addr, &addr4, nullptr, ec) > 0;
 }
 
-bool EasyEvent::Address::isIPv6Address(const char* addr) {
+bool EasyEvent::Address::isAddressIPv6(const char* addr) {
     std::error_code ec;
     in6_addr addr6;
     return SocketOps::InetPton(AF_INET6, addr, &addr6, nullptr, ec) > 0;
 }
 
-void EasyEvent::Address::initIPv4(const char *addr, unsigned short port) {
+void EasyEvent::Address::initAddressIPv4(const char *addr, unsigned short port) {
     _addr.saIn.sin_family = AF_INET;
     _addr.saIn.sin_port = htons(port);
     if (addr != nullptr) {
@@ -172,7 +172,7 @@ void EasyEvent::Address::initIPv4(const char *addr, unsigned short port) {
     }
 }
 
-void EasyEvent::Address::initIPv6(const char *addr, unsigned short port) {
+void EasyEvent::Address::initAddressIPv6(const char *addr, unsigned short port) {
     unsigned long scopeId;
     _addr.saIn6.sin6_family = AF_INET6;
     _addr.saIn6.sin6_port = htons(port);
@@ -184,7 +184,7 @@ void EasyEvent::Address::initIPv6(const char *addr, unsigned short port) {
     }
 }
 
-EasyEvent::Address EasyEvent::Address::makeIPv4Address(const char *str, unsigned short port, std::error_code &ec) {
+EasyEvent::Address EasyEvent::Address::makeAddressIPv4(const char *str, unsigned short port, std::error_code &ec) {
     IPv4Bytes bytes;
     if (SocketOps::InetPton(AF_INET, str, &bytes[0], 0, ec) <= 0) {
         return {};
@@ -192,7 +192,7 @@ EasyEvent::Address EasyEvent::Address::makeIPv4Address(const char *str, unsigned
     return Address(bytes, port);
 }
 
-EasyEvent::Address EasyEvent::Address::makeIPv6Address(const char *str, unsigned short port, std::error_code &ec) {
+EasyEvent::Address EasyEvent::Address::makeAddressIPv6(const char *str, unsigned short port, std::error_code &ec) {
     IPv6Bytes bytes;
     unsigned long scopeId = 0;
     if (SocketOps::InetPton(AF_INET6, str, &bytes[0], &scopeId, ec) <= 0) {
@@ -202,11 +202,11 @@ EasyEvent::Address EasyEvent::Address::makeIPv6Address(const char *str, unsigned
 }
 
 EasyEvent::Address EasyEvent::Address::makeAddress(const char *str, unsigned short port, std::error_code &ec) {
-    auto addr6 = makeIPv6Address(str, port, ec);
+    auto addr6 = makeAddressIPv6(str, port, ec);
     if (!ec) {
         return addr6;
     }
-    auto addr4 = makeIPv4Address(str, port, ec);
+    auto addr4 = makeAddressIPv4(str, port, ec);
     if (!ec) {
         return addr4;
     }
