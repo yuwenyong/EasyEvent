@@ -4,21 +4,59 @@
 
 #include "EasyEvent/Event/SocketOps.h"
 
+namespace EasyEvent {
 
-inline void clearLastError() {
+    inline void clearLastError() {
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
-    WSASetLastError(0);
+        WSASetLastError(0);
 #else
-    errno = 0;
+        errno = 0;
 #endif
-}
+    }
 
-inline void getLastError(std::error_code& ec) {
+    inline void getLastError(std::error_code& ec) {
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
-    ec = std::error_code(WSAGetLastError(), EasyEvent::getSocketErrorCategory());
+        ec = std::error_code(WSAGetLastError(), getSocketErrorCategory());
 #else
-    ec = std::error_code(errno, EasyEvent::getSocketErrorCategory());
+        ec = std::error_code(errno, getSocketErrorCategory());
 #endif
+    }
+
+    inline std::error_code translateAddrInfoError(int error) {
+        switch (error) {
+            case 0:
+                return {};
+            case EAI_AGAIN:
+                return NetDBErrors::HostNotFoundTryAgain;
+            case EAI_BADFLAGS:
+                return SocketErrors::InvalidArgument;
+            case EAI_FAIL:
+                return NetDBErrors::NoRecovery;
+            case EAI_FAMILY:
+                return SocketErrors::AddressFamilyNotSupported;
+            case EAI_MEMORY:
+                return SocketErrors::NoMemory;
+            case EAI_NONAME:
+#if defined(EAI_ADDRFAMILY)
+            case EAI_ADDRFAMILY:
+#endif
+#if defined(EAI_NODATA) && (EAI_NODATA != EAI_NONAME)
+            case EAI_NODATA:
+#endif
+                return NetDBErrors::HostNotFound;
+            case EAI_SERVICE:
+                return AddrInfoErrors::ServiceNotFound;
+            case EAI_SOCKTYPE:
+                return AddrInfoErrors::SocketTypeNotSupported;
+            default: // Possibly the non-portable EAI_SYSTEM.
+#if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
+                return std::error_code(WSAGetLastError(), getSocketErrorCategory());
+#else
+                return std::error_code(errno, getSocketErrorCategory());
+#endif
+        }
+    }
+
 }
 
 
@@ -162,4 +200,14 @@ int EasyEvent::SocketOps::InetPton(int af, const char *src, void *dest, unsigned
     }
     return result;
 #endif
+}
+
+int EasyEvent::SocketOps::GetAddrInfo(const char *host, const char *service, const addrinfo *hints, addrinfo **result,
+                                      std::error_code &ec) {
+    host = (host && *host) ? host : nullptr;
+    service = (service && *service) ? service : nullptr;
+    clearLastError();
+    int error = ::getaddrinfo(host, service, hints, result);
+    ec = translateAddrInfoError(error);
+    return error;
 }

@@ -30,6 +30,20 @@ namespace EasyEvent {
             throwError(ec);
             return result;
         }
+
+        static int GetAddrInfo(const char* host, const char* service, const addrinfo* hints, addrinfo** result,
+                               std::error_code& ec);
+
+        static int GetAddrInfo(const char* host, const char* service, const addrinfo* hints, addrinfo** result) {
+            std::error_code ec;
+            auto ret = GetAddrInfo(host, service, hints, result, ec);
+            throwError(ec);
+            return ret;
+        }
+
+        static void FreeAddrInfo(struct addrinfo* ai) {
+            ::freeaddrinfo(ai);
+        }
     };
 
 }

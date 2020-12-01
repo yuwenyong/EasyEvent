@@ -12,6 +12,7 @@
 #   include <winerror.h>
 #   include <winsock2.h>
 #   include <ws2tcpip.h>
+#   include <mswsock.h>
 #   pragma comment(lib, "ws2_32.lib")
 #else
 #   include <sys/ioctl.h>
@@ -141,6 +142,24 @@ namespace EasyEvent {
         WouldBlock = SOCKET_ERROR(EWOULDBLOCK)
     };
 
+    enum class NetDBErrors {
+        /// Host not found (authoritative).
+        HostNotFound = NETDB_ERROR(HOST_NOT_FOUND),
+        /// Host not found (non-authoritative).
+        HostNotFoundTryAgain = NETDB_ERROR(TRY_AGAIN),
+        /// The query is valid but does not have associated address data.
+        NoData = NETDB_ERROR(NO_DATA),
+        /// A non-recoverable error occurred.
+        NoRecovery = NETDB_ERROR(NO_RECOVERY)
+    };
+
+    enum class AddrInfoErrors {
+        /// The service is not supported for the given socket type.
+        ServiceNotFound = WIN_OR_POSIX(NATIVE_ERROR(WSATYPE_NOT_FOUND),GETADDRINFO_ERROR(EAI_SERVICE)),
+        /// The socket type is not supported.
+        SocketTypeNotSupported = WIN_OR_POSIX(NATIVE_ERROR(WSAESOCKTNOSUPPORT),GETADDRINFO_ERROR(EAI_SOCKTYPE))
+    };
+
     class EASY_EVENT_API SocketErrorCategory: public std::error_category {
     public:
         [[nodiscard]] const char* name() const noexcept override;
@@ -149,9 +168,24 @@ namespace EasyEvent {
 
     EASY_EVENT_API const std::error_category& getSocketErrorCategory();
 
+    inline const std::error_category& getNetDBErrorCategory() {
+        return getSocketErrorCategory();
+    }
+
+    inline const std::error_category& getAddrInfoErrorCategory() {
+        return getSocketErrorCategory();
+    }
 
     inline std::error_code make_error_code(SocketErrors err) {
         return {static_cast<int>(err), getSocketErrorCategory()};
+    }
+
+    inline std::error_code make_error_code(NetDBErrors err) {
+        return {static_cast<int>(err), getNetDBErrorCategory()};
+    }
+
+    inline std::error_code make_error_code(AddrInfoErrors err) {
+        return {static_cast<int>(err), getAddrInfoErrorCategory()};
     }
 
 #if defined(EASY_EVENT_USE_SELECT)
@@ -198,6 +232,12 @@ namespace std {
 
     template <>
     struct is_error_code_enum<EasyEvent::SocketErrors>: public true_type {};
+
+    template <>
+    struct is_error_code_enum<EasyEvent::NetDBErrors>: public true_type {};
+
+    template <>
+    struct is_error_code_enum<EasyEvent::AddrInfoErrors>: public true_type {};
 
 }
 
