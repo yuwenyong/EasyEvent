@@ -21,7 +21,20 @@ namespace EasyEvent {
 
     class EASY_EVENT_API Address {
     public:
-        Address() = default;
+        Address() {
+            std::memset(&_addr.saStorage, 0, sizeof(sockaddr_storage));
+            _addr.saStorage.ss_family = AF_UNSPEC;
+        }
+
+        Address(const struct sockaddr* addr, size_t addrLen, int family, unsigned short port)
+            : Address() {
+            std::memcpy(&_addr.saStorage, addr, addrLen);
+            if (family == AF_INET) {
+                _addr.saIn.sin_port = htons(port);
+            } else if (family == AF_INET6) {
+                _addr.saIn6.sin6_port = htons(port);
+            }
+        }
 
         Address(unsigned short port, ProtocolSupport protocol)
             : Address() {
@@ -323,20 +336,12 @@ namespace EasyEvent {
 
         void initAddressIPv6(const char* addr, unsigned short port);
 
-        union SockAddr {
-
-            SockAddr() {
-                std::memset(&saStorage, 0, sizeof(sockaddr_storage));
-                saStorage.ss_family = AF_UNSPEC;
-            }
-
+        union {
             sockaddr sa;
             sockaddr_in saIn;
             sockaddr_in6 saIn6;
             sockaddr_storage saStorage;
-        };
-
-        SockAddr _addr;
+        } _addr;
     };
 
     template <typename Elem, typename Traits>

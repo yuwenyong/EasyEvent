@@ -4,6 +4,7 @@
 
 
 #include "EasyEvent/EasyEvent.h"
+#include "EasyEvent/Event/Resolver.h"
 
 using namespace EasyEvent;
 
@@ -54,6 +55,13 @@ int main (int argc, char **argv) {
         return 0;
     };
     t();
+
+    std::error_code ec;
+    auto addrs = Resolver::getAddresses("localhost", 200, EnableBoth, false, true, ec);
+    LOG_INFO(logger) << "AddressCount: " << addrs.size();
+    for (auto& addr: addrs) {
+        LOG_INFO(logger) << addr;
+    }
 
     bool running = true;
     int i = 0;

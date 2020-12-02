@@ -112,9 +112,7 @@ std::string EasyEvent::Address::getAddrString(std::error_code &ec) const {
     }
 }
 
-std::vector<EasyEvent::Address> EasyEvent::Address::loopbackAddresses(
-        ProtocolSupport protocol, unsigned short port) {
-
+std::vector<EasyEvent::Address> EasyEvent::Address::loopbackAddresses(ProtocolSupport protocol, unsigned short port) {
     std::vector<Address> result;
     Address addr;
     if (protocol != EnableIPv4) {
