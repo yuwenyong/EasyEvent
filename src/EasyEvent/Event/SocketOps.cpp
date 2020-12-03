@@ -97,14 +97,14 @@ const char* EasyEvent::SocketOps::InetNtop(int af, const void *src, char *dest, 
     if (result != SocketErrorRetVal) {
         ec.assign(0, ec.category());
     } else if (result == SocketErrorRetVal && !ec) {
-        ec = std::make_error_code(std::errc::invalid_argument);
+        ec = UserErrors::InvalidArgument;
     }
     return result == SocketErrorRetVal ? nullptr : dest;
 #else
     const char* result = ::inet_ntop(af, src, dest, (socklen_t)length);
     getLastError(ec);
     if (result == nullptr && !ec) {
-        ec = std::make_error_code(std::errc::invalid_argument);
+        ec = UserErrors::InvalidArgument;
     }
     if (result != nullptr && af == AF_INET6 && scopeId != 0) {
         char ifName[(IF_NAMESIZE > 21 ? IF_NAMESIZE : 21) + 1] = "%";
@@ -156,7 +156,7 @@ int EasyEvent::SocketOps::InetPton(int af, const char *src, void *dest, unsigned
         }
     }
     if (result == SocketErrorRetVal && !ec) {
-        ec = std::make_error_code(std::errc::invalid_argument);
+        ec = UserErrors::InvalidArgument;
     }
     if (result != SocketErrorRetVal) {
         ec.assign(0, ec.category());
@@ -169,7 +169,7 @@ int EasyEvent::SocketOps::InetPton(int af, const char *src, void *dest, unsigned
     const char* srcPtr = src;
     if (ifName != nullptr) {
         if (ifName - src > MaxAddrV6StrLen) {
-            ec = std::make_error_code(std::errc::invalid_argument);
+            ec = UserErrors::InvalidArgument;
             return 0;
         }
         std::memcpy(srcBuf, src, (size_t)(ifName - src));
@@ -180,7 +180,7 @@ int EasyEvent::SocketOps::InetPton(int af, const char *src, void *dest, unsigned
     int result = ::inet_pton(af, srcPtr, dest);
     getLastError(ec);
     if (result <= 0 && !ec) {
-        ec = std::make_error_code(std::errc::invalid_argument);
+        ec = UserErrors::InvalidArgument;
     }
     if (result > 0 && isV6 && scopeId) {
         *scopeId = 0;

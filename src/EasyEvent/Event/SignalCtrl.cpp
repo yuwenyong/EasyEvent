@@ -7,7 +7,7 @@
 
 EasyEvent::SignalHandle EasyEvent::SignalCtrl::add(int sigNum, Task<void(int)> &&callback, std::error_code &ec) {
     if (sigNum < 0 || sigNum >= MaxSignalNumber) {
-        ec = std::make_error_code(std::errc::invalid_argument);
+        ec = UserErrors::InvalidArgument;
         return {};
     }
     auto op = std::make_shared<SignalOp>(sigNum, std::move(callback));
@@ -36,12 +36,12 @@ void EasyEvent::SignalCtrl::remove(SignalHandle handle, std::error_code &ec) {
     std::lock_guard<std::mutex> lock(_mutex);
     auto iter = _registrations.find(op->_sigNum);
     if (iter == _registrations.end()) {
-        ec = std::make_error_code(std::errc::invalid_argument);
+        ec = UserErrors::InvalidArgument;
         return;
     }
     auto opCount = std::count(iter->second.begin(), iter->second.end(), op);
     if (opCount == 0) {
-        ec = std::make_error_code(std::errc::invalid_argument);
+        ec = UserErrors::InvalidArgument;
         return;
     }
     if (iter->second.size() == (size_t)opCount) {
@@ -61,7 +61,7 @@ void EasyEvent::SignalCtrl::remove(SignalHandle handle, std::error_code &ec) {
 void EasyEvent::SignalCtrl::registerSignal(int sigNum, std::error_code &ec) {
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
     if (::signal(sigNum, signalHandler) == SIG_ERR) {
-        ec = std::make_error_code(std::errc::invalid_argument);
+        ec = UserErrors::InvalidArgument;
         return;
     }
 #else
@@ -80,7 +80,7 @@ void EasyEvent::SignalCtrl::registerSignal(int sigNum, std::error_code &ec) {
 void EasyEvent::SignalCtrl::unregisterSignal(int sigNum, std::error_code &ec) {
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
     if (::signal(sigNum, SIG_DFL) == SIG_ERR) {
-        ec = std::make_error_code(std::errc::invalid_argument);
+        ec = UserErrors::InvalidArgument;
         return;
     }
 #else

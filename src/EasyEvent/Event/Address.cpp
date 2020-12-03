@@ -13,7 +13,7 @@ EasyEvent::Address::Address(const char *addr, unsigned short port, ProtocolSuppo
     } else if (protocol == EnableIPv6 || (protocol == EnableBoth && isAddressIPv6(addr))) {
         initAddressIPv6(addr, port);
     } else {
-        std::error_code ec = std::make_error_code(std::errc::invalid_argument);
+        std::error_code ec = UserErrors::InvalidArgument;
         doThrowError(ec);
     }
 }

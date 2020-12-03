@@ -11,6 +11,8 @@
 
 namespace EasyEvent {
 
+    class IOLoop;
+
     class EASY_EVENT_API Resolver {
     public:
         static std::vector<Address> getAddresses(const std::string& host, unsigned short port, ProtocolSupport protocol,
@@ -27,13 +29,15 @@ namespace EasyEvent {
         static void sortAddresses(std::vector<Address>& addrs, ProtocolSupport protocol, bool preferIPv6);
     };
 
-    class EASY_EVENT_API ResolveEntry {
-    public:
-        using CallbackType = Task<void(const std::vector<Address>&, const std::error_code&)>;
 
-        ResolveEntry(std::string host, unsigned short port, ProtocolSupport protocol, bool preferIPv6,
+    class EASY_EVENT_API ResolveQuery: public std::enable_shared_from_this<Resolver> {
+    public:
+        using CallbackType = Task<void(std::vector<Address>, std::error_code)>;
+
+        ResolveQuery(IOLoop* ioLoop, std::string host, unsigned short port, ProtocolSupport protocol, bool preferIPv6,
                      CallbackType&& callback)
-            : _host(std::move(host))
+            : _ioLoop(ioLoop)
+            , _host(std::move(host))
             , _port(port)
             , _protocol(protocol)
             , _preferIPv6(preferIPv6)
@@ -41,11 +45,18 @@ namespace EasyEvent {
 
         }
 
-        bool cancelled() const {
-            return _cancelled;
-        }
+        bool doResolve();
+
+        bool doResolveBackground();
+
+        bool cancel();
 
     protected:
+        void onResolved();
+
+        void onCallback();
+
+        IOLoop* _ioLoop;
         std::string _host;
         unsigned short _port;
         ProtocolSupport _protocol;
@@ -53,7 +64,7 @@ namespace EasyEvent {
         CallbackType _callback;
         bool _cancelled{false};
         std::vector<Address> _addrs;
-        std::error_code _ec;
+        std::error_code _error;
     };
 
 }

@@ -16,6 +16,8 @@ std::string EasyEvent::UserErrorCategory::message(int ev) const {
             return "not found";
         case UserErrors::AlreadyRegistered:
             return "already registered";
+        case UserErrors::OperationCanceled:
+            return "operation canceled";
         default:
             return "(unrecognized error)";
     }

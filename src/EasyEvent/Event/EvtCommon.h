@@ -221,11 +221,6 @@ namespace EasyEvent {
 
     using SelectablePtr = std::shared_ptr<Selectable>;
 
-    class EASY_EVENT_API SelectableData {
-    public:
-        virtual ~SelectableData() = default;
-    };
-
 }
 
 namespace std {

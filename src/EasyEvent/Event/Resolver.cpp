@@ -4,6 +4,7 @@
 
 #include "EasyEvent/Event/Resolver.h"
 #include "EasyEvent/Event/SocketOps.h"
+#include "EasyEvent/Event/IOLoop.h"
 
 
 std::vector<EasyEvent::Address> EasyEvent::Resolver::getAddresses(const std::string &host, unsigned short port,
@@ -67,6 +68,55 @@ void EasyEvent::Resolver::sortAddresses(std::vector<Address> &addrs, ProtocolSup
             std::stable_partition(addrs.begin(), addrs.end(), [](const Address& ss) { return ss.isIPv6(); });
         } else {
             std::stable_partition(addrs.begin(), addrs.end(), [](const Address& ss) { return !ss.isIPv6(); });
+        }
+    }
+}
+
+
+bool EasyEvent::ResolveQuery::doResolve() {
+    std::error_code ec;
+    _addrs = Resolver::getAddresses(_host, _port, _protocol, _preferIPv6, false, ec);
+    if (!ec) {
+        onResolved();
+    };
+    return !ec;
+}
+
+bool EasyEvent::ResolveQuery::doResolveBackground() {
+    if (_cancelled) {
+        return false;
+    }
+    _addrs = Resolver::getAddresses(_host, _port, _protocol, _preferIPv6, true, _error);
+    if (_cancelled) {
+        return false;
+    }
+    onResolved();
+    return !_error;
+}
+
+bool EasyEvent::ResolveQuery::cancel() {
+    if (_cancelled || !_callback) {
+        return false;
+    }
+    _cancelled = true;
+    onResolved();
+    return true;
+}
+
+void EasyEvent::ResolveQuery::onResolved() {
+    _ioLoop->addCallback([this, self=shared_from_this()]() {
+        onCallback();
+    });
+}
+
+void EasyEvent::ResolveQuery::onCallback() {
+    if (_callback) {
+        CallbackType callback = std::move(_callback);
+        _callback = nullptr;
+        if (_cancelled) {
+            callback({}, UserErrors::OperationCanceled);
+        } else {
+            callback(std::move(_addrs), _error);
         }
     }
 }
