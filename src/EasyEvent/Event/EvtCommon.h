@@ -216,7 +216,7 @@ namespace EasyEvent {
         virtual void handleEvents(IOEvents events) = 0;
         virtual SocketType getSocket() const = 0;
         virtual void closeSocket() = 0;
-        virtual ~Selectable() = default;
+        virtual ~Selectable() noexcept = default;
     };
 
     using SelectablePtr = std::shared_ptr<Selectable>;
