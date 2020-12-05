@@ -12,7 +12,7 @@ namespace EasyEvent {
     enum class UserErrors {
         InvalidArgument = 1,
         NotFound = 2,
-        AlreadyRegistered = 3,
+        NotSupported = 3,
         OperationCanceled = 4,
     };
 

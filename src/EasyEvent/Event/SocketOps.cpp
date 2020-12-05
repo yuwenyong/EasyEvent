@@ -65,9 +65,68 @@ namespace EasyEvent {
 
 
 SocketType EasyEvent::SocketOps::Socket(int af, int type, int protocol, std::error_code &ec) {
+#if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
+    SocketType s = ::WSASocketW(af, type, protocol, 0, 0, WSA_FLAG_OVERLAPPED);
+    getLastError(ec, s == InvalidSocket);
+    if (s == InvalidSocket) {
+        return s;
+    }
+    if (af == AF_INET6) {
+        DWORD optval = 0;
+        ::setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, reinterpret_cast<const char*>(&optval), sizeof(optval));
+    }
+    return s;
+#elif EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_APPLE || EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_UNIX
+    SocketType s = ::socket(af, type, protocol);
+    getLastError(ec, s < 0);
 
+    int optval = 1;
+    int result = ::setsockopt(s, SOL_SOCKET, SO_NOSIGPIPE, &optval, sizeof(optval));
+    getLastError(ec, result != 0);
+    if (result != 0) {
+        ::close(s);
+        return InvalidSocket;
+    }
+    return s;
+#else
+    int s = ::socket(af, type, protocol);
+    getLastError(ec, s < 0);
+    return s;
+#endif
 }
 
+int EasyEvent::SocketOps::SetSockOpt(SocketType s, int level, int optname, const void *optval, std::size_t optLen,
+                                     std::error_code &ec) {
+    if (s == InvalidSocket) {
+        ec = SocketErrors::BadDescriptor;
+        return SocketErrorRetVal;
+    }
+    int result = ::setsockopt(s, level, optname, (const char*)optval, (SockLenType)optLen);
+    getLastError(ec, result != 0);
+    return result;
+}
+
+int EasyEvent::SocketOps::Bind(SocketType s, const sockaddr *addr, size_t addrLen, std::error_code &ec) {
+    if (s == InvalidSocket) {
+        ec = SocketErrors::BadDescriptor;
+        return SocketErrorRetVal;
+    }
+    int result = ::bind(s, addr, (SockLenType)addrLen);
+    getLastError(ec, result != 0);
+    return result;
+}
+
+int EasyEvent::SocketOps::GetSockName(SocketType s, sockaddr *addr, size_t *addrLen, std::error_code &ec) {
+    if (s == InvalidSocket) {
+        ec = SocketErrors::BadDescriptor;
+        return SocketErrorRetVal;
+    }
+    SockLenType tmpAddrLen = (SockLenType)*addrLen;
+    int result = ::getsockname(s, addr, &tmpAddrLen);
+    *addrLen = (size_t)tmpAddrLen;
+    getLastError(ec, result != 0);
+    return result;
+}
 
 const char* EasyEvent::SocketOps::InetNtop(int af, const void *src, char *dest, size_t length, unsigned long scopeId,
                                            std::error_code &ec) {

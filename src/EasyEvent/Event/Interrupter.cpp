@@ -3,6 +3,7 @@
 //
 
 #include "EasyEvent/Event/Interrupter.h"
+#include "EasyEvent/Event/SocketOps.h"
 
 
 EasyEvent::Interrupter::~Interrupter() noexcept {
@@ -10,6 +11,16 @@ EasyEvent::Interrupter::~Interrupter() noexcept {
 }
 
 void EasyEvent::Interrupter::openSockets() {
+    std::error_code ec;
+    SocketType acceptor = SocketOps::Socket(AF_INET, SOCK_STREAM, IPPROTO_TCP, ec);
+    if (acceptor == InvalidSocket) {
+        throwError(ec, "Interrupter");
+    }
+    Address addr = Address::loopbackAddressIPv4(0);
+    if (SocketOps::Bind(acceptor, addr, ec) == SocketErrorRetVal) {
+        throwError(ec, "Interrupter");
+    }
+
     int fds[2];
     if (pipe(fds) == 0) {
         _reader = fds[0];

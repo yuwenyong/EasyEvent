@@ -26,6 +26,21 @@ namespace EasyEvent {
             _addr.saStorage.ss_family = AF_UNSPEC;
         }
 
+        Address(const struct sockaddr* addr, size_t addrLen)
+                : Address() {
+            std::memcpy(&_addr.saStorage, addr, addrLen);
+        }
+
+        Address(const struct sockaddr* addr, size_t addrLen, unsigned short port)
+                : Address() {
+            std::memcpy(&_addr.saStorage, addr, addrLen);
+            if (_addr.saStorage.ss_family == AF_INET) {
+                _addr.saIn.sin_port = htons(port);
+            } else if (_addr.saStorage.ss_family == AF_INET6) {
+                _addr.saIn6.sin6_port = htons(port);
+            }
+        }
+
         Address(const struct sockaddr* addr, size_t addrLen, int family, unsigned short port)
             : Address() {
             std::memcpy(&_addr.saStorage, addr, addrLen);
@@ -117,6 +132,10 @@ namespace EasyEvent {
             return size;
         }
 
+        const struct sockaddr* getStoragePtr() const {
+            return &_addr.sa;
+        }
+
         unsigned short getPort(std::error_code& ec) const {
             if (_addr.saStorage.ss_family != AF_INET && _addr.saStorage.ss_family != AF_INET6) {
                 ec = std::make_error_code(std::errc::not_supported);
@@ -188,6 +207,14 @@ namespace EasyEvent {
             auto  ret = getUIntIPv4(ec);
             throwError(ec);
             return ret;
+        }
+
+        void setUIntIPv4(uint32_t addr, std::error_code& ec) {
+            if (_addr.saStorage.ss_family != AF_INET) {
+                ec = std::make_error_code(std::errc::not_supported);
+                return;
+            }
+
         }
 
         IPv6Bytes getBytesIPv6(std::error_code& ec) const {

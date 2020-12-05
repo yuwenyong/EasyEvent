@@ -46,6 +46,7 @@
 #   define WIN_OR_POSIX(e_win, e_posix) e_win
 
 typedef SOCKET SocketType;
+typedef int SockLenType;
 const SOCKET InvalidSocket = INVALID_SOCKET;
 const int SocketErrorRetVal = SOCKET_ERROR;
 const int MaxAddrV4StrLen = 256;
@@ -58,6 +59,7 @@ const int MaxAddrV6StrLen = 256;
 #   define WIN_OR_POSIX(e_win, e_posix) e_posix
 
 typedef int SocketType;
+typedef socklen_t SockLenType;
 const int InvalidSocket = -1;
 const int SocketErrorRetVal = -1;
 const int MaxAddrV4StrLen = INET_ADDRSTRLEN;
