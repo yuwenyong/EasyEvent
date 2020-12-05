@@ -47,6 +47,7 @@
 
 typedef SOCKET SocketType;
 typedef int SockLenType;
+typedef unsigned long IoctlArgType;
 const SOCKET InvalidSocket = INVALID_SOCKET;
 const int SocketErrorRetVal = SOCKET_ERROR;
 const int MaxAddrV4StrLen = 256;
@@ -60,6 +61,7 @@ const int MaxAddrV6StrLen = 256;
 
 typedef int SocketType;
 typedef socklen_t SockLenType;
+typedef int IoctlArgType;
 const int InvalidSocket = -1;
 const int SocketErrorRetVal = -1;
 const int MaxAddrV4StrLen = INET_ADDRSTRLEN;

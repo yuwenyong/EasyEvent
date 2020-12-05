@@ -22,6 +22,24 @@ namespace EasyEvent {
             return result;
         }
 
+        static int Shutdown(SocketType s, int what, std::error_code& ec);
+
+        static int Shutdown(SocketType s, int what) {
+            std::error_code ec;
+            auto result = Shutdown(s, what, ec);
+            throwError(ec, "Shutdown");
+            return result;
+        }
+
+        static int Close(SocketType s, bool destruction, std::error_code& ec);
+
+        static int Close(SocketType s, bool destruction) {
+            std::error_code ec;
+            auto result = Close(s, destruction, ec);
+            throwError(ec, "Close");
+            return result;
+        }
+
         static int SetSockOpt(SocketType s, int level, int optname, const void* optval, std::size_t optLen,
                               std::error_code& ec);
 
@@ -29,6 +47,15 @@ namespace EasyEvent {
             std::error_code ec;
             auto result = SetSockOpt(s, level, optname, optval, optLen, ec);
             throwError(ec, "SetSocketOpt");
+            return result;
+        }
+
+        static int Ioctl(SocketType s, int cmd, IoctlArgType* arg, std::error_code& ec);
+
+        static int Ioctl(SocketType s, int cmd, IoctlArgType* arg) {
+            std::error_code ec;
+            auto result = Ioctl(s, cmd, arg, ec);
+            throwError(ec, "Ioctl");
             return result;
         }
 
@@ -64,9 +91,43 @@ namespace EasyEvent {
             return result;
         }
 
-        static int GetSockName(SocketType s, sockaddr* addr, size_t *addrLen, std::error_code& ec);
+        static int Listen(SocketType s, int backlog, std::error_code& ec);
 
-        static int GetSockName(SocketType s, sockaddr* addr, size_t *addrLen) {
+        static int Listen(SocketType s, int backlog) {
+            std::error_code ec;
+            auto result = Listen(s, backlog,  ec);
+            throwError(ec, "Listen");
+            return result;
+        }
+
+        static int GetPeerName(SocketType s, sockaddr* addr, size_t *addrLen, std::error_code& ec);
+
+        static int GetPeerName(SocketType s, sockaddr* addr, size_t *addrLen) {
+            std::error_code ec;
+            auto result = GetPeerName(s, addr, addrLen, ec);
+            throwError(ec, "GetPeerName");
+            return result;
+        }
+
+        static int GetPeerName(SocketType s, Address& addr, std::error_code& ec) {
+            struct sockaddr_storage ss;
+            size_t addrLen = sizeof(ss);
+            auto result = GetPeerName(s, (sockaddr*)&ss, &addrLen, ec);
+            throwError(ec, "GetPeerName");
+            addr = Address((const sockaddr*)&ss, addrLen);
+            return result;
+        }
+
+        static int GetPeerName(SocketType s, Address& addr) {
+            std::error_code ec;
+            auto result = GetPeerName(s, addr, ec);
+            throwError(ec, "GetPeerName");
+            return result;
+        }
+
+        static int GetSockName(SocketType s, sockaddr* addr, size_t* addrLen, std::error_code& ec);
+
+        static int GetSockName(SocketType s, sockaddr* addr, size_t* addrLen) {
             std::error_code ec;
             auto result = GetSockName(s, addr, addrLen, ec);
             throwError(ec, "GetSockName");
@@ -74,8 +135,8 @@ namespace EasyEvent {
         }
 
         static int GetSockName(SocketType s, Address& addr, std::error_code& ec) {
-            sockaddr_storage ss;
-            size_t addrLen = sizeof(addr);
+            struct sockaddr_storage ss;
+            size_t addrLen = sizeof(ss);
             auto result = GetSockName(s, (sockaddr*)&ss, &addrLen, ec);
             throwError(ec, "GetSockName");
             addr = Address((const sockaddr*)&ss, addrLen);

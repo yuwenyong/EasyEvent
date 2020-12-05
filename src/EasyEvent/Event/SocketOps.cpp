@@ -95,6 +95,48 @@ SocketType EasyEvent::SocketOps::Socket(int af, int type, int protocol, std::err
 #endif
 }
 
+int EasyEvent::SocketOps::Shutdown(SocketType s, int what, std::error_code &ec) {
+    if (s == InvalidSocket) {
+        ec = SocketErrors::BadDescriptor;
+        return SocketErrorRetVal;
+    }
+    int result = ::shutdown(s, what);
+    getLastError(ec, result != 0);
+    return result;
+}
+
+int EasyEvent::SocketOps::Close(SocketType s, bool destruction, std::error_code &ec) {
+    int result = 0;
+    if (s != InvalidSocket) {
+        if (destruction) {
+            ::linger opt;
+            opt.l_onoff = 0;
+            opt.l_linger = 0;
+            std::error_code ignoredError;
+            SocketOps::SetSockOpt(s, SOL_SOCKET, SO_LINGER, &opt, sizeof(opt), ignoredError);
+        }
+    }
+#if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
+    result = ::closesocket(s);
+#else
+    result = ::close(s);
+#endif
+    getLastError(ec, result != 0);
+    if (result != 0 && (ec == SocketErrors::WouldBlock || ec == SocketErrors::TryAgain)) {
+#if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
+        IoctlArgType arg = 0;
+        ::ioctlsocket(s, FIONBIO, &arg);
+        result = ::closesocket(s);
+#else
+        IoctlArgType arg = 0;
+        ::ioctl(s, FIONBIO, &arg);
+        result = ::close(s);
+#endif
+        getLastError(ec, result != 0);
+    }
+    return result;
+}
+
 int EasyEvent::SocketOps::SetSockOpt(SocketType s, int level, int optname, const void *optval, std::size_t optLen,
                                      std::error_code &ec) {
     if (s == InvalidSocket) {
@@ -106,12 +148,50 @@ int EasyEvent::SocketOps::SetSockOpt(SocketType s, int level, int optname, const
     return result;
 }
 
+int EasyEvent::SocketOps::Ioctl(SocketType s, int cmd, IoctlArgType *arg, std::error_code &ec) {
+    if (s == InvalidSocket) {
+        ec = SocketErrors::BadDescriptor;
+        return SocketErrorRetVal;
+    }
+#if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
+    int result = ::ioctlsocket(s, cmd, arg);
+#elif EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_APPLE || EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_UNIX
+    int result = ::ioctl(s, static_cast<unsigned int>(cmd), arg);
+#else
+    int result = ::ioctl(s, static_cast<unsigned long>(cmd), arg);
+#endif
+    getLastError(ec, result < 0);
+    return result;
+}
+
 int EasyEvent::SocketOps::Bind(SocketType s, const sockaddr *addr, size_t addrLen, std::error_code &ec) {
     if (s == InvalidSocket) {
         ec = SocketErrors::BadDescriptor;
         return SocketErrorRetVal;
     }
     int result = ::bind(s, addr, (SockLenType)addrLen);
+    getLastError(ec, result != 0);
+    return result;
+}
+
+int EasyEvent::SocketOps::Listen(SocketType s, int backlog, std::error_code &ec) {
+    if (s == InvalidSocket) {
+        ec = SocketErrors::BadDescriptor;
+        return SocketErrorRetVal;
+    }
+    int result = ::listen(s, backlog);
+    getLastError(ec, result != 0);
+    return result;
+}
+
+int EasyEvent::SocketOps::GetPeerName(SocketType s, sockaddr *addr, size_t *addrLen, std::error_code &ec) {
+    if (s == InvalidSocket) {
+        ec = SocketErrors::BadDescriptor;
+        return SocketErrorRetVal;
+    }
+    SockLenType tmpAddrLen = (SockLenType)*addrLen;
+    int result = ::getpeername(s, addr, &tmpAddrLen);
+    *addrLen = (size_t)tmpAddrLen;
     getLastError(ec, result != 0);
     return result;
 }

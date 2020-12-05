@@ -92,7 +92,7 @@ bool EasyEvent::Address::operator==(const Address &rhs) const {
 
 std::string EasyEvent::Address::getAddrString(std::error_code &ec) const {
     if (_addr.saStorage.ss_family != AF_INET && _addr.saStorage.ss_family != AF_INET6) {
-        ec = std::make_error_code(std::errc::not_supported);
+        ec = UserErrors::NotSupported;
         return {};
     }
     if (_addr.saStorage.ss_family == AF_INET) {

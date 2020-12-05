@@ -122,6 +122,32 @@ namespace EasyEvent {
             return _addr.saStorage.ss_family == AF_INET6;
         }
 
+        bool isAnyAddressIPv4() const {
+            return _addr.saStorage.ss_family == AF_INET && _addr.saIn.sin_addr.s_addr == htonl(INADDR_ANY);
+        }
+
+        bool isAnyAddressIPv6() const {
+            return _addr.saStorage.ss_family == AF_INET6 &&
+            std::memcmp(&_addr.saIn6.sin6_addr, &in6addr_any, sizeof(struct in6_addr)) == 0;
+        }
+
+        bool isAnyAddress() const {
+            return isAnyAddressIPv4() || isAnyAddressIPv6();
+        }
+
+        bool isLoopbackAddressIPv4() const {
+            return _addr.saStorage.ss_family == AF_INET && _addr.saIn.sin_addr.s_addr == htonl(INADDR_LOOPBACK);
+        }
+
+        bool isLoopbackAddressIPv6() const {
+            return _addr.saStorage.ss_family == AF_INET6 &&
+                   std::memcmp(&_addr.saIn6.sin6_addr, &in6addr_loopback, sizeof(struct in6_addr)) == 0;
+        }
+
+        bool isLoopbackAddress() const {
+            return isLoopbackAddressIPv4() || isLoopbackAddressIPv6();
+        }
+
         size_t getStorageSize() const {
             size_t size = 0;
             if (_addr.saStorage.ss_family == AF_INET) {
@@ -138,7 +164,7 @@ namespace EasyEvent {
 
         unsigned short getPort(std::error_code& ec) const {
             if (_addr.saStorage.ss_family != AF_INET && _addr.saStorage.ss_family != AF_INET6) {
-                ec = std::make_error_code(std::errc::not_supported);
+                ec = UserErrors::NotSupported;
                 return 0;
             }
             ec.assign(0, ec.category());
@@ -158,7 +184,7 @@ namespace EasyEvent {
 
         void setPort(unsigned short port, std::error_code& ec) {
             if (_addr.saStorage.ss_family != AF_INET && _addr.saStorage.ss_family != AF_INET6) {
-                ec = std::make_error_code(std::errc::not_supported);
+                ec = UserErrors::NotSupported;
                 return;
             }
             ec = {0, ec.category()};
@@ -178,7 +204,7 @@ namespace EasyEvent {
         IPv4Bytes getBytesIPv4(std::error_code& ec) const {
             IPv4Bytes bytes;
             if (_addr.saStorage.ss_family != AF_INET) {
-                ec = std::make_error_code(std::errc::not_supported);
+                ec = UserErrors::NotSupported;
                 return bytes;
             }
             ec.assign(0, ec.category());
@@ -195,7 +221,7 @@ namespace EasyEvent {
 
         uint32_t getUIntIPv4(std::error_code& ec) const {
             if (_addr.saStorage.ss_family != AF_INET) {
-                ec = std::make_error_code(std::errc::not_supported);
+                ec = UserErrors::NotSupported;
                 return 0;
             }
             ec.assign(0, ec.category());
@@ -211,16 +237,23 @@ namespace EasyEvent {
 
         void setUIntIPv4(uint32_t addr, std::error_code& ec) {
             if (_addr.saStorage.ss_family != AF_INET) {
-                ec = std::make_error_code(std::errc::not_supported);
+                ec = UserErrors::NotSupported;
                 return;
             }
+            _addr.saIn.sin_addr.s_addr = htonl(addr);
+            ec.assign(0, ec.category());
+        }
 
+        void setUIntIPv4(uint32_t addr) {
+            std::error_code ec;
+            setUIntIPv4(addr, ec);
+            throwError(ec);
         }
 
         IPv6Bytes getBytesIPv6(std::error_code& ec) const {
             IPv6Bytes bytes;
             if (_addr.saStorage.ss_family != AF_INET6) {
-                ec = std::make_error_code(std::errc::not_supported);
+                ec = UserErrors::NotSupported;
                 return bytes;
             }
             ec.assign(0, ec.category());
@@ -237,7 +270,7 @@ namespace EasyEvent {
 
         unsigned long getScopeId(std::error_code& ec) const {
             if (_addr.saStorage.ss_family != AF_INET6) {
-                ec = std::make_error_code(std::errc::not_supported);
+                ec = UserErrors::NotSupported;
                 return 0;
             }
             ec.assign(0, ec.category());
@@ -253,7 +286,7 @@ namespace EasyEvent {
 
         void setScopeId(unsigned long scopeId, std::error_code& ec) {
             if (_addr.saStorage.ss_family != AF_INET6) {
-                ec = std::make_error_code(std::errc::not_supported);
+                ec = UserErrors::NotSupported;
                 return;
             }
             ec.assign(0, ec.category());
