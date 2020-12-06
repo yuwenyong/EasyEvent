@@ -184,6 +184,48 @@ int EasyEvent::SocketOps::Listen(SocketType s, int backlog, std::error_code &ec)
     return result;
 }
 
+SocketType EasyEvent::SocketOps::Accept(SocketType s, sockaddr *addr, size_t *addrLen, std::error_code &ec) {
+    if (s == InvalidSocket) {
+        ec = SocketErrors::BadDescriptor;
+        return InvalidSocket;
+    }
+    SockLenType tmpAddrLen = addrLen ? (SockLenType)*addrLen : 0;
+    SocketType newSock = ::accept(s, addr, addrLen ? &tmpAddrLen : nullptr);
+    if (addrLen) {
+        *addrLen = (size_t)tmpAddrLen;
+    }
+    getLastError(ec, newSock == InvalidSocket);
+    if (newSock == InvalidSocket) {
+        return newSock;
+    }
+#if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_APPLE || EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_UNIX
+    int optval = 1;
+    int result = ::setsockopt(newSock, SOL_SOCKET, SO_NOSIGPIPE, &optval, sizeof(optval));
+    getLastError(ec, result != 0);
+    if (result != 0) {
+        ::close(newSock);
+        return InvalidSocket;
+    }
+#endif
+    ec.assign(0, ec.category());
+    return newSock;
+}
+
+int EasyEvent::SocketOps::Connect(SocketType s, const sockaddr *addr, size_t addrLen, std::error_code &ec) {
+    if (s == InvalidSocket) {
+        ec = SocketErrors::BadDescriptor;
+        return SocketErrorRetVal;
+    }
+    int result = ::connect(s, addr, (SockLenType)addrLen);
+    getLastError(ec, result != 0);
+#if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_LINUX
+    if (result != 0 && ec == SocketErrors::TryAgain) {
+        ec = SocketErrors::NoBufferSpace;
+    }
+#endif
+    return result;
+}
+
 int EasyEvent::SocketOps::GetPeerName(SocketType s, sockaddr *addr, size_t *addrLen, std::error_code &ec) {
     if (s == InvalidSocket) {
         ec = SocketErrors::BadDescriptor;
@@ -206,6 +248,63 @@ int EasyEvent::SocketOps::GetSockName(SocketType s, sockaddr *addr, size_t *addr
     *addrLen = (size_t)tmpAddrLen;
     getLastError(ec, result != 0);
     return result;
+}
+
+ssize_t EasyEvent::SocketOps::Send(SocketType s, const void *data, size_t size, int flags, std::error_code &ec) {
+#if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
+    WSABUF buf;
+    buf.buf = const_cast<char*>(static_cast<const char*>(data));
+    buf.len = static_cast<ULONG>(size);
+    DWORD bytesTransferred = 0;
+    DWORD sendFlags = flags;
+    int result = ::WSASend(s, &buf, 1, &bytesTransferred, sendFlags, 0, 0);
+    getLastError(ec, true);
+    if (ec.value() == ERROR_NETNAME_DELETED) {
+        ec = SocketErrors::ConnectionReset;
+    } else if (ec.value() == ERROR_PORT_UNREACHABLE) {
+        ec = SocketErrors::ConnectionRefused;
+    }
+    if (result != 0) {
+        return SocketErrorRetVal;
+    }
+    ec.assign(0, ec.category());
+    return (ssize_t)bytesTransferred;
+#else
+#   if ASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_LINUX
+    flags |= MSG_NOSIGNAL;
+#   endif
+    ssize_t result = ::send(s, static_cast<const char*>(data), size, flags);
+    getLastError(ec, result < 0);
+    return result;
+#endif
+}
+
+ssize_t EasyEvent::SocketOps::Recv(SocketType s, void *data, size_t size, int flags, std::error_code &ec) {
+#if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
+    WSABUF buf;
+    buf.buf = const_cast<char*>(static_cast<const char*>(data));
+    buf.len = static_cast<ULONG>(size);
+    DWORD bytesTransferred = 0;
+    DWORD recvFlags = flags;
+    int result = ::WSARecv(s, &buf, 1, &bytesTransferred, &recvFlags, 0, 0);
+    getLastError(ec, true);
+    if (ec.value() == ERROR_NETNAME_DELETED) {
+        ec = SocketErrors::ConnectionReset;
+    } else if (ec.value() == ERROR_PORT_UNREACHABLE) {
+        ec = SocketErrors::ConnectionRefused;
+    } else if (ec.value() == WSAEMSGSIZE || ec.value() == ERROR_MORE_DATA) {
+        result = 0;
+    }
+    if (result != 0) {
+        return SocketErrorRetVal;
+    }
+    ec.assign(0, ec.category());
+    return (ssize_t)bytesTransferred;
+#else
+    ssize_t result = ::recv(s, static_cast<char*>(data), size, flags);
+    getLastError(ec, result < 0);
+    return result;
+#endif
 }
 
 const char* EasyEvent::SocketOps::InetNtop(int af, const void *src, char *dest, size_t length, unsigned long scopeId,

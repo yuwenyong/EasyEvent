@@ -12,6 +12,9 @@ namespace EasyEvent {
 
     class EASY_EVENT_API Interrupter: public Selectable {
     public:
+        Interrupter(const Interrupter&) = delete;
+        Interrupter& operator=(const Interrupter&) = delete;
+
         Interrupter() {
             openSockets();
         };

@@ -7,6 +7,7 @@
 
 #include "EasyEvent/Event/EvtCommon.h"
 #include "EasyEvent/Event/Address.h"
+#include "EasyEvent/Common/NonCopyable.h"
 
 
 namespace EasyEvent {
@@ -100,6 +101,52 @@ namespace EasyEvent {
             return result;
         }
 
+        static SocketType Accept(SocketType s, sockaddr* addr, size_t *addrLen, std::error_code& ec);
+
+        static SocketType Accept(SocketType s, sockaddr* addr, size_t *addrLen) {
+            std::error_code ec;
+            auto result = Accept(s, addr, addrLen, ec);
+            throwError(ec, "Accept");
+            return result;
+        }
+
+        static SocketType Accept(SocketType s, Address& addr, std::error_code& ec) {
+            struct sockaddr_storage ss;
+            size_t addrLen = sizeof(ss);
+            auto result = Accept(s, (sockaddr*)&ss, &addrLen, ec);
+            if (!ec) {
+                addr = Address((const sockaddr*)&ss, addrLen);
+            }
+            return result;
+        }
+
+        static SocketType Accept(SocketType s, Address& addr) {
+            std::error_code ec;
+            auto result = Accept(s, addr, ec);
+            throwError(ec, "Accept");
+            return result;
+        }
+
+        static int Connect(SocketType s, const sockaddr* addr, size_t addrLen, std::error_code& ec);
+
+        static int Connect(SocketType s, const sockaddr* addr, size_t addrLen) {
+            std::error_code ec;
+            auto result = Connect(s, addr, addrLen, ec);
+            throwError(ec, "Connect");
+            return result;
+        }
+
+        static int Connect(SocketType s, const Address& addr, std::error_code& ec) {
+            return Connect(s, addr.getStoragePtr(), addr.getStorageSize(), ec);
+        }
+
+        static int Connect(SocketType s, const Address& addr) {
+            std::error_code ec;
+            auto result = Connect(s, addr, ec);
+            throwError(ec, "Connect");
+            return result;
+        }
+
         static int GetPeerName(SocketType s, sockaddr* addr, size_t *addrLen, std::error_code& ec);
 
         static int GetPeerName(SocketType s, sockaddr* addr, size_t *addrLen) {
@@ -113,8 +160,9 @@ namespace EasyEvent {
             struct sockaddr_storage ss;
             size_t addrLen = sizeof(ss);
             auto result = GetPeerName(s, (sockaddr*)&ss, &addrLen, ec);
-            throwError(ec, "GetPeerName");
-            addr = Address((const sockaddr*)&ss, addrLen);
+            if (!ec) {
+                addr = Address((const sockaddr*)&ss, addrLen);
+            }
             return result;
         }
 
@@ -138,8 +186,9 @@ namespace EasyEvent {
             struct sockaddr_storage ss;
             size_t addrLen = sizeof(ss);
             auto result = GetSockName(s, (sockaddr*)&ss, &addrLen, ec);
-            throwError(ec, "GetSockName");
-            addr = Address((const sockaddr*)&ss, addrLen);
+            if (!ec) {
+                addr = Address((const sockaddr*)&ss, addrLen);
+            }
             return result;
         }
 
@@ -147,6 +196,24 @@ namespace EasyEvent {
             std::error_code ec;
             auto result = GetSockName(s, addr, ec);
             throwError(ec, "GetSockName");
+            return result;
+        }
+
+        static ssize_t Send(SocketType s, const void* data, size_t size, int flags, std::error_code& ec);
+
+        static ssize_t Send(SocketType s, const void* data, size_t size, int flags) {
+            std::error_code ec;
+            auto result = Send(s, data, size, flags, ec);
+            throwError(ec, "Send");
+            return result;
+        }
+
+        static ssize_t Recv(SocketType s, void* data, size_t size, int flags, std::error_code& ec);
+
+        static ssize_t Recv(SocketType s, void* data, size_t size, int flags) {
+            std::error_code ec;
+            auto result = Recv(s, data, size, flags, ec);
+            throwError(ec, "Recv");
             return result;
         }
 
@@ -184,6 +251,51 @@ namespace EasyEvent {
         }
     };
 
+    class SocketHolder: private NonCopyable {
+    public:
+        SocketHolder()
+            : _socket(InvalidSocket) {
+
+        }
+
+        explicit SocketHolder(SocketType s)
+            : _socket(s) {
+
+        }
+
+        ~SocketHolder() {
+            if (_socket != InvalidSocket) {
+                std::error_code ec;
+                SocketOps::Close(_socket, true, ec);
+            }
+        }
+
+        SocketType get() const {
+            return _socket;
+        }
+
+        void reset() {
+            if (_socket != InvalidSocket) {
+                std::error_code ec;
+                SocketOps::Close(_socket, true, ec);
+                _socket = InvalidSocket;
+            }
+        }
+
+        void reset(SocketType s) {
+            reset();
+            _socket = s;
+        }
+
+        SocketType release() {
+            SocketType tmp = _socket;
+            _socket = InvalidSocket;
+            return tmp;
+        }
+        
+    private:
+        SocketType _socket;
+    };
 }
 
 #endif //EASYEVENT_EVENT_SOCKETOPS_H
