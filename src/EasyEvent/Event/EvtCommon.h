@@ -34,7 +34,7 @@
 #   define EASY_EVENT_USE_EPOLL
 #   include <sys/epoll.h>
 #else
-#   define EASY_EVENT_E_POLL
+#   define EASY_EVENT_USE_POLL
 #endif
 
 
@@ -200,14 +200,14 @@ namespace EasyEvent {
         IO_EVENT_ERROR = 0x04,
     };
 #elif defined(EASY_EVENT_USE_EPOLL)
-    enum class IOEvents: uint16 {
+    enum IOEvents: uint16 {
         IO_EVENT_NONE = 0,
         IO_EVENT_READ = EPOLLIN,
         IO_EVENT_WRITE = EPOLLOUT,
         IO_EVENT_ERROR = EPOLLERR | EPOLLHUP,
     };
 #else
-    enum class IOEvents: uint16 {
+    enum IOEvents: uint16 {
         IO_EVENT_NONE = 0,
         IO_EVENT_READ = POLLIN,
         IO_EVENT_WRITE = POLLOUT,
@@ -224,6 +224,102 @@ namespace EasyEvent {
     };
 
     using SelectablePtr = std::shared_ptr<Selectable>;
+
+#if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
+    class WinFdSetAdapter {
+    public:
+        enum {
+            DefaultFdSetSize = 1024
+        };
+
+        WinFdSetAdapter()
+                : _capacity(DefaultFdSetSize) {
+            _fdSet = static_cast<WinFdSet*>(::operator new(sizeof(WinFdSet) - sizeof(SocketType)
+                    + sizeof(SocketType) * _capacity));
+            _fdSet->fd_count = 0;
+        }
+
+        ~WinFdSetAdapter() {
+            ::operator delete(_fdSet);
+        }
+
+        WinFdSetAdapter(const WinFdSetAdapter& fdSetAdapter) {
+            _capacity = std::max<u_int>(DefaultFdSetSize, fdSetAdapter.size());
+            _fdSet = static_cast<WinFdSet*>(::operator new(sizeof(WinFdSet) - sizeof(SocketType)
+                    + sizeof(SocketType) * _capacity));
+            for (u_int i = 0; i < fdSetAdapter.size(); ++i) {
+                _fdSet->fd_array[i] = fdSetAdapter.get(i);
+            }
+            _fdSet->fd_count = fdSetAdapter.size();
+        }
+
+        WinFdSetAdapter& operator=(const WinFdSetAdapter& fdSetAdapter) {
+            if (this == &fdSetAdapter) {
+                return *this;
+            }
+            reserve(fdSetAdapter.size());
+            for (u_int i = 0; i < fdSetAdapter.size(); ++i) {
+                _fdSet->fd_array[i] = fdSetAdapter.get(i);
+            }
+            _fdSet->fd_count = fdSetAdapter.size();
+            return *this;
+        }
+
+        void reset() {
+            _fdSet->fd_count = 0;
+        }
+
+        bool set(SocketType descriptor) {
+            for (u_int i = 0; i < _fdSet->fd_count; ++i) {
+                if (_fdSet->fd_array[i] == descriptor) {
+                    return true;
+                }
+            }
+            reserve(_fdSet->fd_count + 1);
+            _fdSet->fd_array[_fdSet->fd_count++] = descriptor;
+            return true;
+        }
+
+        u_int size() const {
+            return _fdSet->fd_count;
+        }
+
+        SocketType get(u_int i) const {
+            return _fdSet->fd_array[i];
+        }
+
+        operator fd_set*() {
+            return reinterpret_cast<fd_set*>(_fdSet);
+        }
+    protected:
+        struct WinFdSet {
+            u_int fd_count;
+            SocketType fd_array[1];
+        };
+
+        void reserve(u_int n) {
+            if (n < _capacity) {
+                return;
+            }
+            u_int  newCapacity = _capacity + _capacity / 2;
+            if (newCapacity < n) {
+                newCapacity = n;
+            }
+            WinFdSet* newFdSet = static_cast<WinFdSet*>(::operator new(sizeof(WinFdSet) - sizeof(SocketType)
+                    + sizeof(SocketType) * newCapacity));
+            newFdSet->fd_count = _fdSet->fd_count;
+            for (u_int i = 0; i < _fdSet->fd_count; ++i) {
+                newFdSet->fd_array[i] = _fdSet->fd_array[i];
+            }
+            ::operator delete(_fdSet);
+            _fdSet = newFdSet;
+            _capacity = newCapacity;
+        }
+
+        WinFdSet* _fdSet;
+        u_int _capacity;
+    };
+#endif
 
 }
 
