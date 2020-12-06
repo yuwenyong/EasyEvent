@@ -72,6 +72,42 @@ namespace EasyEvent {
             return result;
         }
 
+        static int SetTcpNoDelay(SocketType s, bool noDelay, std::error_code& ec) {
+            int opt = noDelay ? 1 : 0;
+            return SetSockOpt(s, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt), ec);
+        }
+
+        static int SetTcpNoDelay(SocketType s, bool noDelay) {
+            std::error_code ec;
+            auto result = SetTcpNoDelay(s, noDelay, ec);
+            throwError(ec, "SetTcpNoDelay");
+            return result;
+        }
+
+        static int SetKeepAlive(SocketType s, bool keepAlive, std::error_code& ec) {
+            int opt = keepAlive ? 1 : 0;
+            return SetSockOpt(s, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt), ec);
+        }
+
+        static int SetKeepAlive(SocketType s, bool keepAlive) {
+            std::error_code ec;
+            auto result = SetKeepAlive(s, keepAlive, ec);
+            throwError(ec, "SetKeepAlive");
+            return result;
+        }
+
+        static int SetUnblock(SocketType s, bool unblock, std::error_code& ec) {
+            IoctlArgType arg = unblock ? 1 : 0;
+            return Ioctl(s, FIONBIO, &arg, ec);
+        }
+
+        static int SetUnblock(SocketType s, bool unblock) {
+            std::error_code ec;
+            auto result = SetUnblock(s, unblock, ec);
+            throwError(ec, "SetUnblock");
+            return result;
+        }
+
         static int Bind(SocketType s, const sockaddr* addr, size_t addrLen, std::error_code& ec);
 
         static int Bind(SocketType s, const sockaddr* addr, size_t addrLen) {
@@ -292,7 +328,7 @@ namespace EasyEvent {
             _socket = InvalidSocket;
             return tmp;
         }
-        
+
     private:
         SocketType _socket;
     };
