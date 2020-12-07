@@ -26,12 +26,13 @@ namespace EasyEvent {
     using TimerPtr = std::shared_ptr<Timer>;
     using TimerHandle = std::weak_ptr<Timer>;
 
-    bool operator<(const Timer& lhs, const Timer& rhs) {
+    inline bool operator<(const Timer& lhs, const Timer& rhs) {
         return lhs.deadline < rhs.deadline;
     }
 
     class EASY_EVENT_API TimerQueue {
     public:
+        TimerQueue() = default;
         TimerQueue(const TimerQueue&) = delete;
         TimerQueue& operator=(const TimerQueue&) = delete;
 

@@ -9,6 +9,8 @@
 #include "EasyEvent/Common/Time.h"
 #include "EasyEvent/Common/Task.h"
 #include "EasyEvent/Event/SocketInit.h"
+#include "EasyEvent/Event/TimerQueue.h"
+#include "EasyEvent/Event/Interrupter.h"
 
 
 namespace EasyEvent {
@@ -20,14 +22,7 @@ namespace EasyEvent {
         IOLoop(const IOLoop&) = delete;
         IOLoop& operator=(const IOLoop&) = delete;
 
-        explicit IOLoop(Logger* logger=nullptr, bool makeCurrent=false)
-            : _logger(logger) {
-            if (makeCurrent) {
-                this->makeCurrent();
-            }
-        }
-
-        void close(bool allSockets=false);
+        explicit IOLoop(Logger* logger=nullptr, bool makeCurrent=false);
 
         void addHandler(const SelectablePtr& handler, IOEvents events);
 
@@ -35,19 +30,33 @@ namespace EasyEvent {
 
         void removeHandler(const SelectablePtr& handler);
 
-        void start();
+        void start(std::error_code& ec);
 
-        void stop() {
-
+        void start() {
+            std::error_code ec;
+            start(ec);
+            throwError(ec, "IOLoop");
         }
 
-        // callLater
-        // callAt
-        // removeTimeout
+        void stop();
 
-        void addCallback(Task<void()>&& callback) {
-
+        Time time() const {
+            return TimerQueue::time();
         }
+
+        TimerHandle callLater(Time delay, Task<void()>&& callback) {
+            return _timers.addTimer(time() + delay, std::move(callback));
+        }
+
+        TimerHandle callAt(Time when, Task<void()>&& callback) {
+            return _timers.addTimer(when, std::move(callback));
+        }
+
+        void removeTimeout(const TimerHandle& timeout) {
+            _timers.removeTimer(timeout);
+        }
+
+        void addCallback(Task<void()>&& callback);
 
         void addCallbackFromSignal(Task<void()>&& callback) {
             addCallback(std::move(callback));
@@ -73,11 +82,12 @@ namespace EasyEvent {
         std::unordered_set<SocketType> _discardEvents;
         std::mutex _mutex;
         std::vector<Task<void()>> _callbacks;
-        // Timeout?
-        // cancel count?
-        bool _running{false};
-        bool _stopped{false};
-        bool _closing{false};
+        TimerQueue _timers;
+        std::shared_ptr<Interrupter> _waker;
+        std::thread::id _threadIdent;
+
+        volatile bool _running{false};
+        volatile bool _stopped{false};
 
         thread_local static IOLoop* _current;
     };

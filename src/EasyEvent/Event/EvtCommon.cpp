@@ -38,7 +38,25 @@ std::string EasyEvent::SocketErrorCategory::message(int ev) const {
 #endif
 }
 
+const char * EasyEvent::EventErrorCategory::name() const noexcept {
+    return "event error";
+}
+
+std::string EasyEvent::EventErrorCategory::message(int ev) const {
+    switch (static_cast<EventErrors>(ev)) {
+        case EventErrors::IOLoopAlreadyStarted:
+            return "ioloop already started";
+        default:
+            return "(unrecognized error)";
+    }
+}
+
 const std::error_category & EasyEvent::getSocketErrorCategory() {
-    static const EasyEvent::SocketErrorCategory errCategory{};
+    static const SocketErrorCategory errCategory{};
+    return errCategory;
+}
+
+const std::error_category & EasyEvent::getEventErrorCategory() {
+    static const EventErrorCategory errCategory{};
     return errCategory;
 }

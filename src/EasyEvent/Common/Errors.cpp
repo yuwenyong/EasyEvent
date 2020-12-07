@@ -24,7 +24,7 @@ std::string EasyEvent::UserErrorCategory::message(int ev) const {
 }
 
 const std::error_category& EasyEvent::getUserErrorCategory() {
-    static const EasyEvent::UserErrorCategory errCategory{};
+    static const UserErrorCategory errCategory{};
     return errCategory;
 }
 

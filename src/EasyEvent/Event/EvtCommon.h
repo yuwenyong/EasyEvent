@@ -164,7 +164,17 @@ namespace EasyEvent {
         SocketTypeNotSupported = WIN_OR_POSIX(NATIVE_ERROR(WSAESOCKTNOSUPPORT),GETADDRINFO_ERROR(EAI_SOCKTYPE))
     };
 
+    enum class EventErrors {
+        IOLoopAlreadyStarted = 1,
+    };
+
     class EASY_EVENT_API SocketErrorCategory: public std::error_category {
+    public:
+        [[nodiscard]] const char* name() const noexcept override;
+        [[nodiscard]] std::string message(int ev) const override;
+    };
+
+    class EASY_EVENT_API EventErrorCategory: public std::error_category {
     public:
         [[nodiscard]] const char* name() const noexcept override;
         [[nodiscard]] std::string message(int ev) const override;
@@ -180,6 +190,8 @@ namespace EasyEvent {
         return getSocketErrorCategory();
     }
 
+    EASY_EVENT_API const std::error_category& getEventErrorCategory();
+
     inline std::error_code make_error_code(SocketErrors err) {
         return {static_cast<int>(err), getSocketErrorCategory()};
     }
@@ -190,6 +202,10 @@ namespace EasyEvent {
 
     inline std::error_code make_error_code(AddrInfoErrors err) {
         return {static_cast<int>(err), getAddrInfoErrorCategory()};
+    }
+
+    inline std::error_code make_error_code(EventErrors err) {
+        return {static_cast<int>(err), getEventErrorCategory()};
     }
 
 #if defined(EASY_EVENT_USE_SELECT)
@@ -334,6 +350,8 @@ namespace std {
     template <>
     struct is_error_code_enum<EasyEvent::AddrInfoErrors>: public true_type {};
 
+    template <>
+    struct is_error_code_enum<EasyEvent::EventErrors>: public true_type {};
 }
 
 #endif //EASYEVENT_EVENT_EVTCOMMON_H

@@ -177,6 +177,18 @@ namespace EasyEvent {
 
         static Time makeTime(int year, int mon, int day, int hour=0, int min=0, int sec=0, int isdst=0);
 
+        static Time seconds(int t) {
+            return Time(t * INT64(1000000));
+        }
+
+        static Time milliSeconds(int t) {
+            return Time(t * INT64(1000));
+        }
+
+        static Time microSeconds(int t) {
+            return Time(t);
+        }
+
         static Time seconds(int64 t) {
             return Time(t * INT64(1000000));
         }
