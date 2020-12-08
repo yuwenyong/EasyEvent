@@ -209,21 +209,21 @@ namespace EasyEvent {
     }
 
 #if defined(EASY_EVENT_USE_SELECT)
-    enum IOEvents: uint16 {
+    enum IOEvents: unsigned int {
         IO_EVENT_NONE = 0,
         IO_EVENT_READ = 0x01,
         IO_EVENT_WRITE = 0x02,
         IO_EVENT_ERROR = 0x04,
     };
 #elif defined(EASY_EVENT_USE_EPOLL)
-    enum IOEvents: uint16 {
+    enum IOEvents: unsigned int {
         IO_EVENT_NONE = 0,
         IO_EVENT_READ = EPOLLIN,
         IO_EVENT_WRITE = EPOLLOUT,
         IO_EVENT_ERROR = EPOLLERR | EPOLLHUP,
     };
 #else
-    enum IOEvents: uint16 {
+    enum IOEvents: short {
         IO_EVENT_NONE = 0,
         IO_EVENT_READ = POLLIN,
         IO_EVENT_WRITE = POLLOUT,

@@ -24,19 +24,15 @@ namespace EasyEvent {
 
         explicit IOLoop(Logger* logger=nullptr, bool makeCurrent=false);
 
+        ~IOLoop() noexcept;
+
         void addHandler(const SelectablePtr& handler, IOEvents events);
 
         void updateHandler(const SelectablePtr& handler, IOEvents events);
 
         void removeHandler(const SelectablePtr& handler);
 
-        void start(std::error_code& ec);
-
-        void start() {
-            std::error_code ec;
-            start(ec);
-            throwError(ec, "IOLoop");
-        }
+        void start();
 
         void stop();
 
@@ -58,10 +54,6 @@ namespace EasyEvent {
 
         void addCallback(Task<void()>&& callback);
 
-        void addCallbackFromSignal(Task<void()>&& callback) {
-            addCallback(std::move(callback));
-        }
-
         void makeCurrent() {
             _current = this;
         }
@@ -73,13 +65,27 @@ namespace EasyEvent {
         static void clearCurrent() {
             _current = nullptr;
         }
-    protected:
-        void handleCallbackException(std::exception& e);
+
+    private:
+#ifdef EASY_EVENT_USE_EPOLL
+        enum {
+            EpollSize = 20000,
+        };
+
+        int doEpollCreate();
+#endif
 
         SocketInit _sockInit;
         Logger* _logger;
+
+#ifdef EASY_EVENT_USE_EPOLL
+        int _epollFd;
+#else
+        std::vector<struct pollfd> _pollFdSet;
+        std::vector<struct pollfd> _updatedFdSet;
+#endif
+
         std::unordered_map<SocketType, SelectablePtr> _handlers;
-        std::unordered_set<SocketType> _discardEvents;
         std::mutex _mutex;
         std::vector<Task<void()>> _callbacks;
         TimerQueue _timers;
