@@ -273,6 +273,7 @@ namespace EasyEvent {
             if (this == &fdSetAdapter) {
                 return *this;
             }
+            _fdSet->fd_count = 0;
             reserve(fdSetAdapter.size());
             for (u_int i = 0; i < fdSetAdapter.size(); ++i) {
                 _fdSet->fd_array[i] = fdSetAdapter.get(i);
@@ -288,12 +289,25 @@ namespace EasyEvent {
         bool set(SocketType descriptor) {
             for (u_int i = 0; i < _fdSet->fd_count; ++i) {
                 if (_fdSet->fd_array[i] == descriptor) {
-                    return true;
+                    return false;
                 }
             }
             reserve(_fdSet->fd_count + 1);
             _fdSet->fd_array[_fdSet->fd_count++] = descriptor;
             return true;
+        }
+
+        bool clr(SocketType descriptor) {
+            for (u_int i = 0; i < _fdSet->fd_count; ++i) {
+                if (_fdSet->fd_array[i] == descriptor) {
+                    if (i != _fdSet->fd_count - 1) {
+                        _fdSet->fd_array[i] = _fdSet->fd_array[_fdSet->fd_count - 1];
+                    }
+                    --_fdSet->fd_count;
+                    return true;
+                }
+            }
+            return false;
         }
 
         u_int size() const {

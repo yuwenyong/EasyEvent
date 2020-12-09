@@ -30,7 +30,7 @@ namespace EasyEvent {
     };
 
 
-    class EASY_EVENT_API ResolveQuery: public std::enable_shared_from_this<Resolver> {
+    class EASY_EVENT_API ResolveQuery: public std::enable_shared_from_this<ResolveQuery> {
     public:
         using CallbackType = Task<void(std::vector<Address>, std::error_code)>;
 
@@ -42,7 +42,7 @@ namespace EasyEvent {
             , _protocol(protocol)
             , _preferIPv6(preferIPv6)
             , _callback(std::move(callback)) {
-
+            assert(_callback);
         }
 
         bool doResolve();
@@ -65,6 +65,22 @@ namespace EasyEvent {
         bool _cancelled{false};
         std::vector<Address> _addrs;
         std::error_code _error;
+    };
+
+    using ResolveQueryPtr = std::shared_ptr<ResolveQuery>;
+
+    class ResolveHandle {
+    public:
+        explicit ResolveHandle(const ResolveQueryPtr& query): _query(query) {}
+
+        void cancel() {
+            auto query = _query.lock();
+            if (query) {
+                query->cancel();
+            }
+        }
+    private:
+        std::weak_ptr<ResolveQuery> _query;
     };
 
 }

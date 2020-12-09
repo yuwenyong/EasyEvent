@@ -8,9 +8,11 @@
 #include "EasyEvent/Event/EvtCommon.h"
 #include "EasyEvent/Common/Time.h"
 #include "EasyEvent/Common/Task.h"
+#include "EasyEvent/Common/ConcurrentQueue.h"
 #include "EasyEvent/Event/SocketInit.h"
 #include "EasyEvent/Event/TimerQueue.h"
 #include "EasyEvent/Event/Interrupter.h"
+#include "EasyEvent/Event/Resolver.h"
 
 
 namespace EasyEvent {
@@ -54,6 +56,9 @@ namespace EasyEvent {
 
         void addCallback(Task<void()>&& callback);
 
+        ResolveHandle resolve(std::string host, unsigned short port, ProtocolSupport protocol, bool preferIPv6,
+                              ResolveQuery::CallbackType&& callback);
+
         void makeCurrent() {
             _current = this;
         }
@@ -67,7 +72,9 @@ namespace EasyEvent {
         }
 
     private:
-#ifdef EASY_EVENT_USE_EPOLL
+        void startResolveThread();
+
+#if defined(EASY_EVENT_USE_EPOLL)
         enum {
             EpollSize = 20000,
         };
@@ -78,11 +85,14 @@ namespace EasyEvent {
         SocketInit _sockInit;
         Logger* _logger;
 
-#ifdef EASY_EVENT_USE_EPOLL
+#if defined(EASY_EVENT_USE_SELECT)
+        WinFdSetAdapter _readFdSet;
+        WinFdSetAdapter _writeFdSet;
+        WinFdSetAdapter _errorFdSet;
+#elif defined(EASY_EVENT_USE_EPOLL)
         int _epollFd;
 #else
         std::vector<struct pollfd> _pollFdSet;
-        std::vector<struct pollfd> _updatedFdSet;
 #endif
 
         std::unordered_map<SocketType, SelectablePtr> _handlers;
@@ -94,6 +104,9 @@ namespace EasyEvent {
 
         volatile bool _running{false};
         volatile bool _stopped{false};
+
+        ConcurrentQueue<ResolveQueryPtr> _resolveQueries;
+        std::unique_ptr<std::thread> _resolveThread;
 
         thread_local static IOLoop* _current;
     };

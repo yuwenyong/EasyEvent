@@ -118,10 +118,13 @@ typedef unsigned long long UInt64;
 #   ifndef DEBUG
 #       define DEBUG
 #   endif
-//#   ifndef _GLIBCXX_DEBUG
-//#       define _GLIBCXX_DEBUG
-//#   endif
 #   define EASY_EVENT_DEBUG
+#endif
+
+#ifdef EASY_EVENT_DEBUG
+#   define verify(expr) assert(expr)
+#else
+#   define verify(expr) (expr)
 #endif
 
 

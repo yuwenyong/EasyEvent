@@ -3,6 +3,7 @@
 //
 
 #include "EasyEvent/Event/IOLoop.h"
+#include "EasyEvent/Event/SignalBlocker.h"
 #include "EasyEvent/Logging/LogStream.h"
 
 
@@ -12,7 +13,7 @@ EasyEvent::IOLoop::IOLoop(Logger *logger, bool makeCurrent)
     : _logger(logger)
     , _waker(std::make_shared<Interrupter>()) {
 
-#ifdef EASY_EVENT_USE_EPOLL
+#if defined(EASY_EVENT_USE_EPOLL)
     _epollFd = doEpollCreate();
 #endif
 
@@ -25,18 +26,29 @@ EasyEvent::IOLoop::IOLoop(Logger *logger, bool makeCurrent)
 
 EasyEvent::IOLoop::~IOLoop() noexcept {
 
-#ifdef EASY_EVENT_USE_EPOLL
+#if defined(EASY_EVENT_USE_EPOLL)
     if (_epollFd != -1) {
         ::close(_epollFd);
     }
 #endif
-
+    if (_resolveThread) {
+        _resolveQueries.terminate();
+        _resolveThread->join();
+    }
 }
 
 void EasyEvent::IOLoop::addHandler(const SelectablePtr &handler, IOEvents events) {
     assert(_handlers.find(handler->getSocket()) == _handlers.end());
 
-#ifdef EASY_EVENT_USE_EPOLL
+#if defined(EASY_EVENT_USE_SELECT)
+    if ((events & IO_EVENT_READ) != 0) {
+        verify(_readFdSet.set(handler->getSocket()));
+    }
+    if ((events & IO_EVENT_WRITE) != 0) {
+        verify(_writeFdSet.set(handler->getSocket()));
+    }
+    verify(_errorFdSet.set(handler->getSocket()));
+#elif defined(EASY_EVENT_USE_EPOLL)
     epoll_event ev = {0, {0}};
     ev.events = events | IO_EVENT_ERROR;
     ev.data.fd = handler->getSocket();
@@ -59,7 +71,18 @@ void EasyEvent::IOLoop::addHandler(const SelectablePtr &handler, IOEvents events
 void EasyEvent::IOLoop::updateHandler(const SelectablePtr &handler, IOEvents events) {
     assert(_handlers.find(handler->getSocket()) != _handlers.end());
 
-#ifdef EASY_EVENT_USE_EPOLL
+#if defined(EASY_EVENT_USE_SELECT)
+    if ((events & IO_EVENT_READ) != 0) {
+        _readFdSet.set(handler->getSocket());
+    } else {
+        _readFdSet.clr(handler->getSocket());
+    }
+    if ((events & IO_EVENT_WRITE) != 0) {
+        _writeFdSet.set(handler->getSocket());
+    } else {
+        _writeFdSet.clr(handler->getSocket());
+    }
+#elif defined(EASY_EVENT_USE_EPOLL)
     epoll_event ev = {0, {0}};
     ev.events = events | IO_EVENT_ERROR;
     ev.data.fd = handler->getSocket();
@@ -81,7 +104,11 @@ void EasyEvent::IOLoop::updateHandler(const SelectablePtr &handler, IOEvents eve
 void EasyEvent::IOLoop::removeHandler(const SelectablePtr &handler) {
     assert(_handlers.find(handler->getSocket()) != _handlers.end());
 
-#ifdef EASY_EVENT_USE_EPOLL
+#if defined(EASY_EVENT_USE_SELECT)
+    _readFdSet.clr(handler->getSocket());
+    _writeFdSet.clr(handler->getSocket());
+    verify(_errorFdSet.clr(handler->getSocket()));
+#elif defined(EASY_EVENT_USE_EPOLL)
     epoll_event ev = {0, {0}};
     int result = epoll_ctl(_epollFd, EPOLL_CTL_DEL, handler->getSocket(), &ev);
     if (result != 0) {
@@ -118,15 +145,28 @@ void EasyEvent::IOLoop::start() {
         makeCurrent();
     }
     _threadIdent = std::this_thread::get_id();
+    _resolveQueries.reset();
     _running = true;
+
+    if (!_resolveQueries.empty()) {
+        startResolveThread();
+    }
 
     std::vector<Task<void()>> callbacks;
     std::vector<TimerPtr> readyTimers;
     Time pollTimeout;
     bool hasCallback;
+    int numEvents;
 
-#ifdef EASY_EVENT_USE_EPOLL
+#if defined(EASY_EVENT_USE_SELECT)
+    WinFdSetAdapter readFdSet;
+    WinFdSetAdapter writeFdSet;
+    WinFdSetAdapter errorFdSet;
+    std::unordered_map<SocketType, IOEvents> events;
+#elif defined(EASY_EVENT_USE_EPOLL)
     epoll_event events[256];
+#else
+    std::vector<struct pollfd> pollFdSet;
 #endif
 
     while (true) {
@@ -182,8 +222,66 @@ void EasyEvent::IOLoop::start() {
             break;
         }
 
-#ifdef EASY_EVENT_USE_EPOLL
-        int numEvents = epoll_wait(_epollFd, events, 256, (int)pollTimeout.milliSeconds());
+#if defined(EASY_EVENT_USE_SELECT)
+        readFdSet = _readFdSet;
+        writeFdSet = _writeFdSet;
+        errorFdSet = _errorFdSet;
+        if (!pollTimeout) {
+            numEvents = select(0, readFdSet, writeFdSet, errorFdSet, nullptr);
+        } else {
+            struct timeval tv;
+            tv.tv_sec = (long)pollTimeout.seconds();
+            tv.tv_usec = (long)(pollTimeout.microSeconds() - pollTimeout.seconds() * 1000000);
+            numEvents = select(0, readFdSet, writeFdSet, errorFdSet, &tv);
+        }
+        if (numEvents < 0) {
+            if (WSAGetLastError() == WSAEINTR) {
+                continue;
+            }
+            ec.assign(WSAGetLastError(), getSocketErrorCategory());
+            throwError(ec, "select");
+        }
+        if (numEvents > 0) {
+            events.clear();
+            for (u_int i = 0; i < readFdSet.size(); ++i) {
+                events[readFdSet.get(i)] = IO_EVENT_READ;
+            }
+
+            for (u_int i = 0; i < writeFdSet.size(); ++i) {
+                auto iter = events.find(writeFdSet.get(i));
+                if (iter != events.end()) {
+                    iter->second |= IO_EVENT_WRITE;
+                } else {
+                    events[writeFdSet.get(i)] = IO_EVENT_WRITE;
+                }
+            }
+
+            for (u_int i = 0; i < errorFdSet.size(); ++i) {
+                auto iter = events.find(errorFdSet.get(i));
+                if (iter != events.end()) {
+                    iter->second |= IO_EVENT_ERROR;
+                } else {
+                    events[errorFdSet.get(i)] = IO_EVENT_ERROR;
+                }
+            }
+
+            for (auto &event: events) {
+                auto iter = _handlers.find(event.first);
+                if (iter == _handlers.end()) {
+                    continue;
+                }
+                try {
+                    iter->second->handleEvents(event.second);
+                } catch (std::exception& e) {
+                    LOG_ERROR(_logger) << "Exception in handler: " << e.what();
+                } catch (...) {
+                    LOG_ERROR(_logger) << "Unknown error in handler";
+                }
+            }
+        }
+
+#elif defined(EASY_EVENT_USE_EPOLL)
+        numEvents = epoll_wait(_epollFd, events, 256, (int)pollTimeout.milliSeconds());
         if (numEvents < 0) {
             if (errno == EINTR) {
                 continue;
@@ -206,8 +304,8 @@ void EasyEvent::IOLoop::start() {
             }
         }
 #else
-        _updatedFdSet = _pollFdSet;
-        int numEvents = poll(&_updatedFdSet[0], _updatedFdSet.size(), (int)pollTimeout.milliSeconds());
+        pollFdSet = _pollFdSet;
+        numEvents = poll(&pollFdSet[0], pollFdSet.size(), (int)pollTimeout.milliSeconds());
         if (numEvents < 0) {
             if (errno == EINTR) {
                 continue;
@@ -215,7 +313,7 @@ void EasyEvent::IOLoop::start() {
             ec.assign(errno, getSocketErrorCategory());
             throwError(ec, "poll");
         }
-        for (auto it = _updatedFdSet.begin(); it != _updatedFdSet.end() && numEvents > 0; ++it) {
+        for (auto it = pollFdSet.begin(); it != pollFdSet.end() && numEvents > 0; ++it) {
             if (it->revents == 0) {
                 continue;
             }
@@ -233,7 +331,12 @@ void EasyEvent::IOLoop::start() {
             }
         }
 #endif
+    }
 
+    _resolveQueries.terminate();
+    if (_resolveThread) {
+        _resolveThread->join();
+        _resolveThread.reset();
     }
 
     _stopped = false;
@@ -261,7 +364,34 @@ void EasyEvent::IOLoop::addCallback(Task<void()> &&callback) {
     }
 }
 
-#ifdef EASY_EVENT_USE_EPOLL
+EasyEvent::ResolveHandle EasyEvent::IOLoop::resolve(std::string host, unsigned short port, ProtocolSupport protocol,
+                                                    bool preferIPv6, ResolveQuery::CallbackType &&callback) {
+    auto query = std::make_shared<ResolveQuery>(this, std::move(host), port, protocol, preferIPv6, std::move(callback));
+    if (!query->doResolve()) {
+        _resolveQueries.forceEnqueue(query);
+        if (!_resolveThread && _running) {
+            startResolveThread();
+        }
+    }
+    return ResolveHandle(query);
+}
+
+void EasyEvent::IOLoop::startResolveThread() {
+    assert(!_resolveThread);
+    SignalBlocker sigBlocker;
+    _resolveThread = std::make_unique<std::thread>([this]() {
+        while (_running) {
+            ResolveQueryPtr query;
+            query = _resolveQueries.dequeue();
+            if (!query) {
+                break;
+            }
+            query->doResolveBackground();
+        }
+    });
+}
+
+#if defined(EASY_EVENT_USE_EPOLL)
 
 int EasyEvent::IOLoop::doEpollCreate() {
 #if defined(EPOLL_CLOEXEC)
