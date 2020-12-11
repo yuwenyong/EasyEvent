@@ -23,28 +23,13 @@ namespace EasyEvent {
             _storage = (uint8*)malloc(capacity);
         }
 
-        Buffer(Buffer&& rhs) noexcept {
-            _storage = rhs._storage;
-            _capacity = rhs._capacity;
-            _wpos = rhs._wpos;
-            _rpos = rhs._rpos;
-            rhs._storage = nullptr;
-            rhs._capacity = 0;
-            rhs.reset();
+        Buffer(Buffer&& rhs) noexcept
+            : Buffer() {
+            rhs.swap(*this);
         }
 
         Buffer& operator=(Buffer&& rhs) noexcept {
-            if (_storage) {
-                ::free(_storage);
-            }
-            _storage = rhs._storage;
-            _capacity = rhs._capacity;
-            _wpos = rhs._wpos;
-            _rpos = rhs._rpos;
-
-            rhs._storage = nullptr;
-            rhs._capacity = 0;
-            rhs.reset();
+            rhs.swap(*this);
             return *this;
         }
 
@@ -52,6 +37,13 @@ namespace EasyEvent {
             if (_storage) {
                 ::free(_storage);
             }
+        }
+
+        void swap(Buffer& rhs) {
+            std::swap(_storage, rhs._storage);
+            std::swap(_capacity, rhs._capacity);
+            std::swap(_wpos, rhs._wpos);
+            std::swap(_rpos, rhs._rpos);
         }
 
         void reset() {
@@ -85,6 +77,9 @@ namespace EasyEvent {
         void readCompleted(size_t bytes) {
             _rpos += bytes;
             Assert(_capacity >= _rpos);
+            if (_rpos == _wpos) {
+                reset();
+            }
         }
 
         void writeCompleted(size_t bytes) {
@@ -124,6 +119,81 @@ namespace EasyEvent {
         size_t _capacity;
         size_t _wpos{0};
         size_t _rpos{0};
+    };
+
+
+    class EASY_EVENT_API WriteBuffer: private NonCopyable {
+    public:
+        using SecondaryBuffer = std::variant<std::string, std::vector<uint8>, std::vector<int8>>;
+
+        WriteBuffer()
+            :WriteBuffer(4096) {
+
+        }
+
+        explicit WriteBuffer(size_t initialSize)
+            : _primaryBuffer(initialSize) {
+
+        }
+
+        WriteBuffer(WriteBuffer&& rhs) noexcept
+            : WriteBuffer() {
+            rhs.swap(*this);
+        }
+
+        WriteBuffer& operator=(WriteBuffer&& rhs) noexcept {
+            rhs.swap(*this);
+            return *this;
+        }
+
+        void swap(WriteBuffer& rhs) {
+            _primaryBuffer.swap(rhs._primaryBuffer);
+            std::swap(_secondaryBuffers, rhs._secondaryBuffers);
+            std::swap(_firstPos, rhs._firstPos);
+            std::swap(_size, rhs._size);
+        }
+
+        size_t size() const {
+            return _size;
+        }
+
+        bool empty() const {
+            return _size == 0;
+        }
+
+        void write(std::string&& data) {
+            _size += data.size();
+            _secondaryBuffers.emplace_back(std::move(data));
+        }
+
+        void write(std::vector<uint8>&& data) {
+            _size += data.size();
+            _secondaryBuffers.emplace_back(std::move(data));
+        }
+
+        void write(std::vector<int8>&& data) {
+            _size += data.size();
+            _secondaryBuffers.emplace_back(std::move(data));
+        }
+
+        void write(const std::string& data) {
+            write(data.data(), data.size());
+        }
+
+        void write(const std::vector<uint8>& data) {
+            write(data.data(), data.size());
+        }
+
+        void write(const std::vector<int8>& data) {
+            write(data.data(), data.size());
+        }
+
+        void write(void const* data, size_t size);
+    private:
+        Buffer _primaryBuffer;
+        std::deque<SecondaryBuffer> _secondaryBuffers;
+        size_t _firstPos{0};
+        size_t _size{0};
     };
 
 }

@@ -18,3 +18,14 @@ void EasyEvent::Buffer::prepare(size_t size) {
         }
     }
 }
+
+
+void EasyEvent::WriteBuffer::write(void const*data, size_t size) {
+    _size += size;
+    if (_secondaryBuffers.empty() && size <= _primaryBuffer.getRemainingSpace()) {
+        _primaryBuffer.write(data, size);
+    } else {
+        std::string tmp((const char*)data, size);
+        _secondaryBuffers.emplace_back(std::move(tmp));
+    }
+}
