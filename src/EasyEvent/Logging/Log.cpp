@@ -17,7 +17,7 @@ EasyEvent::Logger * EasyEvent::Log::getOrCreateLogger(const std::string &name, L
     if (iter == _loggers.end()) {
         _loggers[name] = std::make_unique<Logger>(name, level, flags);
         iter = _loggers.find(name);
-        assert(iter != _loggers.end());
+        Assert(iter != _loggers.end());
     }
     return iter->second.get();
 }
@@ -29,7 +29,7 @@ EasyEvent::Logger * EasyEvent::Log::createLogger(const std::string &name,LogLeve
     if (iter == _loggers.end()) {
         _loggers[name] = std::make_unique<Logger>(name, level, flags);
         iter = _loggers.find(name);
-        assert(iter != _loggers.end());
+        Assert(iter != _loggers.end());
         ec = {0, ec.category()};
         return iter->second.get();
     } else {
@@ -47,8 +47,8 @@ EasyEvent::Logger * EasyEvent::Log::createLogger(const std::string &name, LogLev
 
 void EasyEvent::Log::write(std::unique_ptr<LogMessage> &&message) {
     Logger* logger = message->getLogger();
-    assert(logger != nullptr);
-    assert(getLogger(logger->getName()) == logger);
+    Assert(logger != nullptr);
+    Assert(getLogger(logger->getName()) == logger);
     if (logger->isAsync()) {
         if (!_thread) {
             std::lock_guard<std::mutex> lock(_mutex);

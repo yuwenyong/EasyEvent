@@ -9,7 +9,7 @@
 
 thread_local EasyEvent::IOLoop* EasyEvent::IOLoop::_current = nullptr;
 
-EasyEvent::IOLoop::IOLoop(Logger *logger, bool makeCurrent)
+EasyEvent::IOLoop::IOLoop(Logger *logger, bool installSignalHandlers, bool makeCurrent)
     : _logger(logger)
     , _waker(std::make_shared<Interrupter>()) {
 
@@ -19,12 +19,20 @@ EasyEvent::IOLoop::IOLoop(Logger *logger, bool makeCurrent)
 
     addHandler(_waker, IO_EVENT_READ);
 
+    if (installSignalHandlers) {
+        this->installSignalHandlers();
+    }
+
     if (makeCurrent) {
         this->makeCurrent();
     }
 }
 
 EasyEvent::IOLoop::~IOLoop() noexcept {
+
+    for (auto& handle: _signalHandles) {
+        SignalCtrl::instance().remove(handle);
+    }
 
 #if defined(EASY_EVENT_USE_EPOLL)
     if (_epollFd != -1) {
@@ -38,16 +46,16 @@ EasyEvent::IOLoop::~IOLoop() noexcept {
 }
 
 void EasyEvent::IOLoop::addHandler(const SelectablePtr &handler, IOEvents events) {
-    assert(_handlers.find(handler->getSocket()) == _handlers.end());
+    Assert(_handlers.find(handler->getSocket()) == _handlers.end());
 
 #if defined(EASY_EVENT_USE_SELECT)
     if ((events & IO_EVENT_READ) != 0) {
-        verify(_readFdSet.set(handler->getSocket()));
+        Verify(_readFdSet.set(handler->getSocket()));
     }
     if ((events & IO_EVENT_WRITE) != 0) {
-        verify(_writeFdSet.set(handler->getSocket()));
+        Verify(_writeFdSet.set(handler->getSocket()));
     }
-    verify(_errorFdSet.set(handler->getSocket()));
+    Verify(_errorFdSet.set(handler->getSocket()));
 #elif defined(EASY_EVENT_USE_EPOLL)
     epoll_event ev = {0, {0}};
     ev.events = events | IO_EVENT_ERROR;
@@ -69,7 +77,7 @@ void EasyEvent::IOLoop::addHandler(const SelectablePtr &handler, IOEvents events
 }
 
 void EasyEvent::IOLoop::updateHandler(const SelectablePtr &handler, IOEvents events) {
-    assert(_handlers.find(handler->getSocket()) != _handlers.end());
+    Assert(_handlers.find(handler->getSocket()) != _handlers.end());
 
 #if defined(EASY_EVENT_USE_SELECT)
     if ((events & IO_EVENT_READ) != 0) {
@@ -102,12 +110,12 @@ void EasyEvent::IOLoop::updateHandler(const SelectablePtr &handler, IOEvents eve
 }
 
 void EasyEvent::IOLoop::removeHandler(const SelectablePtr &handler) {
-    assert(_handlers.find(handler->getSocket()) != _handlers.end());
+    Assert(_handlers.find(handler->getSocket()) != _handlers.end());
 
 #if defined(EASY_EVENT_USE_SELECT)
     _readFdSet.clr(handler->getSocket());
     _writeFdSet.clr(handler->getSocket());
-    verify(_errorFdSet.clr(handler->getSocket()));
+    Verify(_errorFdSet.clr(handler->getSocket()));
 #elif defined(EASY_EVENT_USE_EPOLL)
     epoll_event ev = {0, {0}};
     int result = epoll_ctl(_epollFd, EPOLL_CTL_DEL, handler->getSocket(), &ev);
@@ -182,7 +190,7 @@ void EasyEvent::IOLoop::start() {
             } catch (std::exception& e) {
                 LOG_ERROR(_logger) << "Exception in callback: " << e.what();
             } catch (...) {
-                LOG_ERROR(_logger) << "Unknown error in callback";
+                LOG_ERROR(_logger) << "Unknown error in callback.";
             }
             callback = nullptr;
         }
@@ -194,7 +202,7 @@ void EasyEvent::IOLoop::start() {
             } catch (std::exception& e) {
                 LOG_ERROR(_logger) << "Exception in timer callback: " << e.what();
             } catch (...) {
-                LOG_ERROR(_logger) << "Unknown error in timer callback";
+                LOG_ERROR(_logger) << "Unknown error in timer callback.";
             }
             timer = nullptr;
         }
@@ -275,7 +283,7 @@ void EasyEvent::IOLoop::start() {
                 } catch (std::exception& e) {
                     LOG_ERROR(_logger) << "Exception in handler: " << e.what();
                 } catch (...) {
-                    LOG_ERROR(_logger) << "Unknown error in handler";
+                    LOG_ERROR(_logger) << "Unknown error in handler.";
                 }
             }
         }
@@ -300,7 +308,7 @@ void EasyEvent::IOLoop::start() {
             } catch (std::exception& e) {
                 LOG_ERROR(_logger) << "Exception in handler: " << e.what();
             } catch (...) {
-                LOG_ERROR(_logger) << "Unknown error in handler";
+                LOG_ERROR(_logger) << "Unknown error in handler.";
             }
         }
 #else
@@ -327,7 +335,7 @@ void EasyEvent::IOLoop::start() {
             } catch (std::exception& e) {
                 LOG_ERROR(_logger) << "Exception in handler: " << e.what();
             } catch (...) {
-                LOG_ERROR(_logger) << "Unknown error in handler";
+                LOG_ERROR(_logger) << "Unknown error in handler.";
             }
         }
 #endif
@@ -376,8 +384,34 @@ EasyEvent::ResolveHandle EasyEvent::IOLoop::resolve(std::string host, unsigned s
     return ResolveHandle(query);
 }
 
+void EasyEvent::IOLoop::installSignalHandlers() {
+    _signalHandles.emplace_back(SignalCtrl::instance().add(SIGTERM, [this](int sigNum) {
+        LOG_INFO(_logger) << "Received SIGTERM, shutting down.";
+        stop();
+    }));
+
+    _signalHandles.emplace_back(SignalCtrl::instance().add(SIGINT, [this](int sigNum) {
+        LOG_INFO(_logger) << "Received SIGINT, shutting down.";
+        stop();
+    }));
+
+#if defined(SIGBREAK)
+    _signalHandles.emplace_back(SignalCtrl::instance().add(SIGBREAK, [this](int sigNum) {
+            LOG_INFO(_logger) << "Received SIGBREAK, shutting down.";
+            stop();
+        }));
+#endif
+
+#if defined(SIGQUIT)
+    _signalHandles.emplace_back(SignalCtrl::instance().add(SIGQUIT, [this](int sigNum) {
+        LOG_INFO(_logger) << "Received SIGQUIT, shutting down.";
+        stop();
+    }));
+#endif
+}
+
 void EasyEvent::IOLoop::startResolveThread() {
-    assert(!_resolveThread);
+    Assert(!_resolveThread);
     SignalBlocker sigBlocker;
     _resolveThread = std::make_unique<std::thread>([this]() {
         while (_running) {

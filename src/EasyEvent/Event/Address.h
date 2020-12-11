@@ -5,7 +5,7 @@
 #ifndef EASYEVENT_EVENT_ADDRESS_H
 #define EASYEVENT_EVENT_ADDRESS_H
 
-#include "EasyEvent/Event/EvtCommon.h"
+#include "EasyEvent/Event/Event.h"
 
 
 namespace EasyEvent {

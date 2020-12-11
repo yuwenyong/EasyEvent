@@ -5,7 +5,7 @@
 #ifndef EASYEVENT_EVENT_SOCKETOPS_H
 #define EASYEVENT_EVENT_SOCKETOPS_H
 
-#include "EasyEvent/Event/EvtCommon.h"
+#include "EasyEvent/Event/Event.h"
 #include "EasyEvent/Event/Address.h"
 #include "EasyEvent/Common/NonCopyable.h"
 

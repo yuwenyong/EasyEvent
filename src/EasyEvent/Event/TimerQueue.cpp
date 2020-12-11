@@ -30,7 +30,7 @@ std::vector<EasyEvent::TimerPtr> EasyEvent::TimerQueue::getReadyTimers() {
             if (_timers.size() > 1) {
                 std::swap(_timers[0], _timers[_timers.size() - 1]);
             }
-            assert(_cancellations > 0);
+            Assert(_cancellations > 0);
             --_cancellations;
             _timers.pop_back();
             if (_timers.size() > 1) {

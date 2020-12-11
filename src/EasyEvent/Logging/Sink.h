@@ -39,7 +39,7 @@ namespace EasyEvent {
         virtual void write(LogMessage *message, const std::string& text) = 0;
 
         bool shouldLog(LogMessage* message) const {
-            assert(message != nullptr);
+            Assert(message != nullptr);
             return _level <= message->getLevel();
         }
 

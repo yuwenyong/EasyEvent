@@ -68,7 +68,7 @@ bool EasyEvent::TimedRotatingFileSink::shouldRollover() {
                 break;
             }
             default: {
-                assert(false);
+                Assert(false);
                 break;
             }
         }
@@ -104,7 +104,7 @@ void EasyEvent::TimedRotatingFileSink::computeRollover() {
             break;
         }
         default: {
-            assert(false);
+            Assert(false);
             break;
         }
     }
@@ -127,7 +127,7 @@ void EasyEvent::TimedRotatingFileSink::openFile() {
             break;
         }
         default: {
-            assert(false);
+            Assert(false);
             break;
         }
     }

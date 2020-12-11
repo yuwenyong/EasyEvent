@@ -11,8 +11,8 @@ EasyEvent::ColorTypes EasyEvent::ConsoleSink::gColors[EasyEvent::NUM_ENABLED_LOG
     EasyEvent::ColorTypes::LGRAY,
     EasyEvent::ColorTypes::GREEN,
     EasyEvent::ColorTypes::YELLOW,
-    EasyEvent::ColorTypes::RED,
-    EasyEvent::ColorTypes::MAGENTA
+    EasyEvent::ColorTypes::MAGENTA,
+    EasyEvent::ColorTypes::RED
 };
 
 void EasyEvent::ConsoleSink::write(LogMessage *message, const std::string &text) {

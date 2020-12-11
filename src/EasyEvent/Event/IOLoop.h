@@ -5,7 +5,7 @@
 #ifndef EASYEVENT_EVENT_IOLOOP_H
 #define EASYEVENT_EVENT_IOLOOP_H
 
-#include "EasyEvent/Event/EvtCommon.h"
+#include "EasyEvent/Event/Event.h"
 #include "EasyEvent/Common/Time.h"
 #include "EasyEvent/Common/Task.h"
 #include "EasyEvent/Common/ConcurrentQueue.h"
@@ -13,6 +13,7 @@
 #include "EasyEvent/Event/TimerQueue.h"
 #include "EasyEvent/Event/Interrupter.h"
 #include "EasyEvent/Event/Resolver.h"
+#include "EasyEvent/Event/SignalCtrl.h"
 
 
 namespace EasyEvent {
@@ -24,7 +25,7 @@ namespace EasyEvent {
         IOLoop(const IOLoop&) = delete;
         IOLoop& operator=(const IOLoop&) = delete;
 
-        explicit IOLoop(Logger* logger=nullptr, bool makeCurrent=false);
+        explicit IOLoop(Logger* logger=nullptr, bool installSignalHandlers=false, bool makeCurrent=false);
 
         ~IOLoop() noexcept;
 
@@ -72,6 +73,8 @@ namespace EasyEvent {
         }
 
     private:
+        void installSignalHandlers();
+
         void startResolveThread();
 
 #if defined(EASY_EVENT_USE_EPOLL)
@@ -100,6 +103,7 @@ namespace EasyEvent {
         std::vector<Task<void()>> _callbacks;
         TimerQueue _timers;
         std::shared_ptr<Interrupter> _waker;
+        std::vector<SignalHandle> _signalHandles;
         std::thread::id _threadIdent;
 
         volatile bool _running{false};

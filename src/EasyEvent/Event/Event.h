@@ -2,8 +2,8 @@
 // Created by yuwenyong on 2020/11/23.
 //
 
-#ifndef EASYEVENT_EVENT_EVTCOMMON_H
-#define EASYEVENT_EVENT_EVTCOMMON_H
+#ifndef EASYEVENT_EVENT_EVENT_H
+#define EASYEVENT_EVENT_EVENT_H
 
 #include "EasyEvent/Common/Config.h"
 #include "EasyEvent/Common/Errors.h"
@@ -368,4 +368,4 @@ namespace std {
     struct is_error_code_enum<EasyEvent::EventErrors>: public true_type {};
 }
 
-#endif //EASYEVENT_EVENT_EVTCOMMON_H
+#endif //EASYEVENT_EVENT_EVENT_H

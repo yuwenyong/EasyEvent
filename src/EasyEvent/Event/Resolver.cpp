@@ -20,7 +20,7 @@ std::vector<EasyEvent::Address> EasyEvent::Resolver::getAddresses(const std::str
 
     struct addrinfo* info = nullptr;
     struct addrinfo hints = {};
-    std::shared_ptr<void> localFree(nullptr, [info](void*) {
+    std::shared_ptr<void> localFree(nullptr, [&info](void*) {
         if (info) {
             SocketOps::FreeAddrInfo(info);
         }

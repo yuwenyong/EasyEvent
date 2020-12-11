@@ -5,7 +5,7 @@
 #ifndef EASYEVENT_EVENT_RESOLVER_H
 #define EASYEVENT_EVENT_RESOLVER_H
 
-#include "EasyEvent/Event/EvtCommon.h"
+#include "EasyEvent/Event/Event.h"
 #include "EasyEvent/Event/Address.h"
 #include "EasyEvent/Common/Task.h"
 
@@ -42,7 +42,7 @@ namespace EasyEvent {
             , _protocol(protocol)
             , _preferIPv6(preferIPv6)
             , _callback(std::move(callback)) {
-            assert(_callback);
+            Assert(_callback);
         }
 
         bool doResolve();

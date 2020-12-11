@@ -2,7 +2,7 @@
 // Created by yuwenyong on 2020/11/23.
 //
 
-#include "EasyEvent/Event/EvtCommon.h"
+#include "EasyEvent/Event/Event.h"
 
 
 const char * EasyEvent::SocketErrorCategory::name() const noexcept {
@@ -16,7 +16,7 @@ std::string EasyEvent::SocketErrorCategory::message(int ev) const {
         | FORMAT_MESSAGE_FROM_SYSTEM
         | FORMAT_MESSAGE_IGNORE_INSERTS, 0, ev,
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (char*)&msg, 0, 0);
-    std::shared_ptr<void> localFree(nullptr, [msg](void*) {
+    std::shared_ptr<void> localFree(nullptr, [&msg](void*) {
         ::LocalFree(msg);
     });
     if (length && msg[length - 1] == '\n') {

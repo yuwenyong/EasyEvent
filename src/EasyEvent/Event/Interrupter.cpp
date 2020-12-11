@@ -77,7 +77,7 @@ void EasyEvent::Interrupter::openSockets() {
 }
 
 void EasyEvent::Interrupter::handleEvents(IOEvents events) {
-    assert((events & IO_EVENT_READ) != 0);
+    Assert((events & IO_EVENT_READ) != 0);
     reset();
 }
 

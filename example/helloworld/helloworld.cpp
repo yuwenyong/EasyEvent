@@ -8,6 +8,13 @@
 
 using namespace EasyEvent;
 
+void test(IOLoop* ioLoop, Logger* logger) {
+    static int i = 0;
+    LOG_ERROR(logger) << "This is a test log " << i++ << ";";
+    ioLoop->callLater(Time::seconds(2), [ioLoop, logger]() {
+        test(ioLoop, logger);
+    });
+}
 
 int main (int argc, char **argv) {
     Logger* logger = Log::instance().createLogger("Test", LOG_LEVEL_DEBUG, LOGGER_FLAGS_ASYNC);
@@ -16,64 +23,52 @@ int main (int argc, char **argv) {
 //    logger->addSink(FileSink::create("./test.log", true));
 //    logger->addSink(RotatingFileSink::create("./rtest.log", 1024, 3));
 //    logger->addSink(TimedRotatingFileSink::create("./trtest.log", TimedRotatingWhen::Minute));
-    EasyEvent::TaskPool taskPool;
-    taskPool.start(1);
-    auto v1 = taskPool.submit([logger]() {
+
+    IOLoop ioLoop(logger, true, true);
+    ioLoop.addCallback([logger]() {
         int i = 1;
         LOG_DEBUG(logger) << "Task " << i;
-        return 5;
     });
-    auto v2 = taskPool.submit([logger]() {
+    ioLoop.addCallback([logger]() {
         int i = 2;
         LOG_INFO(logger) << "Task " << i;
-        return 6;
     });
-    auto v3 = taskPool.submit([logger]() {
+    ioLoop.addCallback([logger]() {
         int i = 3;
         LOG_WARN(logger) << "Task " << i;
     });
-
-    taskPool.submit([logger]() {
+    ioLoop.addCallback([logger]() {
         int i = 4;
         LOG_ERROR(logger) << "Task " << i;
-        return 8;
     });
-    auto result = taskPool.post([logger]() {
+    ioLoop.addCallback([logger]() {
         LOG_CRITICAL(logger) << "Last task";
     });
-    assert(result);
-    taskPool.stop();
-    LOG_INFO(logger) << "Task 1: " << v1.get();
-    LOG_INFO(logger) << "Task 2: " << v2.get();
-    LOG_INFO(logger) << "Task 3: " << (isReady(v3) ? 1 : 0);
-    LOG_CRITICAL(logger) << "Last ....";
-    taskPool.wait();
-
-    std::unique_ptr<int> a = std::make_unique<int>(6);
-    Task<void ()> t = [logger, a=std::move(a)]() {
-        LOG_INFO(logger) << "Custom task: " << *a;
-        return 0;
-    };
-    t();
-
-    std::error_code ec;
-    auto addrs = Resolver::getAddresses("localhost", 200, EnableBoth, false, true, ec);
-    LOG_INFO(logger) << "AddressCount: " << addrs.size();
-    for (auto& addr: addrs) {
-        LOG_INFO(logger) << addr;
-    }
-
-    bool running = true;
-    int i = 0;
-
-    SignalCtrl::instance().add(SIGINT, [&running, logger](int sig){
-        LOG_CRITICAL(logger) << "Exit!!!";
-        running = false;
+    ioLoop.resolve("localhost", 200, EnableBoth, false,
+                   [logger](std::vector<Address> addrs, std::error_code ec) {
+        if (!ec) {
+            for (auto& addr: addrs) {
+                LOG_INFO(logger) << "Local: " << addr;
+            }
+        } else {
+            LOG_ERROR(logger) << ec;
+        }
     });
 
-    while (running) {
-        LOG_ERROR(logger) << "This is a test log " << ++i << ";";
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
+    ioLoop.resolve("www.baidu.com", 200, EnableBoth, true,
+                   [logger](std::vector<Address> addrs, std::error_code ec) {
+                       if (!ec) {
+                           for (auto& addr: addrs) {
+                               LOG_INFO(logger) << "Baidu: " << addr;
+                           }
+                       } else {
+                           LOG_ERROR(logger) << ec;
+                       }
+                   });
+
+    ioLoop.callLater(Time::seconds(2), [logger, &ioLoop]() {
+        test(&ioLoop, logger);
+    });
+    ioLoop.start();
     return 0;
 }

@@ -52,7 +52,7 @@ void EasyEvent::SignalCtrl::remove(SignalHandle handle, std::error_code &ec) {
         _registrations.erase(iter);
     } else {
         auto newEnd = std::remove(iter->second.begin(), iter->second.end(), op);
-        assert(newEnd != iter->second.end());
+        Assert(newEnd != iter->second.end());
         iter->second.erase(newEnd, iter->second.end());
     }
     ec = {0, ec.category()};
