@@ -44,8 +44,10 @@ const char * EasyEvent::EventErrorCategory::name() const noexcept {
 
 std::string EasyEvent::EventErrorCategory::message(int ev) const {
     switch (static_cast<EventErrors>(ev)) {
-        case EventErrors::IOLoopAlreadyStarted:
-            return "ioloop already started";
+        case EventErrors::AlreadyStarted:
+            return "already started";
+        case EventErrors::AlreadyReading:
+            return "already reading";
         default:
             return "(unrecognized error)";
     }

@@ -165,7 +165,8 @@ namespace EasyEvent {
     };
 
     enum class EventErrors {
-        IOLoopAlreadyStarted = 1,
+        AlreadyStarted = 1,
+        AlreadyReading = 2,
     };
 
     class EASY_EVENT_API SocketErrorCategory: public std::error_category {

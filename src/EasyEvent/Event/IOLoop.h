@@ -29,6 +29,10 @@ namespace EasyEvent {
 
         ~IOLoop() noexcept;
 
+        Logger* getLogger() const {
+            return _logger;
+        }
+
         void addHandler(const SelectablePtr& handler, IOEvents events);
 
         void updateHandler(const SelectablePtr& handler, IOEvents events);

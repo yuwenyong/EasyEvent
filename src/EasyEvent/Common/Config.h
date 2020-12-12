@@ -229,6 +229,7 @@ typedef uint8_t uint8;
 #include <variant>
 #include <string_view>
 #include <string>
+#include <regex>
 #include <system_error>
 #include <chrono>
 #include <thread>

@@ -189,6 +189,12 @@ namespace EasyEvent {
         }
 
         void write(void const* data, size_t size);
+
+        void advance(size_t size);
+
+        void* getReadPtr();
+
+        size_t getReadSize() const;
     private:
         Buffer _primaryBuffer;
         std::deque<SecondaryBuffer> _secondaryBuffers;

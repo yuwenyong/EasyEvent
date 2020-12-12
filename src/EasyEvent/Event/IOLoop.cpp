@@ -141,7 +141,7 @@ void EasyEvent::IOLoop::removeHandler(const SelectablePtr &handler) {
 void EasyEvent::IOLoop::start() {
     std::error_code ec;
     if (_running) {
-        ec = EventErrors::IOLoopAlreadyStarted;
+        ec = EventErrors::AlreadyStarted;
         throwError(ec, "IOLoop");
     }
     if (_stopped) {
