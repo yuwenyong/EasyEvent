@@ -168,6 +168,9 @@ namespace EasyEvent {
         AlreadyStarted = 1,
         AlreadyReading = 2,
         UnsatisfiableRead = 3,
+        ReadCallbackFailed = 4,
+        WriteCallbackFailed = 5,
+        CloseCallbackFailed = 6,
     };
 
     class EASY_EVENT_API SocketErrorCategory: public std::error_category {
@@ -236,8 +239,8 @@ namespace EasyEvent {
     class EASY_EVENT_API Selectable {
     public:
         virtual void handleEvents(IOEvents events) = 0;
-        virtual SocketType getSocket() const = 0;
-        virtual void closeSocket() = 0;
+        virtual SocketType getFD() const = 0;
+        virtual void closeFD() = 0;
         virtual ~Selectable() noexcept = default;
     };
 

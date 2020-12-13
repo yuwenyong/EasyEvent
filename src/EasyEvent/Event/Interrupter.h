@@ -23,9 +23,9 @@ namespace EasyEvent {
 
         void handleEvents(IOEvents events) override;
 
-        SocketType getSocket() const override;
+        SocketType getFD() const override;
 
-        void closeSocket() override;
+        void closeFD() override;
 
         void interrupt();
     protected:

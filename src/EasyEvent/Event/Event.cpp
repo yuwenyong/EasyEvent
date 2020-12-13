@@ -50,6 +50,12 @@ std::string EasyEvent::EventErrorCategory::message(int ev) const {
             return "already reading";
         case EventErrors::UnsatisfiableRead:
             return "unsatisfiable read";
+        case EventErrors::ReadCallbackFailed:
+            return "read callback failed";
+        case EventErrors::WriteCallbackFailed:
+            return "write callback failed";
+        case EventErrors::CloseCallbackFailed:
+            return "close callback failed";
         default:
             return "(unrecognized error)";
     }

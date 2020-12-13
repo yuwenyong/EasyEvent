@@ -7,7 +7,7 @@
 
 
 EasyEvent::Interrupter::~Interrupter() noexcept {
-    closeSocket();
+    closeFD();
 }
 
 void EasyEvent::Interrupter::openSockets() {
@@ -81,11 +81,11 @@ void EasyEvent::Interrupter::handleEvents(IOEvents events) {
     reset();
 }
 
-SocketType EasyEvent::Interrupter::getSocket() const {
+SocketType EasyEvent::Interrupter::getFD() const {
     return _reader;
 }
 
-void EasyEvent::Interrupter::closeSocket() {
+void EasyEvent::Interrupter::closeFD() {
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
     std::error_code ec;
     if (_reader != InvalidSocket) {

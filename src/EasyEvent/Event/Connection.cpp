@@ -4,6 +4,7 @@
 
 #include "EasyEvent/Event/Connection.h"
 #include "EasyEvent/Common/StrUtil.h"
+#include "EasyEvent/Logging/LogStream.h"
 
 
 EasyEvent::Connection::Connection(IOLoop *ioLoop, SocketType socket, size_t maxReadBufferSize, size_t maxWriteBufferSize)
@@ -30,25 +31,71 @@ void EasyEvent::Connection::handleEvents(IOEvents events) {
 
 }
 
-SocketType EasyEvent::Connection::getSocket() const {
+SocketType EasyEvent::Connection::getFD() const {
     return _socket;
 }
 
-void EasyEvent::Connection::closeSocket() {
+void EasyEvent::Connection::closeFD() {
     std::error_code ec;
-    closeSocket(ec);
-    throwError(ec, "Connection");
+    SocketOps::Close(_socket, false, ec);
+    if (!ec) {
+        _socket = InvalidSocket;
+    } else {
+        throwError(ec, "Connection");
+    }
 }
 
-void EasyEvent::Connection::readUntilRegex(const std::string &regex, Task<void(std::string)> &&task, size_t maxBytes,
-                                           std::error_code &ec) {
+void EasyEvent::Connection::readUntilRegex(const std::string &regex, Task<void(std::string)> &&task, size_t maxBytes) {
+    std::error_code ec;
     setReadCallback(std::move(task), ec);
     if (ec) {
-        return;
+        throwError(ec, "Connection");
     }
     _readRegex = std::regex(regex);
     _readMaxBytes = maxBytes;
 
+}
+
+void EasyEvent::Connection::close(const std::error_code& error) {
+    if (!closed()) {
+        if (error) {
+            _error = error;
+        }
+        if (_state != IO_EVENT_NONE) {
+            _ioLoop->removeHandler(shared_from_this());
+            _state = IO_EVENT_NONE;
+        }
+        closeFD();
+        _closed = true;
+    }
+    maybeRunCloseCallback();
+}
+
+void EasyEvent::Connection::maybeRunCloseCallback() {
+    if (closed() && _pendingCallbacks == 0) {
+        if (_closeCallback) {
+            auto callback = std::move(_closeCallback);
+            _closeCallback = nullptr;
+            ++_pendingCallbacks;
+            _ioLoop->addCallback([this, self=shared_from_this(), callback=std::move(callback)]() {
+                --_pendingCallbacks;
+                LocalAddErrorListener addErrorListener(this);
+                try {
+                    callback(_error);
+                } catch (std::exception& e) {
+                    _error = EventErrors::CloseCallbackFailed;
+                    LOG_ERROR(_logger) << "Uncaught exception in close callback: " << e.what();
+                    throw;
+                } catch (...) {
+                    _error = EventErrors::CloseCallbackFailed;
+                    LOG_ERROR(_logger) << "Uncaught exception in close callback: Unknown error.";
+                    throw;
+                }
+            });
+        }
+        _readCallback = nullptr;
+        _writeCallback = nullptr;
+    }
 }
 
 void EasyEvent::Connection::setReadCallback(Task<void(std::string)> &&task, std::error_code &ec) {
@@ -62,12 +109,29 @@ void EasyEvent::Connection::setReadCallback(Task<void(std::string)> &&task, std:
 
 void EasyEvent::Connection::runReadCallback(size_t size) {
     auto result = consume(size);
-    Task<void(std::string)> callback = std::move(_readCallback);
-    _readCallback = nullptr;
-    if (callback) {
+    if (_readCallback) {
+        auto callback = std::move(_readCallback);
+        _readCallback = nullptr;
+        ++_pendingCallbacks;
 
+        _ioLoop->addCallback(
+                [this, self=shared_from_this(), callback=std::move(callback), result=std::move(result)]() mutable {
+                    --_pendingCallbacks;
+                    LocalAddErrorListener addErrorListener(this);
+                    try {
+                        callback(std::move(result));
+                    } catch (std::exception& e) {
+                        _error = EventErrors::ReadCallbackFailed;
+                        LOG_ERROR(_logger) << "Uncaught exception in read callback: " << e.what();
+                        throw;
+                    } catch (...) {
+                        _error = EventErrors::ReadCallbackFailed;
+                        LOG_ERROR(_logger) << "Uncaught exception in read callback: Unknown error.";
+                        throw;
+                    }
+                });
     } else {
-
+        maybeAddErrorListener();
     }
 }
 
@@ -79,6 +143,14 @@ void EasyEvent::Connection::tryInlineRead(std::error_code &ec) {
     if (pos > 0) {
 
     }
+}
+
+void EasyEvent::Connection::readFromBuffer(size_t pos) {
+    _readBytes = 0;
+    _readDelimiter.clear();
+    _readRegex = std::nullopt;
+    _readPartial = false;
+    runReadCallback(pos);
 }
 
 size_t EasyEvent::Connection::findReadPos(std::error_code &ec) {
@@ -112,4 +184,8 @@ size_t EasyEvent::Connection::findReadPos(std::error_code &ec) {
         }
     }
     return 0;
+}
+
+void EasyEvent::Connection::maybeAddErrorListener() {
+
 }

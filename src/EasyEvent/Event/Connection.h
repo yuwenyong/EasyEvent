@@ -24,24 +24,29 @@ namespace EasyEvent {
 
         void handleEvents(IOEvents events) override;
 
-        SocketType getSocket() const override;
+        SocketType getFD() const override;
 
-        void closeSocket() override;
+        void closeFD() override;
 
-        void closeSocket(std::error_code& ec) {
-            SocketOps::Close(_socket, false, ec);
-            if (!ec) {
-                _socket = InvalidSocket;
-            }
+        void readUntilRegex(const std::string& regex, Task<void(std::string)>&& task, size_t maxBytes=0);
+
+        void setCloseCallback(Task<void(std::error_code)>&& callback) {
+            _closeCallback  = std::move(callback);
+            maybeAddErrorListener();
         }
 
-        void readUntilRegex(const std::string& regex, Task<void(std::string)>&& task, size_t maxBytes,
-                            std::error_code& ec);
+        void close(const std::error_code& error);
 
-        void readUntilRegex(const std::string& regex, Task<void(std::string)>&& task, size_t maxBytes=0) {
-            std::error_code ec;
-            readUntilRegex(regex, std::move(task), maxBytes, ec);
-            throwError(ec, "Connection");
+        bool reading() const {
+            return (bool)_readCallback;
+        }
+
+        bool writing() const {
+            return !_writeBuffer.empty();
+        }
+
+        bool closed() const {
+            return _closed;
         }
 
         static constexpr size_t DefaultMaxReadBufferSize = 104857600;
@@ -50,11 +55,30 @@ namespace EasyEvent {
         static constexpr size_t InitialWriteBufferSize = 4096;
 
     protected:
+
+        class LocalAddErrorListener {
+        public:
+            LocalAddErrorListener(Connection* conn)
+                : _conn(conn) {
+
+            }
+
+            ~LocalAddErrorListener() {
+                _conn->maybeAddErrorListener();
+            }
+        protected:
+            Connection* _conn;
+        };
+
+        void maybeRunCloseCallback();
+
         void setReadCallback(Task<void(std::string)>&& task, std::error_code& ec);
 
         void runReadCallback(size_t size);
 
         void tryInlineRead(std::error_code& ec);
+
+        void readFromBuffer(size_t pos);
 
         size_t findReadPos(std::error_code& ec);
 
@@ -74,6 +98,8 @@ namespace EasyEvent {
             return s;
         }
 
+        void maybeAddErrorListener();
+
         IOLoop* _ioLoop;
         Logger* _logger;
         SocketType _socket;
@@ -88,6 +114,8 @@ namespace EasyEvent {
         size_t _readBytes{0};
         bool _readPartial{false};
         Task<void(std::string)> _readCallback;
+        Task<void()> _writeCallback;
+        Task<void(std::error_code)> _closeCallback;
         bool _connecting{false};
         bool _closed{false};
         IOEvents _state{IO_EVENT_NONE};

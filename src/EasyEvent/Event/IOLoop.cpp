@@ -46,62 +46,62 @@ EasyEvent::IOLoop::~IOLoop() noexcept {
 }
 
 void EasyEvent::IOLoop::addHandler(const SelectablePtr &handler, IOEvents events) {
-    Assert(_handlers.find(handler->getSocket()) == _handlers.end());
+    Assert(_handlers.find(handler->getFD()) == _handlers.end());
 
 #if defined(EASY_EVENT_USE_SELECT)
     if ((events & IO_EVENT_READ) != 0) {
-        Verify(_readFdSet.set(handler->getSocket()));
+        Verify(_readFdSet.set(handler->getFD()));
     }
     if ((events & IO_EVENT_WRITE) != 0) {
-        Verify(_writeFdSet.set(handler->getSocket()));
+        Verify(_writeFdSet.set(handler->FD()));
     }
-    Verify(_errorFdSet.set(handler->getSocket()));
+    Verify(_errorFdSet.set(handler->getFD()));
 #elif defined(EASY_EVENT_USE_EPOLL)
     epoll_event ev = {0, {0}};
     ev.events = events | IO_EVENT_ERROR;
-    ev.data.fd = handler->getSocket();
-    int result = epoll_ctl(_epollFd, EPOLL_CTL_ADD, handler->getSocket(), &ev);
+    ev.data.fd = handler->getFD();
+    int result = epoll_ctl(_epollFd, EPOLL_CTL_ADD, handler->getFD(), &ev);
     if (result != 0) {
         std::error_code ec(errno, getSocketErrorCategory());
         throwError(ec, "add epoll handler");
     }
 #else
     struct pollfd pollFd;
-    pollFd.fd = handler->getSocket();
+    pollFd.fd = handler->getFD();
     pollFd.events = events | IO_EVENT_ERROR;
     pollFd.revents = 0;
     _pollFdSet.emplace_back(pollFd);
 #endif
 
-    _handlers[handler->getSocket()] = handler;
+    _handlers[handler->getFD()] = handler;
 }
 
 void EasyEvent::IOLoop::updateHandler(const SelectablePtr &handler, IOEvents events) {
-    Assert(_handlers.find(handler->getSocket()) != _handlers.end());
+    Assert(_handlers.find(handler->getFD()) != _handlers.end());
 
 #if defined(EASY_EVENT_USE_SELECT)
     if ((events & IO_EVENT_READ) != 0) {
-        _readFdSet.set(handler->getSocket());
+        _readFdSet.set(handler->getFD());
     } else {
-        _readFdSet.clr(handler->getSocket());
+        _readFdSet.clr(handler->getFD());
     }
     if ((events & IO_EVENT_WRITE) != 0) {
-        _writeFdSet.set(handler->getSocket());
+        _writeFdSet.set(handler->getFD());
     } else {
-        _writeFdSet.clr(handler->getSocket());
+        _writeFdSet.clr(handler->getFD());
     }
 #elif defined(EASY_EVENT_USE_EPOLL)
     epoll_event ev = {0, {0}};
     ev.events = events | IO_EVENT_ERROR;
-    ev.data.fd = handler->getSocket();
-    int result = epoll_ctl(_epollFd, EPOLL_CTL_MOD, handler->getSocket(), &ev);
+    ev.data.fd = handler->getFD();
+    int result = epoll_ctl(_epollFd, EPOLL_CTL_MOD, handler->getFD(), &ev);
     if (result != 0) {
         std::error_code ec(errno, getSocketErrorCategory());
         throwError(ec, "update epoll handler");
     }
 #else
     for (size_t i = 0; i != _pollFdSet.size(); ++i) {
-        if (_pollFdSet[i].fd == handler->getSocket()) {
+        if (_pollFdSet[i].fd == handler->getFD()) {
             _pollFdSet[i].events = events | IO_EVENT_ERROR;
             break;
         }
@@ -110,22 +110,22 @@ void EasyEvent::IOLoop::updateHandler(const SelectablePtr &handler, IOEvents eve
 }
 
 void EasyEvent::IOLoop::removeHandler(const SelectablePtr &handler) {
-    Assert(_handlers.find(handler->getSocket()) != _handlers.end());
+    Assert(_handlers.find(handler->getFD()) != _handlers.end());
 
 #if defined(EASY_EVENT_USE_SELECT)
-    _readFdSet.clr(handler->getSocket());
-    _writeFdSet.clr(handler->getSocket());
-    Verify(_errorFdSet.clr(handler->getSocket()));
+    _readFdSet.clr(handler->getFD());
+    _writeFdSet.clr(handler->getFD());
+    Verify(_errorFdSet.clr(handler->getFD()));
 #elif defined(EASY_EVENT_USE_EPOLL)
     epoll_event ev = {0, {0}};
-    int result = epoll_ctl(_epollFd, EPOLL_CTL_DEL, handler->getSocket(), &ev);
+    int result = epoll_ctl(_epollFd, EPOLL_CTL_DEL, handler->getFD(), &ev);
     if (result != 0) {
         std::error_code ec(errno, getSocketErrorCategory());
         throwError(ec, "remove epoll handler");
     }
 #else
     for (size_t i = 0; i != _pollFdSet.size(); ++i) {
-        if (_pollFdSet[i].fd == handler->getSocket()) {
+        if (_pollFdSet[i].fd == handler->getFD()) {
             if (i != _pollFdSet.size() - 1) {
                 _pollFdSet[i] = _pollFdSet[_pollFdSet.size() - 1];
             }
@@ -135,7 +135,7 @@ void EasyEvent::IOLoop::removeHandler(const SelectablePtr &handler) {
     }
 #endif
 
-    _handlers.erase(handler->getSocket());
+    _handlers.erase(handler->getFD());
 }
 
 void EasyEvent::IOLoop::start() {
