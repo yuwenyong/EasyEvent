@@ -96,15 +96,15 @@ namespace EasyEvent {
             return result;
         }
 
-        static int SetUnblock(SocketType s, bool unblock, std::error_code& ec) {
-            IoctlArgType arg = unblock ? 1 : 0;
+        static int SetNonblock(SocketType s, bool nonblock, std::error_code& ec) {
+            IoctlArgType arg = nonblock ? 1 : 0;
             return Ioctl(s, FIONBIO, &arg, ec);
         }
 
-        static int SetUnblock(SocketType s, bool unblock) {
+        static int SetNonblock(SocketType s, bool nonblock) {
             std::error_code ec;
-            auto result = SetUnblock(s, unblock, ec);
-            throwError(ec, "SetUnblock");
+            auto result = SetNonblock(s, nonblock, ec);
+            throwError(ec, "SetNonblock");
             return result;
         }
 

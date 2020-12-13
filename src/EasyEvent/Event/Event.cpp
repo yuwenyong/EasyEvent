@@ -48,6 +48,8 @@ std::string EasyEvent::EventErrorCategory::message(int ev) const {
             return "already started";
         case EventErrors::AlreadyReading:
             return "already reading";
+        case EventErrors::UnsatisfiableRead:
+            return "unsatisfiable read";
         default:
             return "(unrecognized error)";
     }

@@ -52,6 +52,28 @@ namespace EasyEvent {
     protected:
         void setReadCallback(Task<void(std::string)>&& task, std::error_code& ec);
 
+        void runReadCallback(size_t size);
+
+        void tryInlineRead(std::error_code& ec);
+
+        size_t findReadPos(std::error_code& ec);
+
+        void checkMaxBytes(size_t size, std::error_code& ec) const {
+            if (_readMaxBytes > 0 && size > _readMaxBytes) {
+                ec = EventErrors::UnsatisfiableRead;
+            }
+        }
+
+        std::string consume(size_t size) {
+            if (size == 0) {
+                return "";
+            }
+            Assert(size <= _readBuffer.getActiveSize());
+            std::string s = {(char*)_readBuffer.getReadPointer(), (char*)_readBuffer.getReadPointer() + size};
+            _readBuffer.readCompleted(size);
+            return s;
+        }
+
         IOLoop* _ioLoop;
         Logger* _logger;
         SocketType _socket;
@@ -64,6 +86,7 @@ namespace EasyEvent {
         std::optional<std::regex> _readRegex;
         size_t _readMaxBytes{0};
         size_t _readBytes{0};
+        bool _readPartial{false};
         Task<void(std::string)> _readCallback;
         bool _connecting{false};
         bool _closed{false};

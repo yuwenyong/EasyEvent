@@ -45,12 +45,12 @@ void EasyEvent::Interrupter::openSockets() {
         throwError(ec, "Interrupter");
     }
 
-    if (SocketOps::SetUnblock(client.get(), true, ec)) {
+    if (SocketOps::SetNonblock(client.get(), true, ec)) {
         throwError(ec, "Interrupter");
     }
     SocketOps::SetTcpNoDelay(client.get(), true, ec);
 
-    if (SocketOps::SetUnblock(server.get(), true, ec)) {
+    if (SocketOps::SetNonblock(server.get(), true, ec)) {
         throwError(ec, "Interrupter");
     }
     SocketOps::SetTcpNoDelay(server.get(), true, ec);

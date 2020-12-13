@@ -167,6 +167,7 @@ namespace EasyEvent {
     enum class EventErrors {
         AlreadyStarted = 1,
         AlreadyReading = 2,
+        UnsatisfiableRead = 3,
     };
 
     class EASY_EVENT_API SocketErrorCategory: public std::error_category {
