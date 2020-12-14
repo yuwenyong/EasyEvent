@@ -41,13 +41,35 @@ namespace EasyEvent {
             return result;
         }
 
-        static int SetSockOpt(SocketType s, int level, int optname, const void* optval, std::size_t optLen,
+        static int SetSockOpt(SocketType s, int level, int optname, const void* optval, std::size_t optlen,
                               std::error_code& ec);
 
-        static int SetSockOpt(SocketType s, int level, int optname, const void* optval, std::size_t optLen) {
+        static int SetSockOpt(SocketType s, int level, int optname, const void* optval, std::size_t optlen) {
             std::error_code ec;
-            auto result = SetSockOpt(s, level, optname, optval, optLen, ec);
-            throwError(ec, "SetSocketOpt");
+            auto result = SetSockOpt(s, level, optname, optval, optlen, ec);
+            throwError(ec, "SetSockOpt");
+            return result;
+        }
+
+        static int GetSockOpt(SocketType s, int level, int optname, void* optval, std::size_t* optlen,
+                              std::error_code& ec);
+
+        static int GetSockOpt(SocketType s, int level, int optname, void* optval, std::size_t* optlen) {
+            std::error_code ec;
+            auto result = GetSockOpt(s, level, optname, optval, optlen, ec);
+            throwError(ec, "GetSockOpt");
+            return result;
+        }
+
+        static int GetSockError(SocketType s, int& error, std::error_code& ec) {
+            size_t errorLen = sizeof(error);
+            return GetSockOpt(s, SOL_SOCKET, SO_ERROR, &error, &errorLen, ec);
+        }
+
+        static int GetSockError(SocketType s, int& error) {
+            std::error_code ec;
+            auto result = GetSockError(s, error, ec);
+            throwError(ec, "GetSockError");
             return result;
         }
 

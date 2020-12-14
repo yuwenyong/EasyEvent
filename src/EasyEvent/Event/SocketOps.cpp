@@ -137,14 +137,39 @@ int EasyEvent::SocketOps::Close(SocketType s, bool destruction, std::error_code 
     return result;
 }
 
-int EasyEvent::SocketOps::SetSockOpt(SocketType s, int level, int optname, const void *optval, std::size_t optLen,
+int EasyEvent::SocketOps::SetSockOpt(SocketType s, int level, int optname, const void *optval, std::size_t optlen,
                                      std::error_code &ec) {
     if (s == InvalidSocket) {
         ec = SocketErrors::BadDescriptor;
         return SocketErrorRetVal;
     }
-    int result = ::setsockopt(s, level, optname, (const char*)optval, (SockLenType)optLen);
+    int result = ::setsockopt(s, level, optname, (const char*)optval, (SockLenType)optlen);
     getLastError(ec, result != 0);
+    return result;
+}
+
+int EasyEvent::SocketOps::GetSockOpt(SocketType s, int level, int optname, void *optval, std::size_t *optlen,
+                                     std::error_code &ec) {
+    if (s == InvalidSocket) {
+        ec = SocketErrors::BadDescriptor;
+        return SocketErrorRetVal;
+    }
+    SockLenType tmpOptlen = (SockLenType)*optlen;
+    int result = ::getsockopt(s, level, optname, (char*)optval, &tmpOptlen);
+    *optlen = (std::size_t)tmpOptlen;
+    getLastError(ec, result != 0);
+#if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
+    if (result != 0 && level == IPPROTO_IPV6 && optname == IPV6_V6ONLY
+        && ec.value() == WSAENOPROTOOPT && *optlen == sizeof(DWORD)) {
+        *static_cast<DWORD*>(optval) = 1;
+        ec.assign(0, ec.category());
+    }
+#elif EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_LINUX
+    if (result == 0 && level == SOL_SOCKET && *optlen == sizeof(int)
+        && (optname == SO_SNDBUF || optname == SO_RCVBUF)) {
+        *static_cast<int*>(optval) /= 2;
+    }
+#endif
     return result;
 }
 

@@ -56,6 +56,10 @@ std::string EasyEvent::EventErrorCategory::message(int ev) const {
             return "write callback failed";
         case EventErrors::CloseCallbackFailed:
             return "close callback failed";
+        case EventErrors::ConnectionClosed:
+            return "connection closed";
+        case EventErrors::ConnectionBufferFull:
+            return "connection buffer full";
         default:
             return "(unrecognized error)";
     }

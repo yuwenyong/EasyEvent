@@ -28,7 +28,13 @@ namespace EasyEvent {
 
         void closeFD() override;
 
-        void readUntilRegex(const std::string& regex, Task<void(std::string)>&& task, size_t maxBytes=0);
+        void readUntilRegex(const std::string& regex, Task<void(std::string)>&& callback, size_t maxBytes=0);
+
+        void readUntil(std::string delimiter, Task<void(std::string)>&& callback, size_t maxBytes=0);
+
+        void readBytes(size_t numBytes, Task<void(std::string)>&& callback, bool partial=false);
+
+        void write(const void* data, size_t size, Task<void()>&& callback= nullptr);
 
         void setCloseCallback(Task<void(std::error_code)>&& callback) {
             _closeCallback  = std::move(callback);
@@ -70,23 +76,40 @@ namespace EasyEvent {
             Connection* _conn;
         };
 
+        std::error_code getFdError() {
+            int error;
+            SocketOps::GetSockError(_socket, error);
+            return {error, getSocketErrorCategory()};
+        }
+
+        ssize_t writeToFd(const void* data, size_t size, std::error_code& ec) {
+            return SocketOps::Send(_socket, data, size, 0, ec);
+        }
+
+        ssize_t readFromFd(void* buf, size_t size, std::error_code& ec) {
+            return SocketOps::Recv(_socket, buf, size, 0, ec);
+        }
+
         void maybeRunCloseCallback();
 
-        void setReadCallback(Task<void(std::string)>&& task, std::error_code& ec);
+        void setReadCallback(Task<void(std::string)>&& task);
 
         void runReadCallback(size_t size);
 
-        void tryInlineRead(std::error_code& ec);
+        void tryInlineRead();
 
         void readFromBuffer(size_t pos);
 
-        size_t findReadPos(std::error_code& ec);
+        size_t findReadPos();
 
-        void checkMaxBytes(size_t size, std::error_code& ec) const {
+        void checkMaxBytes(size_t size) const {
             if (_readMaxBytes > 0 && size > _readMaxBytes) {
-                ec = EventErrors::UnsatisfiableRead;
+                std::error_code ec = EventErrors::UnsatisfiableRead;
+                throwError(ec, "Connection");
             }
         }
+
+        void handleWrite();
 
         std::string consume(size_t size) {
             if (size == 0) {
@@ -98,7 +121,32 @@ namespace EasyEvent {
             return s;
         }
 
+        void checkClosed() const {
+            if (closed()) {
+                std::error_code ec = EventErrors::ConnectionClosed;
+                throwError(ec, "Connection");
+            }
+        }
+
         void maybeAddErrorListener();
+
+        bool isWouldBlock(const std::error_code& ec) const {
+            return ec == SocketErrors::WouldBlock || ec == SocketErrors::TryAgain;
+        }
+
+        bool isConnReset(const std::error_code& ec) const {
+            return ec == SocketErrors::ConnectionReset ||
+                ec == SocketErrors::ConnectionAborted ||
+                ec == SocketErrors::BrokenPipe ||
+                ec == SocketErrors::TimedOut;
+        }
+
+        void checkWriteBuffer(size_t size) {
+            if (_maxWriteBufferSize != 0 && _writeBuffer.size() + size > _maxWriteBufferSize) {
+                std::error_code ec = EventErrors::ConnectionBufferFull;
+                throwError(ec, "Connection");
+            }
+        }
 
         IOLoop* _ioLoop;
         Logger* _logger;

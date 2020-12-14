@@ -171,6 +171,8 @@ namespace EasyEvent {
         ReadCallbackFailed = 4,
         WriteCallbackFailed = 5,
         CloseCallbackFailed = 6,
+        ConnectionClosed = 7,
+        ConnectionBufferFull = 8,
     };
 
     class EASY_EVENT_API SocketErrorCategory: public std::error_category {
