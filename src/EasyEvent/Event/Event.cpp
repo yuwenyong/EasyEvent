@@ -60,6 +60,8 @@ std::string EasyEvent::EventErrorCategory::message(int ev) const {
             return "connection closed";
         case EventErrors::ConnectionBufferFull:
             return "connection buffer full";
+        case EventErrors::UnexpectedBehaviour:
+            return "unexpected behaviour";
         default:
             return "(unrecognized error)";
     }

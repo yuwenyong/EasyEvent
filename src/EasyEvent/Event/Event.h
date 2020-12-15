@@ -173,6 +173,7 @@ namespace EasyEvent {
         CloseCallbackFailed = 6,
         ConnectionClosed = 7,
         ConnectionBufferFull = 8,
+        UnexpectedBehaviour = 9,
     };
 
     class EASY_EVENT_API SocketErrorCategory: public std::error_category {

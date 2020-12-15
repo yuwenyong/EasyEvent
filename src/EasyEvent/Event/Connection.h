@@ -41,7 +41,7 @@ namespace EasyEvent {
             maybeAddErrorListener();
         }
 
-        void close(const std::error_code& error);
+        void close(const std::error_code& error={});
 
         bool reading() const {
             return (bool)_readCallback;
@@ -53,6 +53,10 @@ namespace EasyEvent {
 
         bool closed() const {
             return _closed;
+        }
+
+        void setNoDelay(bool value) {
+            SocketOps::SetTcpNoDelay(_socket, value);
         }
 
         static constexpr size_t DefaultMaxReadBufferSize = 104857600;
@@ -93,6 +97,8 @@ namespace EasyEvent {
         void maybeRunCloseCallback();
 
         size_t readToBufferLoop();
+
+        void handleRead();
 
         void setReadCallback(Task<void(std::string)>&& task);
 

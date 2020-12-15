@@ -28,7 +28,10 @@ EasyEvent::Connection::~Connection() noexcept {
 }
 
 void EasyEvent::Connection::handleEvents(IOEvents events) {
-
+    if (closed()) {
+        LOG_WARN(_logger) << "Got events for closed connection.";
+        return;
+    }
 }
 
 SocketType EasyEvent::Connection::getFD() const {
@@ -189,6 +192,33 @@ size_t EasyEvent::Connection::readToBufferLoop() {
     return findReadPos();
 }
 
+void EasyEvent::Connection::handleRead() {
+    size_t pos = 0;
+    try {
+        pos = readToBufferLoop();
+    } catch (std::system_error& e) {
+        if (e.code() == EventErrors::ConnectionBufferFull) {
+            throw;
+        }
+        LOG_WARN(_logger) << "System error on read: " << e.what();
+        close(e.code());
+        return;
+    } catch (std::exception& e) {
+        LOG_WARN(_logger) << "Error on read: " << e.what();
+        close(EventErrors::UnexpectedBehaviour);
+        return;
+    } catch (...) {
+        LOG_WARN(_logger) << "Unknown error on read event.";
+        close(EventErrors::UnexpectedBehaviour);
+        return;
+    }
+    if (pos > 0) {
+        readFromBuffer(pos);
+    } else {
+        maybeRunCloseCallback();
+    }
+}
+
 void EasyEvent::Connection::setReadCallback(Task<void(std::string)> &&task) {
     if (_readCallback) {
         std::error_code ec;
@@ -237,10 +267,59 @@ void EasyEvent::Connection::tryInlineRead() {
         return;
     }
     checkClosed();
+    try {
+        pos = readToBufferLoop();
+    } catch (...) {
+        maybeRunCloseCallback();
+        throw;
+    }
+    if (pos > 0) {
+        readFromBuffer(pos);
+        return;
+    }
+    if (closed()) {
+        maybeRunCloseCallback();
+    } else {
+        addIOState(IO_EVENT_READ);
+    }
 }
 
 size_t EasyEvent::Connection::readToBuffer() {
-    return 0;
+    ssize_t bytesRead;
+    std::error_code ec;
+    while (true) {
+        _readBuffer.prepare(DefaultReadChunkSize);
+        bytesRead = readFromFd(_readBuffer.getWritePointer(), _readBuffer.getRemainingSpace(), ec);
+        if (ec) {
+            if (isWouldBlock(ec)) {
+                return 0;
+            }
+            if (ec == SocketErrors::Interrupted) {
+                continue;
+            }
+            if (isConnReset(ec)) {
+                close(ec);
+                return 0;
+            }
+            close(ec);
+            throwError(ec, "Connection");
+        }
+        break;
+    }
+    if (bytesRead == 0) {
+        close();
+        return 0;
+    }
+    Assert(bytesRead > 0);
+    _readBuffer.writeCompleted((size_t)bytesRead);
+
+    if (_readBuffer.getActiveSize() > _maxReadBufferSize) {
+        LOG_ERROR(_logger) << "Reached maximum read buffer size";
+        close();
+        throwError(EventErrors::ConnectionBufferFull, "Connection");
+    }
+
+    return (size_t)bytesRead;
 }
 
 void EasyEvent::Connection::readFromBuffer(size_t pos) {
