@@ -222,6 +222,7 @@ namespace EasyEvent {
         IO_EVENT_WRITE = 0x02,
         IO_EVENT_ERROR = 0x04,
     };
+
 #elif defined(EASY_EVENT_USE_EPOLL)
     enum IOEvents: unsigned int {
         IO_EVENT_NONE = 0,
@@ -237,6 +238,24 @@ namespace EasyEvent {
         IO_EVENT_ERROR = POLLERR | POLLHUP,
     };
 #endif
+
+    inline IOEvents operator|(IOEvents lhs, IOEvents rhs) {
+        return static_cast<IOEvents>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+    }
+
+    inline IOEvents& operator|=(IOEvents& lhs, IOEvents rhs) {
+        lhs = lhs | rhs;
+        return lhs;
+    }
+
+    inline IOEvents operator&(IOEvents lhs, IOEvents rhs) {
+        return static_cast<IOEvents>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+    }
+
+    inline IOEvents& operator&=(IOEvents& lhs, IOEvents rhs) {
+        lhs = lhs & rhs;
+        return lhs;
+    }
 
     class EASY_EVENT_API Selectable {
     public:

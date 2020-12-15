@@ -92,11 +92,15 @@ namespace EasyEvent {
 
         void maybeRunCloseCallback();
 
+        size_t readToBufferLoop();
+
         void setReadCallback(Task<void(std::string)>&& task);
 
         void runReadCallback(size_t size);
 
         void tryInlineRead();
+
+        size_t readToBuffer();
 
         void readFromBuffer(size_t pos);
 
@@ -129,6 +133,8 @@ namespace EasyEvent {
         }
 
         void maybeAddErrorListener();
+
+        void addIOState(IOEvents state);
 
         bool isWouldBlock(const std::error_code& ec) const {
             return ec == SocketErrors::WouldBlock || ec == SocketErrors::TryAgain;
@@ -170,7 +176,9 @@ namespace EasyEvent {
         int _pendingCallbacks{0};
     };
 
-}
+    // akeover
+    // release
 
+}
 
 #endif //EASYEVENT_EVENT_CONNECTION_H

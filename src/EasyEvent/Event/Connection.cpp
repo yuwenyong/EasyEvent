@@ -101,6 +101,10 @@ void EasyEvent::Connection::write(const void *data, size_t size, Task<void()> &&
     }
     if (!_connecting) {
         handleWrite();
+        if (!_writeBuffer.empty()) {
+            addIOState(IO_EVENT_WRITE);
+        }
+        maybeAddErrorListener();
     }
 }
 
@@ -147,6 +151,44 @@ void EasyEvent::Connection::maybeRunCloseCallback() {
     }
 }
 
+size_t EasyEvent::Connection::readToBufferLoop() {
+    std::optional<size_t> targetBytes;
+    if (_readBytes > 0) {
+        targetBytes = _readBytes;
+    } else if (_readMaxBytes > 0) {
+        targetBytes = _readMaxBytes;
+    } else if (reading()) {
+        targetBytes = std::nullopt;
+    } else {
+        targetBytes = 0;
+    }
+    size_t nextFindPos = 0;
+    size_t pos;
+
+    ++_pendingCallbacks;
+    std::shared_ptr<void> localDecCallback(nullptr, [this](void*) {
+        --_pendingCallbacks;
+    });
+
+    while (!closed()) {
+        if (readToBuffer() == 0) {
+            break;
+        }
+        if (targetBytes && _readBuffer.getActiveSize() >= *targetBytes) {
+            break;
+        }
+
+        if (_readBuffer.getActiveSize() >= nextFindPos) {
+            pos = findReadPos();
+            if (pos != 0) {
+                return pos;
+            }
+            nextFindPos = _readBuffer.getActiveSize() * 2;
+        }
+    }
+    return findReadPos();
+}
+
 void EasyEvent::Connection::setReadCallback(Task<void(std::string)> &&task) {
     if (_readCallback) {
         std::error_code ec;
@@ -191,8 +233,14 @@ void EasyEvent::Connection::runReadCallback(size_t size) {
 void EasyEvent::Connection::tryInlineRead() {
     size_t pos = findReadPos();
     if (pos > 0) {
-
+        readFromBuffer(pos);
+        return;
     }
+    checkClosed();
+}
+
+size_t EasyEvent::Connection::readToBuffer() {
+    return 0;
 }
 
 void EasyEvent::Connection::readFromBuffer(size_t pos) {
@@ -295,5 +343,27 @@ void EasyEvent::Connection::handleWrite() {
 }
 
 void EasyEvent::Connection::maybeAddErrorListener() {
+    if (_pendingCallbacks != 0) {
+        return;
+    }
+    if (_state == IO_EVENT_NONE || _state == IO_EVENT_ERROR) {
+        if (closed()) {
+            maybeRunCloseCallback();
+        } else if (_readBuffer.getActiveSize() == 0 && _closeCallback) {
+            addIOState(IO_EVENT_READ);
+        }
+    }
+}
 
+void EasyEvent::Connection::addIOState(IOEvents state) {
+    if (closed()) {
+        return;
+    }
+    if (_state == IO_EVENT_NONE) {
+        _state = IO_EVENT_ERROR | state;
+        _ioLoop->addHandler(shared_from_this(), _state);
+    } else if ((_state & state) != 0) {
+        _state |= state;
+        _ioLoop->updateHandler(shared_from_this(), _state);
+    }
 }
