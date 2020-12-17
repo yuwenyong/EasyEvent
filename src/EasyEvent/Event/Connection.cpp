@@ -32,6 +32,69 @@ void EasyEvent::Connection::handleEvents(IOEvents events) {
         LOG_WARN(_logger) << "Got events for closed connection.";
         return;
     }
+
+    try {
+        if (_connecting) {
+            handleConnect();
+        }
+        if (closed()) {
+            return;
+        }
+        if ((events & IO_EVENT_READ) != 0) {
+            handleRead();
+        }
+        if (closed()) {
+            return;
+        }
+        if ((events & IO_EVENT_WRITE) != 0) {
+            handleWrite();
+        }
+        if (closed()) {
+            return;
+        }
+        if ((events & IO_EVENT_ERROR) != 0) {
+            std::error_code ec;
+            int err = getFdError(ec);
+            throwError(ec, "Connection");
+            _error = {err, getSocketErrorCategory()};
+            _ioLoop->addCallback([this, self=shared_from_this()]() {
+                close();
+            });
+            return;
+        }
+        IOEvents state = IO_EVENT_ERROR;
+        if (reading()) {
+            state |= IO_EVENT_READ;
+        }
+        if (writing()) {
+            state |= IO_EVENT_WRITE;
+        }
+        if (state == IO_EVENT_ERROR && _readBuffer.getActiveSize() == 0) {
+            state |= IO_EVENT_READ;
+        }
+        if (state != _state) {
+            Assert(_state != IO_EVENT_NONE);
+            _state = state;
+            _ioLoop->updateHandler(shared_from_this(), _state);
+        }
+    } catch (std::system_error& e) {
+        if (e.code() == EventErrors::UnsatisfiableRead) {
+            LOG_INFO(_logger) << "Unsatisfiable read, closing connection.";
+            close(EventErrors::UnsatisfiableRead);
+        } else {
+            LOG_ERROR(_logger) << "Uncaught system error, closing connection: " << e.what();
+            close(e.code());
+            throw;
+        }
+    } catch (std::exception& e) {
+        LOG_ERROR(_logger) << "Uncaught exception closing connection: " << e.what();
+        close(EventErrors::UnexpectedBehaviour);
+        throw;
+    } catch (...) {
+        LOG_ERROR(_logger) << "Uncaught unknown exception closing connection";
+        close(EventErrors::UnexpectedBehaviour);
+        throw;
+    }
 }
 
 SocketType EasyEvent::Connection::getFD() const {
@@ -45,6 +108,19 @@ void EasyEvent::Connection::closeFD() {
         _socket = InvalidSocket;
     } else {
         throwError(ec, "Connection");
+    }
+}
+
+void EasyEvent::Connection::connect(const Address &address, Task<void(std::error_code)> &&callback) {
+    _connecting = true;
+    _connectCallback = std::move(callback);
+
+    std::error_code ec;
+    SocketOps::Connect(_socket, address, ec);
+    if (ec && !isInProgress(ec) && !isWouldBlock(ec)) {
+        runConnectCallback(ec);
+    } else {
+        addIOState(IO_EVENT_WRITE);
     }
 }
 
@@ -193,11 +269,11 @@ size_t EasyEvent::Connection::readToBufferLoop() {
 }
 
 void EasyEvent::Connection::handleRead() {
-    size_t pos = 0;
+    size_t pos;
     try {
         pos = readToBufferLoop();
     } catch (std::system_error& e) {
-        if (e.code() == EventErrors::ConnectionBufferFull) {
+        if (e.code() == EventErrors::UnsatisfiableRead) {
             throw;
         }
         LOG_WARN(_logger) << "System error on read: " << e.what();
@@ -383,7 +459,7 @@ void EasyEvent::Connection::handleWrite() {
                 break;
             } else {
                 if (!isConnReset(ec)) {
-                    LOG_WARN(_logger) << "Write error: " << ec;
+                    LOG_WARN(_logger) << "Write error: " << ec << "(" << ec.message() << ")";
                 }
                 close(ec);
                 return;
@@ -441,8 +517,50 @@ void EasyEvent::Connection::addIOState(IOEvents state) {
     if (_state == IO_EVENT_NONE) {
         _state = IO_EVENT_ERROR | state;
         _ioLoop->addHandler(shared_from_this(), _state);
-    } else if ((_state & state) != 0) {
+    } else if ((_state & state) == 0) {
         _state |= state;
         _ioLoop->updateHandler(shared_from_this(), _state);
     }
+}
+
+void EasyEvent::Connection::runConnectCallback(std::error_code ec) {
+    if (_connectCallback) {
+        auto callback = std::move(_connectCallback);
+        _connectCallback = nullptr;
+        ++_pendingCallbacks;
+        _ioLoop->addCallback([this, ec, self=shared_from_this(), callback=std::move(callback)]() {
+            --_pendingCallbacks;
+            LocalAddErrorListener addErrorListener(this);
+            try {
+                callback(ec);
+            } catch (std::system_error& e) {
+                LOG_ERROR(_logger) << "Uncaught system error in connect callback: " << e.what();
+                throw;
+            } catch (std::exception& e) {
+                LOG_ERROR(_logger) << "Uncaught exception in connect callback: " << e.what();
+                throw;
+            } catch (...) {
+                LOG_ERROR(_logger) << "Uncaught exception in connect callback: Unknown error.";
+                throw;
+            }
+        });
+    }
+    if (ec) {
+        LOG_WARN(_logger) << "Connect error: " << ec << "(" << ec.message() << ")";
+        close(ec);
+    } else {
+        _connecting = false;
+    }
+}
+
+void EasyEvent::Connection::handleConnect() {
+    std::error_code ec;
+    int err = getFdError(ec);
+    if (ec == SocketErrors::NoProtocolOption) {
+        err = 0;
+    }
+    if (!ec && err != 0) {
+        ec = {err, getSocketErrorCategory()};
+    }
+    runConnectCallback(ec);
 }

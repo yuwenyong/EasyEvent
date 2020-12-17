@@ -29,12 +29,11 @@ std::string EasyEvent::SocketErrorCategory::message(int ev) const {
         return msg;
     }
     else {
-        return "(unrecognized sokcet error)";
+        return "(unrecognized socket error)";
     }
 #else
     char buf[256] = "";
-    strerror_r(ev, buf, sizeof(buf));
-    return buf;
+    return strerror_result(strerror_r(ev, buf, sizeof(buf)), buf);
 #endif
 }
 

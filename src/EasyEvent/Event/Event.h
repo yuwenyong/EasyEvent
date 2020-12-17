@@ -180,6 +180,14 @@ namespace EasyEvent {
     public:
         [[nodiscard]] const char* name() const noexcept override;
         [[nodiscard]] std::string message(int ev) const override;
+    private:
+        static const char* strerror_result(int, const char* s) {
+            return s;
+        }
+
+        static const char* strerror_result(const char* s, const char*) {
+            return s;
+        }
     };
 
     class EASY_EVENT_API EventErrorCategory: public std::error_category {

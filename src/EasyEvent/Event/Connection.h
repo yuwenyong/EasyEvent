@@ -28,6 +28,8 @@ namespace EasyEvent {
 
         void closeFD() override;
 
+        void connect(const Address& address, Task<void(std::error_code)>&& callback);
+
         void readUntilRegex(const std::string& regex, Task<void(std::string)>&& callback, size_t maxBytes=0);
 
         void readUntil(std::string delimiter, Task<void(std::string)>&& callback, size_t maxBytes=0);
@@ -80,10 +82,10 @@ namespace EasyEvent {
             Connection* _conn;
         };
 
-        std::error_code getFdError() {
-            int error;
-            SocketOps::GetSockError(_socket, error);
-            return {error, getSocketErrorCategory()};
+         int getFdError(std::error_code& ec) {
+            int error = 0;
+            SocketOps::GetSockError(_socket, error, ec);
+            return error;
         }
 
         ssize_t writeToFd(const void* data, size_t size, std::error_code& ec) {
@@ -142,6 +144,10 @@ namespace EasyEvent {
 
         void addIOState(IOEvents state);
 
+        void runConnectCallback(std::error_code ec);
+
+        void handleConnect();
+
         bool isWouldBlock(const std::error_code& ec) const {
             return ec == SocketErrors::WouldBlock || ec == SocketErrors::TryAgain;
         }
@@ -151,6 +157,10 @@ namespace EasyEvent {
                 ec == SocketErrors::ConnectionAborted ||
                 ec == SocketErrors::BrokenPipe ||
                 ec == SocketErrors::TimedOut;
+        }
+
+        bool isInProgress(const std::error_code& ec) const {
+            return ec == SocketErrors::InProgress;
         }
 
         void checkWriteBuffer(size_t size) {
@@ -176,6 +186,7 @@ namespace EasyEvent {
         Task<void(std::string)> _readCallback;
         Task<void()> _writeCallback;
         Task<void(std::error_code)> _closeCallback;
+        Task<void(std::error_code)> _connectCallback;
         bool _connecting{false};
         bool _closed{false};
         IOEvents _state{IO_EVENT_NONE};
