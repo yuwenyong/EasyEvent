@@ -161,20 +161,11 @@ namespace EasyEvent {
             return _size == 0;
         }
 
-        void write(std::string&& data) {
-            _size += data.size();
-            _secondaryBuffers.emplace_back(std::move(data));
-        }
+        void write(std::string&& data);
 
-        void write(std::vector<uint8>&& data) {
-            _size += data.size();
-            _secondaryBuffers.emplace_back(std::move(data));
-        }
+        void write(std::vector<uint8>&& data);
 
-        void write(std::vector<int8>&& data) {
-            _size += data.size();
-            _secondaryBuffers.emplace_back(std::move(data));
-        }
+        void write(std::vector<int8>&& data);
 
         void write(const std::string& data) {
             write(data.data(), data.size());
@@ -195,6 +186,8 @@ namespace EasyEvent {
         void* getReadPtr();
 
         size_t getReadSize() const;
+
+        static constexpr size_t MoveBufferThreshold = 64;
     private:
         Buffer _primaryBuffer;
         std::deque<SecondaryBuffer> _secondaryBuffers;

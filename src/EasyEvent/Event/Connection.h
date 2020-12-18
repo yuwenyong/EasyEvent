@@ -38,6 +38,28 @@ namespace EasyEvent {
 
         void write(const void* data, size_t size, Task<void()>&& callback= nullptr);
 
+        void write(const char* data, Task<void()>&& callback= nullptr) {
+            write(data, strlen(data), std::move(callback));
+        }
+
+        void write(const std::string& data, Task<void()>&& callback= nullptr) {
+            write(data.data(), data.size(), std::move(callback));
+        }
+
+        void write(const std::vector<int8>& data, Task<void()>&& callback= nullptr) {
+            write(data.data(), data.size(), std::move(callback));
+        }
+
+        void write(const std::vector<uint8>& data, Task<void()>&& callback= nullptr) {
+            write(data.data(), data.size(), std::move(callback));
+        }
+
+        void write(std::string&& data, Task<void()>&& callback= nullptr);
+
+        void write(std::vector<int8>&& data, Task<void()>&& callback= nullptr);
+
+        void write(std::vector<uint8>&& data, Task<void()>&& callback= nullptr);
+
         void setCloseCallback(Task<void(std::error_code)>&& callback) {
             _closeCallback  = std::move(callback);
             maybeAddErrorListener();
@@ -193,8 +215,31 @@ namespace EasyEvent {
         int _pendingCallbacks{0};
     };
 
-    // akeover
-    // release
+    using ConnectionPtr = std::shared_ptr<Connection>;
+
+    class ConnectionHolder {
+    public:
+        explicit ConnectionHolder(const ConnectionPtr& connection, bool takeover=false)
+            : _connection(connection.get())
+            , _ptr(takeover ? connection : nullptr) {
+
+        }
+
+        ConnectionPtr takeover() {
+            Assert(!_ptr);
+            _ptr = _connection->shared_from_this();
+            return _ptr;
+        }
+
+        ConnectionPtr release() {
+            Assert(_ptr);
+            auto conn = std::move(_ptr);
+            return conn;
+        }
+    private:
+        Connection* _connection;
+        ConnectionPtr _ptr;
+    };
 
 }
 

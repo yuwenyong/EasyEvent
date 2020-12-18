@@ -187,6 +187,60 @@ void EasyEvent::Connection::write(const void *data, size_t size, Task<void()> &&
     }
 }
 
+void EasyEvent::Connection::write(std::string &&data, Task<void()> &&callback) {
+    checkClosed();
+    if (data.size() > 0) {
+        checkWriteBuffer(data.size());
+        _writeBuffer.write(std::move(data));
+    }
+    if (callback) {
+        _writeCallback = std::move(callback);
+    }
+    if (!_connecting) {
+        handleWrite();
+        if (!_writeBuffer.empty()) {
+            addIOState(IO_EVENT_WRITE);
+        }
+        maybeAddErrorListener();
+    }
+}
+
+void EasyEvent::Connection::write(std::vector<int8> &&data, Task<void()> &&callback) {
+    checkClosed();
+    if (data.size() > 0) {
+        checkWriteBuffer(data.size());
+        _writeBuffer.write(std::move(data));
+    }
+    if (callback) {
+        _writeCallback = std::move(callback);
+    }
+    if (!_connecting) {
+        handleWrite();
+        if (!_writeBuffer.empty()) {
+            addIOState(IO_EVENT_WRITE);
+        }
+        maybeAddErrorListener();
+    }
+}
+
+void EasyEvent::Connection::write(std::vector<uint8> &&data, Task<void()> &&callback) {
+    checkClosed();
+    if (data.size() > 0) {
+        checkWriteBuffer(data.size());
+        _writeBuffer.write(std::move(data));
+    }
+    if (callback) {
+        _writeCallback = std::move(callback);
+    }
+    if (!_connecting) {
+        handleWrite();
+        if (!_writeBuffer.empty()) {
+            addIOState(IO_EVENT_WRITE);
+        }
+        maybeAddErrorListener();
+    }
+}
+
 void EasyEvent::Connection::close(const std::error_code& error) {
     if (!closed()) {
         if (error) {

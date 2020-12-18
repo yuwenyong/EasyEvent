@@ -12,7 +12,7 @@ std::vector<EasyEvent::Address> EasyEvent::Resolver::getAddresses(const std::str
                                                                   bool canBlock, std::error_code &ec) {
     std::vector<Address> result;
     if (host.empty()) {
-        result = Address::loopbackAddresses(protocol, port);
+        result = Address::anyAddresses(protocol, port);
         sortAddresses(result, protocol, preferIPv6);
         ec.assign(0, ec.category());
         return result;

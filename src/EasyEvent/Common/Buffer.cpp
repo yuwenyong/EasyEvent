@@ -19,6 +19,38 @@ void EasyEvent::Buffer::prepare(size_t size) {
     }
 }
 
+void EasyEvent::WriteBuffer::write(std::string &&data) {
+    _size += data.size();
+    if (_secondaryBuffers.empty() &&
+        data.size() <= MoveBufferThreshold &&
+        _primaryBuffer.getRemainingSpace() >= MoveBufferThreshold) {
+        _primaryBuffer.write(data.data(), data.size());
+    } else {
+        _secondaryBuffers.emplace_back(std::move(data));
+    }
+}
+
+void EasyEvent::WriteBuffer::write(std::vector<int8> &&data) {
+    _size += data.size();
+    if (_secondaryBuffers.empty() &&
+        data.size() <= MoveBufferThreshold &&
+        _primaryBuffer.getRemainingSpace() >= MoveBufferThreshold) {
+        _primaryBuffer.write(data.data(), data.size());
+    } else {
+        _secondaryBuffers.emplace_back(std::move(data));
+    }
+}
+
+void EasyEvent::WriteBuffer::write(std::vector<uint8> &&data) {
+    _size += data.size();
+    if (_secondaryBuffers.empty() &&
+        data.size() <= MoveBufferThreshold &&
+        _primaryBuffer.getRemainingSpace() >= MoveBufferThreshold) {
+        _primaryBuffer.write(data.data(), data.size());
+    } else {
+        _secondaryBuffers.emplace_back(std::move(data));
+    }
+}
 
 void EasyEvent::WriteBuffer::write(void const*data, size_t size) {
     _size += size;
