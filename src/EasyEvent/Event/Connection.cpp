@@ -279,6 +279,7 @@ void EasyEvent::Connection::maybeRunCloseCallback() {
                 }
             });
         }
+        _connectCallback = nullptr;
         _readCallback = nullptr;
         _writeCallback = nullptr;
     }

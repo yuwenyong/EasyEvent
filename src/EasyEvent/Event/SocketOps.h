@@ -321,6 +321,17 @@ namespace EasyEvent {
 
         }
 
+        SocketHolder(SocketHolder&& rhs) noexcept
+            : _socket(rhs.release()) {
+
+        }
+
+        SocketHolder& operator=(SocketHolder&& rhs) noexcept {
+            reset();
+            _socket = rhs.release();
+            return *this;
+        }
+
         ~SocketHolder() {
             if (_socket != InvalidSocket) {
                 std::error_code ec;

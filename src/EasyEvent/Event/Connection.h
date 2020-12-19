@@ -236,6 +236,22 @@ namespace EasyEvent {
             auto conn = std::move(_ptr);
             return conn;
         }
+
+        const Connection* operator->() const {
+            return _connection;
+        }
+
+        Connection* operator->() {
+            return _connection;
+        }
+
+        const Connection& operator*() const {
+            return *_connection;
+        }
+
+        Connection& operator*() {
+            return *_connection;
+        }
     private:
         Connection* _connection;
         ConnectionPtr _ptr;
