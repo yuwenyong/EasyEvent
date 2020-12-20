@@ -34,7 +34,23 @@ namespace EasyEvent {
         TcpServer(const TcpServer&) = delete;
         TcpServer& operator=(const TcpServer&) = delete;
 
+        explicit TcpServer(IOLoop* ioLoop, size_t maxBufferSize=0)
+            : _ioLoop(ioLoop ? ioLoop : IOLoop::current())
+            , _logger(_ioLoop->getLogger())
+            , _maxBufferSize(maxBufferSize) {
+
+        }
+
+        void listen(unsigned short port, const std::string& address="") {
+        }
+
+        static constexpr int DefaultBacklog = 128;
     protected:
+        std::vector<SocketHolder> bindSockets(unsigned short port, const std::string& address, int family=AF_UNSPEC,
+                                              int backlog=0);
+
+        IOLoop* _ioLoop;
+        Logger* _logger;
         std::map<SocketType, int> _handlers;
         std::vector<SocketHolder> _pendingSockets;
         bool _started{false};

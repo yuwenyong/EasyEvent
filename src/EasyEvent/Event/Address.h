@@ -106,6 +106,10 @@ namespace EasyEvent {
             return !(*this == rhs);
         }
 
+        int getFamily() const {
+            return _addr.saStorage.ss_family;
+        }
+
         bool isUnspecified() const {
             return _addr.saStorage.ss_family == AF_UNSPEC;
         }

@@ -7,7 +7,7 @@
 
 #include "EasyEvent/Event/Event.h"
 #include "EasyEvent/Event/Address.h"
-#include "EasyEvent/Common/NonCopyable.h"
+#include "EasyEvent/Common/Utility.h"
 
 
 namespace EasyEvent {
@@ -115,6 +115,18 @@ namespace EasyEvent {
             std::error_code ec;
             auto result = SetKeepAlive(s, keepAlive, ec);
             throwError(ec, "SetKeepAlive");
+            return result;
+        }
+
+        static int SetIPv6Only(SocketType s, bool v6Only, std::error_code& ec) {
+            int opt = v6Only ? 1 : 0;
+            return SetSockOpt(s, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt), ec);
+        }
+
+        static int SetIPv6Only(SocketType s, bool v6Only) {
+            std::error_code ec;
+            auto result = SetIPv6Only(s, v6Only, ec);
+            throwError(ec, "SetIPv6Only");
             return result;
         }
 

@@ -6,7 +6,7 @@
 #define EASYEVENT_COMMON_BUFFER_H
 
 #include "EasyEvent/Common/Config.h"
-#include "EasyEvent/Common/NonCopyable.h"
+#include "EasyEvent/Common/Utility.h"
 
 
 namespace EasyEvent {

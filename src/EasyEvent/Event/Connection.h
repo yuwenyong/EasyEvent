@@ -216,46 +216,7 @@ namespace EasyEvent {
     };
 
     using ConnectionPtr = std::shared_ptr<Connection>;
-
-    class ConnectionHolder {
-    public:
-        explicit ConnectionHolder(const ConnectionPtr& connection, bool takeover=false)
-            : _connection(connection.get())
-            , _ptr(takeover ? connection : nullptr) {
-
-        }
-
-        ConnectionPtr takeover() {
-            Assert(!_ptr);
-            _ptr = _connection->shared_from_this();
-            return _ptr;
-        }
-
-        ConnectionPtr release() {
-            Assert(_ptr);
-            auto conn = std::move(_ptr);
-            return conn;
-        }
-
-        const Connection* operator->() const {
-            return _connection;
-        }
-
-        Connection* operator->() {
-            return _connection;
-        }
-
-        const Connection& operator*() const {
-            return *_connection;
-        }
-
-        Connection& operator*() {
-            return *_connection;
-        }
-    private:
-        Connection* _connection;
-        ConnectionPtr _ptr;
-    };
+    using ConnectionHolder = Holder<Connection>;
 
 }
 
