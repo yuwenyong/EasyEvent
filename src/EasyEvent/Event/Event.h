@@ -180,6 +180,7 @@ namespace EasyEvent {
         UnexpectedBehaviour = 9,
         AlreadyListening = 10,
         CallbackNotFound = 11,
+        AlreadyConnecting = 12,
     };
 
     class EASY_EVENT_API SocketErrorCategory: public std::error_category {

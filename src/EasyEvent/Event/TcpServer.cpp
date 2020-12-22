@@ -82,7 +82,7 @@ void EasyEvent::TcpServer::bind(unsigned short port, const std::string &address,
     }
 }
 
-void EasyEvent::TcpServer::start(Task<void(ConnectionPtr, const Address &)> &&callback) {
+void EasyEvent::TcpServer::start(Task<void(ConnectionPtr, const Address&)>&& callback) {
     Assert(!_started);
     _started = true;
     auto sockets = std::move(_pendingSockets);

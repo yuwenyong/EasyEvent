@@ -71,7 +71,13 @@ namespace EasyEvent {
 
     class ResolveHandle {
     public:
+        ResolveHandle() = default;
+
         explicit ResolveHandle(const ResolveQueryPtr& query): _query(query) {}
+
+        bool expired() const {
+            return _query.expired();
+        }
 
         void cancel() {
             auto query = _query.lock();

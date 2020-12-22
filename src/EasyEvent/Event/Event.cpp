@@ -65,6 +65,8 @@ std::string EasyEvent::EventErrorCategory::message(int ev) const {
             return "already listening";
         case EventErrors::CallbackNotFound:
             return "callback not found";
+        case EventErrors::AlreadyConnecting:
+            return "already connecting";
         default:
             return "(unrecognized error)";
     }

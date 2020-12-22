@@ -83,6 +83,42 @@ namespace EasyEvent {
             SocketOps::SetTcpNoDelay(_socket, value);
         }
 
+        std::string getLocalIP() const {
+            Address address;
+            SocketOps::GetSockName(_socket, address);
+            return address.getAddrString();
+        }
+
+        unsigned short getLocalPort() const {
+            Address address;
+            SocketOps::GetSockName(_socket, address);
+            return address.getPort();
+        }
+
+        Address getLocalAddress() const {
+            Address address;
+            SocketOps::GetSockName(_socket, address);
+            return address;
+        }
+
+        std::string getRemoteIP() const {
+            Address address;
+            SocketOps::GetPeerName(_socket, address);
+            return address.getAddrString();
+        }
+
+        unsigned short getRemotePort() const {
+            Address address;
+            SocketOps::GetPeerName(_socket, address);
+            return address.getPort();
+        }
+
+        Address getRemoteAddress() const {
+            Address address;
+            SocketOps::GetPeerName(_socket, address);
+            return address;
+        }
+
         static constexpr size_t DefaultMaxReadBufferSize = 104857600;
         static constexpr size_t DefaultReadBufferCapacity = 8192;
         static constexpr size_t DefaultReadChunkSize = 4096;
