@@ -39,6 +39,10 @@ namespace EasyEvent {
             return ptr;
         }
 
+        std::shared_ptr<ValueT> lock() {
+            return _val->shared_from_this();
+        }
+
         const ValueT* get() const {
             return _val;
         }

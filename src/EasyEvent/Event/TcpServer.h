@@ -106,6 +106,8 @@ namespace EasyEvent {
         Task<void(ConnectionPtr, const Address&)> _callback;
     };
 
+    using TcpServerPtr = std::shared_ptr<TcpServer>;
+
 }
 
 #endif //EASYEVENT_EVENT_TCPSERVER_H

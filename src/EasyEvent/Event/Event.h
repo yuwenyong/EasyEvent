@@ -181,6 +181,7 @@ namespace EasyEvent {
         AlreadyListening = 10,
         CallbackNotFound = 11,
         AlreadyConnecting = 12,
+        ConnectTimeout = 13,
     };
 
     class EASY_EVENT_API SocketErrorCategory: public std::error_category {

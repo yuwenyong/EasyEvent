@@ -12,6 +12,87 @@
 
 namespace EasyEvent {
 
+    class EASY_EVENT_API TcpConnector: public std::enable_shared_from_this<TcpConnector> {
+    public:
+        TcpConnector(const TcpConnector&) = delete;
+        TcpConnector& operator=(const TcpConnector&) = delete;
+
+        explicit TcpConnector(IOLoop* ioLoop, Task<ConnectionPtr(const Address& address)>&& connectionCallback)
+            : _ioLoop(ioLoop ? ioLoop : IOLoop::current())
+            , _connectionCallback(std::move(connectionCallback)) {
+
+        }
+
+        void start(Task<void(ConnectionPtr, const std::error_code&)>&& callback, const std::vector<Address>& addrs,
+                   Time connectTimeout={}, Time timeout=Time::milliSeconds(300));
+    private:
+        void splitAddresses(const std::vector<Address>& addrs);
+
+        void tryConnect(bool primary);
+
+        void onConnectDone(bool primary, SocketType socket, const std::error_code& ec);
+
+        void setTimeout(Time timeout) {
+            _timer = _ioLoop->callLater(timeout, [this, self=shared_from_this()]() {
+                onTimeout();
+            });
+        }
+
+        void onTimeout() {
+            tryConnect(false);
+        }
+
+        void clearTimeout() {
+            if (!_timer.expired()) {
+                _ioLoop->removeTimeout(_timer);
+            }
+        }
+
+        void setConnectTimeout(Time connectTimeout) {
+            _connectTimer = _ioLoop->callLater(connectTimeout, [this, self=shared_from_this()]() {
+                onConnectTimeout();
+            });
+        }
+
+        void onConnectTimeout() {
+            closeConnections();
+            runConnectCallback(nullptr, EventErrors::ConnectTimeout);
+        }
+
+        void clearConnectTimeout() {
+            if (!_connectTimer.expired()) {
+                _ioLoop->removeTimeout(_connectTimer);
+            }
+        }
+
+        void clearTimeouts() {
+            clearTimeout();
+            clearConnectTimeout();
+        }
+
+        void closeConnections() {
+            for (auto& conn: _connections) {
+                conn.second->close();
+            }
+        }
+
+        void runConnectCallback(ConnectionPtr connection, const std::error_code& ec);
+
+        IOLoop* _ioLoop;
+        Task<ConnectionPtr(const Address& address)> _connectionCallback;
+        Task<void(ConnectionPtr, const std::error_code&)> _callback;
+        TimerHandle _timer;
+        TimerHandle _connectTimer;
+        std::error_code _lastError;
+        size_t _remaining;
+        std::vector<Address> _primaryAddrs;
+        std::vector<Address> _secondaryAddrs;
+        std::vector<Address>::iterator _primaryIter;
+        std::vector<Address>::iterator _secondaryIter;
+        std::map<SocketType, ConnectionHolder> _connections;
+    };
+
+
     class EASY_EVENT_API TcpClient: public std::enable_shared_from_this<TcpClient> {
     public:
         TcpClient(const TcpClient&) = delete;
@@ -28,13 +109,15 @@ namespace EasyEvent {
                      std::string sourceIP="", unsigned short sourcePort=0);
 
     protected:
-        void onResolved(std::vector<Address> addresses, std::error_code ec);
+        void onResolved(const std::vector<Address>& addresses, const std::error_code& ec);
 
         void onTimeout() {
             _resolve.cancel();
         }
 
         void runConnectCallback(ConnectionPtr connection, const std::error_code& ec);
+
+        ConnectionPtr createConnection(const Address& address);
 
         IOLoop* _ioLoop;
         bool _connecting{false};
@@ -48,6 +131,8 @@ namespace EasyEvent {
         TimerHandle _timer;
         ResolveHandle _resolve;
     };
+
+    using TcpClientPtr = std::shared_ptr<TcpClient>;
 
 }
 
