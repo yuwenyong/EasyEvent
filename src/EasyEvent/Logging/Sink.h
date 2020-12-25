@@ -5,7 +5,6 @@
 #ifndef EASYEVENT_LOGGING_SINK_H
 #define EASYEVENT_LOGGING_SINK_H
 
-#include "EasyEvent/Common/Config.h"
 #include "EasyEvent/Logging/LogCommon.h"
 #include "EasyEvent/Logging/LogMessage.h"
 
@@ -40,7 +39,7 @@ namespace EasyEvent {
         virtual void write(LogMessage *message, const std::string& text) = 0;
 
         bool shouldLog(LogMessage* message) const {
-            assert(message != nullptr);
+            Assert(message != nullptr);
             return _level <= message->getLevel();
         }
 

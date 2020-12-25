@@ -12,7 +12,8 @@ namespace EasyEvent {
     enum class UserErrors {
         InvalidArgument = 1,
         NotFound = 2,
-        AlreadyRegistered = 3,
+        NotSupported = 3,
+        OperationCanceled = 4,
     };
 
     class EASY_EVENT_API UserErrorCategory: public std::error_category {

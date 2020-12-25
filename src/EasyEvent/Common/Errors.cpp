@@ -14,15 +14,17 @@ std::string EasyEvent::UserErrorCategory::message(int ev) const {
             return "invalid argument";
         case UserErrors::NotFound:
             return "not found";
-        case UserErrors::AlreadyRegistered:
-            return "already registered";
+        case UserErrors::NotSupported:
+            return "not supported";
+        case UserErrors::OperationCanceled:
+            return "operation canceled";
         default:
             return "(unrecognized error)";
     }
 }
 
 const std::error_category& EasyEvent::getUserErrorCategory() {
-    static const EasyEvent::UserErrorCategory errCategory{};
+    static const UserErrorCategory errCategory{};
     return errCategory;
 }
 

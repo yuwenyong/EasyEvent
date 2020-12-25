@@ -118,20 +118,26 @@ typedef unsigned long long UInt64;
 #   ifndef DEBUG
 #       define DEBUG
 #   endif
-//#   ifndef _GLIBCXX_DEBUG
-//#       define _GLIBCXX_DEBUG
-//#   endif
 #   define EASY_EVENT_DEBUG
+#endif
+
+#define Assert(expr)    assert(expr)
+
+#ifdef EASY_EVENT_DEBUG
+#   define Verify(expr) assert(expr)
+#else
+#   define Verify(expr) (expr)
 #endif
 
 
 #include <cassert>
-#include <exception>
-#include <stdexcept>
-#include <iostream>
-#include <sstream>
-#include <iomanip>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 #include <cerrno>
+#include <csignal>
 
 
 #ifdef _WIN32
@@ -197,6 +203,11 @@ typedef uint32_t uint32;
 typedef uint16_t uint16;
 typedef uint8_t uint8;
 
+#include <exception>
+#include <stdexcept>
+#include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <utility>
 #include <type_traits>
 #include <numeric>
@@ -218,6 +229,7 @@ typedef uint8_t uint8;
 #include <variant>
 #include <string_view>
 #include <string>
+#include <regex>
 #include <system_error>
 #include <chrono>
 #include <thread>
@@ -226,13 +238,6 @@ typedef uint8_t uint8;
 #include <future>
 #include <filesystem>
 
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <ctime>
-#include <cerrno>
-#include <csignal>
 
 #ifdef max
 #undef max

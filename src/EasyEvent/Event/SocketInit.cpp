@@ -3,7 +3,7 @@
 //
 
 #include "EasyEvent/Event/SocketInit.h"
-#include "EasyEvent/Common/Errors.h"
+
 
 EasyEvent::SocketInit::SocketInit() {
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS

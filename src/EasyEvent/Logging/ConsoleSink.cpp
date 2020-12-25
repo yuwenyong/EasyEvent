@@ -11,8 +11,8 @@ EasyEvent::ColorTypes EasyEvent::ConsoleSink::gColors[EasyEvent::NUM_ENABLED_LOG
     EasyEvent::ColorTypes::LGRAY,
     EasyEvent::ColorTypes::GREEN,
     EasyEvent::ColorTypes::YELLOW,
-    EasyEvent::ColorTypes::RED,
-    EasyEvent::ColorTypes::MAGENTA
+    EasyEvent::ColorTypes::MAGENTA,
+    EasyEvent::ColorTypes::RED
 };
 
 void EasyEvent::ConsoleSink::write(LogMessage *message, const std::string &text) {
@@ -28,10 +28,10 @@ void EasyEvent::ConsoleSink::_write(LogMessage *message, const std::string &text
     LogLevel level = message->getLevel();
     if (_colored) {
         setColor(level);
-        fprintf((level < LOG_LEVEL_ERROR ? stdout : stderr), "%s\n", text.c_str());
+        fprintf(stdout, "%s\n", text.c_str());
         resetColor(level);
     } else {
-        fprintf((level < LOG_LEVEL_ERROR ? stdout : stderr), "%s\n", text.c_str());
+        fprintf(stdout, "%s\n", text.c_str());
     }
 }
 
@@ -58,7 +58,7 @@ void EasyEvent::ConsoleSink::setColor(LogLevel level) {
                     FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY  // WHITE
             };
 
-    HANDLE hConsole = GetStdHandle(level < LOG_LEVEL_ERROR ? STD_OUTPUT_HANDLE : STD_ERROR_HANDLE);
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleTextAttribute(hConsole, WinColorFG[color]);
 #else
     enum ANSITextAttr
@@ -113,16 +113,16 @@ void EasyEvent::ConsoleSink::setColor(LogLevel level) {
         FG_WHITE,                                          // WHITE
     };
 
-    fprintf((level < LOG_LEVEL_ERROR ? stdout : stderr), "\x1b[%s%dm",
-            (color >= (uint8)ColorTypes::DGRAY && color < MaxColors ? "1;" : "0;"), UnixColorFG[color]);
+    fprintf(stdout, "\x1b[%s%dm", (color >= (uint8)ColorTypes::DGRAY && color < MaxColors ? "1;" : "0;"),
+            UnixColorFG[color]);
 #endif
 }
 
 void EasyEvent::ConsoleSink::resetColor(LogLevel level) {
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
-    HANDLE hConsole = GetStdHandle(level < LOG_LEVEL_ERROR? STD_OUTPUT_HANDLE : STD_ERROR_HANDLE);
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleTextAttribute(hConsole, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
 #else
-    fprintf((level < LOG_LEVEL_ERROR ? stdout : stderr), "\x1b[0m");
+    fprintf(stdout, "\x1b[0m");
 #endif
 }

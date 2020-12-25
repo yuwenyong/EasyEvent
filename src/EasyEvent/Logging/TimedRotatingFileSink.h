@@ -5,7 +5,7 @@
 #ifndef EASYEVENT_LOGGING_TIMEDROTATINGFILESINK_H
 #define EASYEVENT_LOGGING_TIMEDROTATINGFILESINK_H
 
-#include "EasyEvent/Common/Config.h"
+#include "EasyEvent/Logging/LogCommon.h"
 #include "EasyEvent/Logging/Sink.h"
 
 

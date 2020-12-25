@@ -5,7 +5,6 @@
 #ifndef EASYEVENT_LOGGING_LOGGER_H
 #define EASYEVENT_LOGGING_LOGGER_H
 
-#include "EasyEvent/Common/Config.h"
 #include "EasyEvent/Logging/LogCommon.h"
 
 

@@ -30,10 +30,10 @@ bool EasyEvent::TaskPool::start(size_t threadCount) {
 
 void EasyEvent::TaskPool::process() {
     while (true) {
-        auto task = _tasks.dequeue();
-        if (!task) {
+        Task<void()> task;
+        if (!_tasks.dequeue(task)) {
             break;
         }
-        (*task)();
+        task();
     }
 }
