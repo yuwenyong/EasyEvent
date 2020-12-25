@@ -25,7 +25,11 @@ void EasyEvent::Sink::write(LogMessage *message) {
     }
 
     ss << message->getText();
-    write(message, ss.str());
+    std::string data = ss.str();
+    if (!data.empty() && data.back() == '\n') {
+        data.pop_back();
+    }
+    write(message, data);
 }
 
 const char * EasyEvent::Sink::getLevelString(LogLevel level) {

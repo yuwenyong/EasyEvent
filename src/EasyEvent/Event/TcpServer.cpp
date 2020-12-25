@@ -141,7 +141,7 @@ void EasyEvent::TcpServer::addSockets(std::vector<SocketHolder> &&sockets) {
 
 void EasyEvent::TcpServer::handleIncomingConnection(SocketType socket, const Address &address) {
     try {
-        auto connection = std::make_shared<Connection>(_ioLoop, socket, _maxBufferSize);
+        auto connection = Connection::create(_ioLoop, socket, _maxBufferSize);
         handleConnection(std::move(connection), address);
     } catch (std::exception& e) {
         LOG_ERROR(_logger) << "Error in connection callback: " << e.what();

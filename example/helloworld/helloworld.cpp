@@ -4,7 +4,6 @@
 
 
 #include "EasyEvent/EasyEvent.h"
-#include "EasyEvent/Event/Resolver.h"
 
 using namespace EasyEvent;
 
@@ -23,6 +22,14 @@ int main (int argc, char **argv) {
 //    logger->addSink(FileSink::create("./test.log", true));
 //    logger->addSink(RotatingFileSink::create("./rtest.log", 1024, 3));
 //    logger->addSink(TimedRotatingFileSink::create("./trtest.log", TimedRotatingWhen::Minute));
+
+    std::error_code ec = SocketErrors::Interrupted;
+    LOG_ERROR(logger) << ec << "(" << ec.message() << ")";
+
+    auto addrs = Resolver::getAddresses("", 2, EnableBoth, false, true);
+    for (auto& addr: addrs) {
+        LOG_INFO(logger) << addr;
+    }
 
     IOLoop ioLoop(logger, true, true);
     ioLoop.addCallback([logger]() {

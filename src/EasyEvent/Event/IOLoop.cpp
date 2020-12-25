@@ -279,7 +279,8 @@ void EasyEvent::IOLoop::start() {
                     continue;
                 }
                 try {
-                    iter->second->handleEvents(event.second);
+                    auto handler = iter->second;
+                    handler->handleEvents((IOEvents)events[i].events);
                 } catch (std::exception& e) {
                     LOG_ERROR(_logger) << "Exception in handler: " << e.what();
                 } catch (...) {
@@ -304,7 +305,8 @@ void EasyEvent::IOLoop::start() {
                 continue;
             }
             try {
-                iter->second->handleEvents((IOEvents)events[i].events);
+                auto handler = iter->second;
+                handler->handleEvents((IOEvents)events[i].events);
             } catch (std::exception& e) {
                 LOG_ERROR(_logger) << "Exception in handler: " << e.what();
             } catch (...) {
@@ -331,7 +333,8 @@ void EasyEvent::IOLoop::start() {
                 continue;
             }
             try {
-                iter->second->handleEvents((IOEvents)it->revents);
+                auto handler = iter->second;
+                handler->handleEvents((IOEvents)events[i].events);
             } catch (std::exception& e) {
                 LOG_ERROR(_logger) << "Exception in handler: " << e.what();
             } catch (...) {

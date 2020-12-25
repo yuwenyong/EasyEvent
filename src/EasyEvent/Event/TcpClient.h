@@ -94,12 +94,14 @@ namespace EasyEvent {
 
 
     class EASY_EVENT_API TcpClient: public std::enable_shared_from_this<TcpClient> {
+    private:
+        struct MakeSharedTag {};
     public:
         TcpClient(const TcpClient&) = delete;
         TcpClient& operator=(const TcpClient&) = delete;
 
-        explicit TcpClient(IOLoop* ioLoop)
-            : _ioLoop(ioLoop ? ioLoop : IOLoop::current()) {
+        explicit TcpClient(IOLoop* ioLoop, MakeSharedTag tag)
+            : TcpClient(ioLoop) {
 
         }
 
@@ -108,7 +110,15 @@ namespace EasyEvent {
                      Time timeout={}, size_t maxBufferSize=0,
                      std::string sourceIP="", unsigned short sourcePort=0);
 
+        static std::shared_ptr<TcpClient> create(IOLoop* ioLoop) {
+            return std::make_shared<TcpClient>(ioLoop, MakeSharedTag{});
+        }
     protected:
+        explicit TcpClient(IOLoop* ioLoop)
+                : _ioLoop(ioLoop ? ioLoop : IOLoop::current()) {
+
+        }
+
         void onResolved(const std::vector<Address>& addresses, const std::error_code& ec);
 
         void onTimeout() {
@@ -124,9 +134,9 @@ namespace EasyEvent {
 
         Task<void(ConnectionPtr, const std::error_code&)> _callback;
         Time _timeout;
-        size_t _maxBufferSize;
+        size_t _maxBufferSize{0};
         std::string _sourceIP;
-        unsigned short _sourcePort;
+        unsigned short _sourcePort{0};
 
         TimerHandle _timer;
         ResolveHandle _resolve;

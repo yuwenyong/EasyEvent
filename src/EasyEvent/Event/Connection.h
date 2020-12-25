@@ -14,11 +14,17 @@
 namespace EasyEvent {
 
     class EASY_EVENT_API Connection: public Selectable, public std::enable_shared_from_this<Connection> {
+    private:
+        struct MakeSharedTag {};
     public:
+        Connection(IOLoop* ioLoop, SocketType socket, size_t maxReadBufferSize, size_t maxWriteBufferSize,
+                   MakeSharedTag tag)
+            : Connection(ioLoop, socket, maxReadBufferSize, maxWriteBufferSize) {
+
+        }
+
         Connection(const Connection&) = delete;
         Connection& operator=(const Connection&) = delete;
-
-        Connection(IOLoop* ioLoop, SocketType socket, size_t maxReadBufferSize=0, size_t maxWriteBufferSize=0);
 
         ~Connection() noexcept override;
 
@@ -119,6 +125,11 @@ namespace EasyEvent {
             return address;
         }
 
+        static std::shared_ptr<Connection> create(IOLoop* ioLoop, SocketType socket, size_t maxReadBufferSize=0,
+                                                  size_t maxWriteBufferSize=0) {
+            return std::make_shared<Connection>(ioLoop, socket, maxReadBufferSize, maxWriteBufferSize, MakeSharedTag{});
+        }
+
         static constexpr size_t DefaultMaxReadBufferSize = 104857600;
         static constexpr size_t DefaultReadBufferCapacity = 8192;
         static constexpr size_t DefaultReadChunkSize = 4096;
@@ -145,6 +156,8 @@ namespace EasyEvent {
             SocketOps::GetSockError(_socket, error, ec);
             return error;
         }
+
+        Connection(IOLoop* ioLoop, SocketType socket, size_t maxReadBufferSize, size_t maxWriteBufferSize);
 
         ssize_t writeToFd(const void* data, size_t size, std::error_code& ec) {
             return SocketOps::Send(_socket, data, size, 0, ec);

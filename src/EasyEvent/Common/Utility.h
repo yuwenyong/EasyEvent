@@ -39,7 +39,7 @@ namespace EasyEvent {
             return ptr;
         }
 
-        std::shared_ptr<ValueT> lock() {
+        std::shared_ptr<ValueT> shared() {
             return _val->shared_from_this();
         }
 

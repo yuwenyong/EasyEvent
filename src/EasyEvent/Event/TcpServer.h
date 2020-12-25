@@ -55,14 +55,14 @@ namespace EasyEvent {
     using TcpListenerHolder = Holder<TcpListener>;
 
     class EASY_EVENT_API TcpServer: public std::enable_shared_from_this<TcpServer> {
+    private:
+        struct MakeSharedTag {};
     public:
         TcpServer(const TcpServer&) = delete;
         TcpServer& operator=(const TcpServer&) = delete;
 
-        explicit TcpServer(IOLoop* ioLoop, size_t maxBufferSize=0)
-            : _ioLoop(ioLoop ? ioLoop : IOLoop::current())
-            , _logger(_ioLoop->getLogger())
-            , _maxBufferSize(maxBufferSize) {
+        explicit TcpServer(IOLoop* ioLoop, size_t maxBufferSize, MakeSharedTag tag)
+                : TcpServer(ioLoop, maxBufferSize) {
 
         }
 
@@ -82,7 +82,17 @@ namespace EasyEvent {
 
         virtual void handleConnection(ConnectionPtr connection, const Address& address);
 
+        static std::shared_ptr<TcpServer> create(IOLoop* ioLoop, size_t maxBufferSize=0) {
+            return std::make_shared<TcpServer>(ioLoop, maxBufferSize, MakeSharedTag{});
+        }
     protected:
+        explicit TcpServer(IOLoop* ioLoop, size_t maxBufferSize)
+                : _ioLoop(ioLoop ? ioLoop : IOLoop::current())
+                , _logger(_ioLoop->getLogger())
+                , _maxBufferSize(maxBufferSize) {
+
+        }
+
         std::vector<SocketHolder> bindSockets(unsigned short port, const std::string& address="",
                                               ProtocolSupport protocol=EnableBoth, int backlog=DefaultBacklog);
 

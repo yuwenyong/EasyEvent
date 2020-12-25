@@ -92,7 +92,7 @@ void EasyEvent::TcpConnector::onConnectDone(bool primary, SocketType socket, con
         if (iter == _connections.end()) {
             return;
         }
-        auto connection = iter->second.lock();
+        auto connection = iter->second.shared();
         _connections.erase(iter);
         clearTimeouts();
         closeConnections();
@@ -168,5 +168,5 @@ EasyEvent::ConnectionPtr EasyEvent::TcpClient::createConnection(const Address &a
         }
         SocketOps::Bind(socket.get(), sourceAddr);
     }
-    return std::make_shared<Connection>(_ioLoop, socket.release(), _maxBufferSize);
+    return Connection::create(_ioLoop, socket.release(), _maxBufferSize);
 }
