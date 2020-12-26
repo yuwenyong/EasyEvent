@@ -14,7 +14,7 @@
 #   include <ws2tcpip.h>
 #   include <mswsock.h>
 #   pragma comment(lib, "ws2_32.lib")
-#   pragma comment(lib, "msock.lib")
+#   pragma comment(lib, "mswsock.lib")
 #else
 #   include <sys/ioctl.h>
 #   include <sys/types.h>
