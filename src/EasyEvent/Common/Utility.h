@@ -39,7 +39,17 @@ namespace EasyEvent {
             return ptr;
         }
 
+        std::shared_ptr<const ValueT> shared() const {
+            if (_ptr) {
+                return _ptr;
+            }
+            return _val->shared_from_this();
+        }
+
         std::shared_ptr<ValueT> shared() {
+            if (_ptr) {
+                return _ptr;
+            }
             return _val->shared_from_this();
         }
 

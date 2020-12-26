@@ -242,13 +242,12 @@ void EasyEvent::Connection::write(std::vector<uint8> &&data, Task<void()> &&call
 }
 
 void EasyEvent::Connection::close(const std::error_code& error) {
-    auto self = shared_from_this();
     if (!closed()) {
         if (error) {
             _error = error;
         }
         if (_state != IO_EVENT_NONE) {
-            _ioLoop->removeHandler(self);
+            _ioLoop->removeHandler(shared_from_this());
             _state = IO_EVENT_NONE;
         }
         closeFD();
