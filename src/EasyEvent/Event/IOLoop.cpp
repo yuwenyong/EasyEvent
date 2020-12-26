@@ -53,7 +53,7 @@ void EasyEvent::IOLoop::addHandler(const SelectablePtr &handler, IOEvents events
         Verify(_readFdSet.set(handler->getFD()));
     }
     if ((events & IO_EVENT_WRITE) != 0) {
-        Verify(_writeFdSet.set(handler->FD()));
+        Verify(_writeFdSet.set(handler->getFD()));
     }
     Verify(_errorFdSet.set(handler->getFD()));
 #elif defined(EASY_EVENT_USE_EPOLL)

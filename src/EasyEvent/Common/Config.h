@@ -141,6 +141,10 @@ typedef unsigned long long UInt64;
 
 
 #ifdef _WIN32
+#   define _WIN32_WINNT 0x0601
+#   ifndef WIN32_LEAN_AND_MEAN
+#       define WIN32_LEAN_AND_MEAN
+#   endif
 #   include <windows.h>
 #   include <sys/timeb.h>
 #   include <sys/types.h>
@@ -169,6 +173,18 @@ typedef unsigned long long UInt64;
 #  define EASY_EVENT_PLATFORM EASY_EVENT_PLATFORM_INTEL
 #else
 #  define EASY_EVENT_PLATFORM EASY_EVENT_PLATFORM_UNIX
+#endif
+
+#if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_LINUX || EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_APPLE
+#   define EASY_EVENT_HAS_SSIZE_T 1
+#endif
+
+#ifndef EASY_EVENT_HAS_SSIZE_T
+#   if defined(EASY_EVENT_64)
+typedef Int64 ssize_t;
+#   else
+typedef int ssize_t;
+#   endif
 #endif
 
 #include <cstddef>
@@ -238,6 +254,24 @@ typedef uint8_t uint8;
 #include <future>
 #include <filesystem>
 
+#ifdef _MSC_VER
+#   include <float.h>
+#   define snprintf _snprintf
+#   define atoll _atoi64
+#   define vsnprintf _vsnprintf
+#   define llabs _abs64
+#else
+#   define stricmp strcasecmp
+#   define strnicmp strncasecmp
+#endif
+
+inline unsigned long atoul(char const* str) {
+    return strtoul(str, nullptr, 10);
+}
+
+inline unsigned long long atoull(char const* str) {
+    return strtoull(str, nullptr, 10);
+}
 
 #ifdef max
 #undef max
