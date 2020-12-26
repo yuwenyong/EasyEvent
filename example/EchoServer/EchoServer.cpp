@@ -47,9 +47,9 @@ int main (int argc, char **argv) {
     logger->addSink(ConsoleSink::create(true, LOG_LEVEL_DEBUG));
 
     IOLoop ioLoop(logger, true);
-    LOG_INFO(logger) << "Start listening on port: " << 1234;
+    LOG_INFO(logger) << "Start listening on port: " << 12345;
     auto server = TcpServer::create(&ioLoop);
-    server->bind(1234);
+    server->bind(12345);
     server->start([logger](ConnectionPtr connection, const Address& addr) {
         LOG_INFO(logger) << "Get connection from: " << addr;
         auto session = std::make_shared<EchoSession>(connection, logger);

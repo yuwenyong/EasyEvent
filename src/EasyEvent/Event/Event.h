@@ -14,6 +14,7 @@
 #   include <ws2tcpip.h>
 #   include <mswsock.h>
 #   pragma comment(lib, "ws2_32.lib")
+#   pragma comment(lib, "msock.lib")
 #else
 #   include <sys/ioctl.h>
 #   include <sys/types.h>
@@ -39,10 +40,10 @@
 
 
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
-#   define NATIVE_ERROR(e) e
-#   define SOCKET_ERROR(e) WSA ## e
-#   define NETDB_ERROR(e) WSA ## e
-#   define GETADDRINFO_ERROR(e) WSA ## e
+#   define EVENT_NATIVE_ERROR(e) e
+#   define EVENT_SOCKET_ERROR(e) WSA ## e
+#   define EVENT_NETDB_ERROR(e) WSA ## e
+#   define EVENT_GETADDRINFO_ERROR(e) WSA ## e
 #   define WIN_OR_POSIX(e_win, e_posix) e_win
 
 typedef SOCKET SocketType;
@@ -53,10 +54,10 @@ const int SocketErrorRetVal = SOCKET_ERROR;
 const int MaxAddrV4StrLen = 256;
 const int MaxAddrV6StrLen = 256;
 #else
-#   define NATIVE_ERROR(e) e
-#   define SOCKET_ERROR(e) e
-#   define NETDB_ERROR(e) e
-#   define GETADDRINFO_ERROR(e) e
+#   define EVENT_NATIVE_ERROR(e) e
+#   define EVENT_SOCKET_ERROR(e) e
+#   define EVENT_NETDB_ERROR(e) e
+#   define EVENT_GETADDRINFO_ERROR(e) e
 #   define WIN_OR_POSIX(e_win, e_posix) e_posix
 
 typedef int SocketType;
@@ -81,91 +82,91 @@ namespace EasyEvent {
 
     enum class SocketErrors {
         /// Permission denied.
-        AccessDenied = SOCKET_ERROR(EACCES),
+        AccessDenied = EVENT_SOCKET_ERROR(EACCES),
         /// Address family not supported by protocol.
-        AddressFamilyNotSupported = SOCKET_ERROR(EAFNOSUPPORT),
+        AddressFamilyNotSupported = EVENT_SOCKET_ERROR(EAFNOSUPPORT),
         /// Address already in use.
-        AddressInUse = SOCKET_ERROR(EADDRINUSE),
+        AddressInUse = EVENT_SOCKET_ERROR(EADDRINUSE),
         /// Transport endpoint is already connected.
-        AlreadyConnected = SOCKET_ERROR(EISCONN),
+        AlreadyConnected = EVENT_SOCKET_ERROR(EISCONN),
         /// Operation already in progress.
-        AlreadyStarted = SOCKET_ERROR(EALREADY),
+        AlreadyStarted = EVENT_SOCKET_ERROR(EALREADY),
         /// Broken pipe.
-        BrokenPipe = WIN_OR_POSIX(NATIVE_ERROR(ERROR_BROKEN_PIPE),NATIVE_ERROR(EPIPE)),
+        BrokenPipe = WIN_OR_POSIX(EVENT_NATIVE_ERROR(ERROR_BROKEN_PIPE),EVENT_NATIVE_ERROR(EPIPE)),
         /// A connection has been aborted.
-        ConnectionAborted = SOCKET_ERROR(ECONNABORTED),
+        ConnectionAborted = EVENT_SOCKET_ERROR(ECONNABORTED),
         /// Connection refused.
-        ConnectionRefused = SOCKET_ERROR(ECONNREFUSED),
+        ConnectionRefused = EVENT_SOCKET_ERROR(ECONNREFUSED),
         /// Connection reset by peer.
-        ConnectionReset = SOCKET_ERROR(ECONNRESET),
+        ConnectionReset = EVENT_SOCKET_ERROR(ECONNRESET),
         /// Bad file descriptor.
-        BadDescriptor = SOCKET_ERROR(EBADF),
+        BadDescriptor = EVENT_SOCKET_ERROR(EBADF),
         /// Bad address.
-        Fault = SOCKET_ERROR(EFAULT),
+        Fault = EVENT_SOCKET_ERROR(EFAULT),
         /// No route to host.
-        HostUnreachable = SOCKET_ERROR(EHOSTUNREACH),
+        HostUnreachable = EVENT_SOCKET_ERROR(EHOSTUNREACH),
         /// Operation now in progress.
-        InProgress = SOCKET_ERROR(EINPROGRESS),
+        InProgress = EVENT_SOCKET_ERROR(EINPROGRESS),
         /// Interrupted system call.
-        Interrupted = SOCKET_ERROR(EINTR),
+        Interrupted = EVENT_SOCKET_ERROR(EINTR),
         /// Invalid argument.
-        InvalidArgument = SOCKET_ERROR(EINVAL),
+        InvalidArgument = EVENT_SOCKET_ERROR(EINVAL),
         /// Message too long.
-        MessageSize = SOCKET_ERROR(EMSGSIZE),
+        MessageSize = EVENT_SOCKET_ERROR(EMSGSIZE),
         /// The name was too long.
-        NameTooLong = SOCKET_ERROR(ENAMETOOLONG),
+        NameTooLong = EVENT_SOCKET_ERROR(ENAMETOOLONG),
         /// Network is down.
-        NetworkDown = SOCKET_ERROR(ENETDOWN),
+        NetworkDown = EVENT_SOCKET_ERROR(ENETDOWN),
         /// Network dropped connection on reset.
-        NetworkReset = SOCKET_ERROR(ENETRESET),
+        NetworkReset = EVENT_SOCKET_ERROR(ENETRESET),
         /// Network is unreachable.
-        NetworkUnreachable = SOCKET_ERROR(ENETUNREACH),
+        NetworkUnreachable = EVENT_SOCKET_ERROR(ENETUNREACH),
         /// Too many open files.
-        NoDescriptors = SOCKET_ERROR(EMFILE),
+        NoDescriptors = EVENT_SOCKET_ERROR(EMFILE),
         /// No buffer space available.
-        NoBufferSpace = SOCKET_ERROR(ENOBUFS),
+        NoBufferSpace = EVENT_SOCKET_ERROR(ENOBUFS),
         /// Cannot allocate memory.
-        NoMemory = WIN_OR_POSIX(NATIVE_ERROR(ERROR_OUTOFMEMORY),NATIVE_ERROR(ENOMEM)),
+        NoMemory = WIN_OR_POSIX(EVENT_NATIVE_ERROR(ERROR_OUTOFMEMORY),EVENT_NATIVE_ERROR(ENOMEM)),
         /// Operation not permitted.
-        NoPermission = WIN_OR_POSIX(NATIVE_ERROR(ERROR_ACCESS_DENIED),NATIVE_ERROR(EPERM)),
+        NoPermission = WIN_OR_POSIX(EVENT_NATIVE_ERROR(ERROR_ACCESS_DENIED),EVENT_NATIVE_ERROR(EPERM)),
         /// Protocol not available.
-        NoProtocolOption = SOCKET_ERROR(ENOPROTOOPT),
+        NoProtocolOption = EVENT_SOCKET_ERROR(ENOPROTOOPT),
         /// No such device.
-        NoSuchDevice = WIN_OR_POSIX(NATIVE_ERROR(ERROR_BAD_UNIT),NATIVE_ERROR(ENODEV)),
+        NoSuchDevice = WIN_OR_POSIX(EVENT_NATIVE_ERROR(ERROR_BAD_UNIT),EVENT_NATIVE_ERROR(ENODEV)),
         /// Transport endpoint is not connected.
-        NotConnected = SOCKET_ERROR(ENOTCONN),
+        NotConnected = EVENT_SOCKET_ERROR(ENOTCONN),
         /// Socket operation on non-socket.
-        NotSocket = SOCKET_ERROR(ENOTSOCK),
+        NotSocket = EVENT_SOCKET_ERROR(ENOTSOCK),
         /// Operation cancelled.
-        OperationAborted = WIN_OR_POSIX(NATIVE_ERROR(ERROR_OPERATION_ABORTED),NATIVE_ERROR(ECANCELED)),
+        OperationAborted = WIN_OR_POSIX(EVENT_NATIVE_ERROR(ERROR_OPERATION_ABORTED),EVENT_NATIVE_ERROR(ECANCELED)),
         /// Operation not supported.
-        OperationNotSupported = SOCKET_ERROR(EOPNOTSUPP),
+        OperationNotSupported = EVENT_SOCKET_ERROR(EOPNOTSUPP),
         /// Cannot send after transport endpoint shutdown.
-        ShutDown = SOCKET_ERROR(ESHUTDOWN),
+        ShutDown = EVENT_SOCKET_ERROR(ESHUTDOWN),
         /// Connection timed out.
-        TimedOut = SOCKET_ERROR(ETIMEDOUT),
+        TimedOut = EVENT_SOCKET_ERROR(ETIMEDOUT),
         /// Resource temporarily unavailable.
-        TryAgain = WIN_OR_POSIX(NATIVE_ERROR(ERROR_RETRY),NATIVE_ERROR(EAGAIN)),
+        TryAgain = WIN_OR_POSIX(EVENT_NATIVE_ERROR(ERROR_RETRY),EVENT_NATIVE_ERROR(EAGAIN)),
         /// The socket is marked non-blocking and the requested operation would block.
-        WouldBlock = SOCKET_ERROR(EWOULDBLOCK)
+        WouldBlock = EVENT_SOCKET_ERROR(EWOULDBLOCK)
     };
 
     enum class NetDBErrors {
         /// Host not found (authoritative).
-        HostNotFound = NETDB_ERROR(HOST_NOT_FOUND),
+        HostNotFound = EVENT_NETDB_ERROR(HOST_NOT_FOUND),
         /// Host not found (non-authoritative).
-        HostNotFoundTryAgain = NETDB_ERROR(TRY_AGAIN),
+        HostNotFoundTryAgain = EVENT_NETDB_ERROR(TRY_AGAIN),
         /// The query is valid but does not have associated address data.
-        NoData = NETDB_ERROR(NO_DATA),
+        NoData = EVENT_NETDB_ERROR(NO_DATA),
         /// A non-recoverable error occurred.
-        NoRecovery = NETDB_ERROR(NO_RECOVERY)
+        NoRecovery = EVENT_NETDB_ERROR(NO_RECOVERY)
     };
 
     enum class AddrInfoErrors {
         /// The service is not supported for the given socket type.
-        ServiceNotFound = WIN_OR_POSIX(NATIVE_ERROR(WSATYPE_NOT_FOUND),GETADDRINFO_ERROR(EAI_SERVICE)),
+        ServiceNotFound = WIN_OR_POSIX(EVENT_NATIVE_ERROR(WSATYPE_NOT_FOUND),EVENT_GETADDRINFO_ERROR(EAI_SERVICE)),
         /// The socket type is not supported.
-        SocketTypeNotSupported = WIN_OR_POSIX(NATIVE_ERROR(WSAESOCKTNOSUPPORT),GETADDRINFO_ERROR(EAI_SOCKTYPE))
+        SocketTypeNotSupported = WIN_OR_POSIX(EVENT_NATIVE_ERROR(WSAESOCKTNOSUPPORT),EVENT_GETADDRINFO_ERROR(EAI_SOCKTYPE))
     };
 
     enum class EventErrors {
