@@ -66,7 +66,7 @@ void EasyEvent::TcpConnector::tryConnect(bool primary) {
     } catch (std::system_error& e) {
         ec = e.code();
     } catch (...) {
-        ec = EventErrors::UnexpectedBehaviour;
+        ec = UserErrors::UnexpectedBehaviour;
     }
     if (ec) {
         _ioLoop->addCallback([this, self=shared_from_this(), primary, ec]() {

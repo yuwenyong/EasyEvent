@@ -18,6 +18,40 @@ namespace EasyEvent {
     };
 
 
+    template <typename T> struct FailType: std::false_type {};
+
+    template <typename VariantT, typename CompT>
+    class VariantComparer: NonCopyable {
+    public:
+        explicit VariantComparer(const VariantT& lhs) noexcept
+            : _lhs(lhs) {
+
+        }
+
+        template<typename T>
+        bool operator()(const T& rhsContent) const {
+            const T& lhsContent = std::get<T>(_lhs);
+            return CompT()(lhsContent, rhsContent);
+        }
+    private:
+        const VariantT& _lhs;
+    };
+
+    struct VariantEqualComp {
+        template<typename T>
+        bool operator()(const T& lhs, const T& rhs) const {
+            return lhs == rhs;
+        }
+    };
+
+    struct VariantLessComp {
+        template<typename T>
+        bool operator()(const T& lhs, const T& rhs) const {
+            return lhs < rhs;
+        }
+    };
+
+
     template <typename ValueT>
     class Holder {
     public:

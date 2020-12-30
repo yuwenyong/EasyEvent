@@ -101,6 +101,8 @@ void EasyEvent::WriteBuffer::advance(size_t size) {
                     _firstPos += size;
                     size = 0;
                 }
+            } else {
+                static_assert(FailType<T>{});
             }
         }, _secondaryBuffers.front());
         Assert(_firstPos == 0 || size == 0);
@@ -128,6 +130,8 @@ void * EasyEvent::WriteBuffer::getReadPtr() {
             ptr = arg.data() + _firstPos;
         } else if constexpr (std::is_same_v<T, std::vector<int8>>) {
             ptr = arg.data() + _firstPos;
+        } else {
+            static_assert(FailType<T>{});
         }
     }, _secondaryBuffers.front());
     Assert(ptr != nullptr);
@@ -151,6 +155,8 @@ size_t EasyEvent::WriteBuffer::getReadSize() const {
             size = arg.size() - _firstPos;
         } else if constexpr (std::is_same_v<T, std::vector<int8>>) {
             size = arg.size() - _firstPos;
+        } else {
+            static_assert(FailType<T>{});
         }
     }, _secondaryBuffers.front());
     Assert(size > 0);

@@ -178,7 +178,6 @@ namespace EasyEvent {
         CloseCallbackFailed = 6,
         ConnectionClosed = 7,
         ConnectionBufferFull = 8,
-        UnexpectedBehaviour = 9,
         AlreadyListening = 10,
         CallbackNotFound = 11,
         AlreadyConnecting = 12,

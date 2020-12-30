@@ -14,6 +14,9 @@ namespace EasyEvent {
         NotFound = 2,
         NotSupported = 3,
         OperationCanceled = 4,
+        NotConvertible = 5,
+        OutOfRange = 6,
+        UnexpectedBehaviour = 7,
     };
 
     class EASY_EVENT_API UserErrorCategory: public std::error_category {

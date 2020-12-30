@@ -88,11 +88,11 @@ void EasyEvent::Connection::handleEvents(IOEvents events) {
         }
     } catch (std::exception& e) {
         LOG_ERROR(_logger) << "Uncaught exception closing connection: " << e.what();
-        close(EventErrors::UnexpectedBehaviour);
+        close(UserErrors::UnexpectedBehaviour);
         throw;
     } catch (...) {
         LOG_ERROR(_logger) << "Uncaught unknown exception closing connection";
-        close(EventErrors::UnexpectedBehaviour);
+        close(UserErrors::UnexpectedBehaviour);
         throw;
     }
 }

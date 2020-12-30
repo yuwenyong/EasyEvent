@@ -18,6 +18,12 @@ std::string EasyEvent::UserErrorCategory::message(int ev) const {
             return "not supported";
         case UserErrors::OperationCanceled:
             return "operation canceled";
+        case UserErrors::NotConvertible:
+            return "not convertible";
+        case UserErrors::OutOfRange:
+            return "out of range";
+        case UserErrors::UnexpectedBehaviour:
+            return "unexpected behaviour";
         default:
             return "(unrecognized error)";
     }
