@@ -17,6 +17,7 @@ namespace EasyEvent {
         NotConvertible = 5,
         OutOfRange = 6,
         UnexpectedBehaviour = 7,
+        InvalidValue = 8,
     };
 
     class EASY_EVENT_API UserErrorCategory: public std::error_category {
@@ -32,9 +33,9 @@ namespace EasyEvent {
         return {static_cast<int>(err), getUserErrorCategory()};
     }
 
-    EASY_EVENT_API void doThrowError(const std::error_code& err);
+    EASY_EVENT_API [[ noreturn ]] void doThrowError(const std::error_code& err);
 
-    EASY_EVENT_API void doThrowError(const std::error_code& err, const char* location);
+    EASY_EVENT_API [[ noreturn ]] void doThrowError(const std::error_code& err, const char* location);
 
     inline void throwError(const std::error_code& err) {
         if (err) {

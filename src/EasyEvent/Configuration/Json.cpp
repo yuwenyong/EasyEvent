@@ -675,121 +675,136 @@ bool EasyEvent::JsonValue::isConvertibleTo(JsonType other) const {
         }
         case JsonType::IntValue: {
             return isInt()
-                   || (_value.type() == typeid(double)
-                       && InRange(boost::get<double>(_value), std::numeric_limits<int>::min(),
+                   || (isTypeOf(JsonType::RealValue)
+                       && InRange(std::get<double>(_value), std::numeric_limits<int>::min(),
                                   std::numeric_limits<int>::max()))
-                   || _value.type() == typeid(bool)
-                   || _value.type() == typeid(NullValue);
+                   || isTypeOf(JsonType::BoolValue)
+                   || isTypeOf(JsonType::NullValue);
         }
         case JsonType::UintValue: {
             return isUInt()
-                   || (_value.type() == typeid(double)
-                       && InRange(boost::get<double>(_value), 0, std::numeric_limits<unsigned int>::max()))
-                   || _value.type() == typeid(bool)
-                   || _value.type() == typeid(NullValue);
+                   || (isTypeOf(JsonType::RealValue)
+                       && InRange(std::get<double>(_value), 0, std::numeric_limits<unsigned int>::max()))
+                      || isTypeOf(JsonType::BoolValue)
+                      || isTypeOf(JsonType::NullValue);
         }
         case JsonType::RealValue: {
-            return isNumeric() || _value.type() == typeid(bool) || _value.type() == typeid(NullValue);
+            return isNumeric() || isTypeOf(JsonType::BoolValue) || isTypeOf(JsonType::NullValue);
         }
         case JsonType::StringValue: {
-            return isNumeric() || _value.type() == typeid(bool) || _value.type() == typeid(std::string)
-                   || _value.type() == typeid(NullValue);
+            return isNumeric() || isTypeOf(JsonType::BoolValue) || isTypeOf(JsonType::StringValue)
+                   || isTypeOf(JsonType::NullValue);
         }
         case JsonType::BoolValue: {
-            return isNumeric() || _value.type() == typeid(bool) || _value.type() == typeid(NullValue);
+            return isNumeric() || isTypeOf(JsonType::BoolValue) || isTypeOf(JsonType::NullValue);
         }
         case JsonType::ArrayValue: {
-            return _value.type() == typeid(ArrayType) || _value.type() == typeid(NullValue);
+            return isTypeOf(JsonType::ArrayValue) || isTypeOf(JsonType::NullValue);
         }
         case JsonType::ObjectValue: {
-            return _value.type() == typeid(ObjectType) || _value.type() == typeid(NullValue);
+            return isTypeOf(JsonType::ObjectValue) || isTypeOf(JsonType::NullValue);
         }
     }
     Assert(false);
     return false; // unreachable
 }
 
-size_t JsonValue::size() const {
-    if (_value.type() == typeid(ArrayType)) {
-        return boost::get<ArrayType>(_value).size();
-    } else if (_value.type() == typeid(ObjectType)) {
-        return boost::get<ObjectType>(_value).size();
+size_t EasyEvent::JsonValue::size() const {
+    if (isTypeOf(JsonType::ArrayValue)) {
+        return std::get<ArrayType>(_value).size();
+    } else if (isTypeOf(JsonType::ObjectValue)) {
+        return std::get<ObjectType>(_value).size();
     } else {
         return 0;
     }
 }
 
-void JsonValue::clear() {
-    if (_value.type() == typeid(ArrayType)) {
-        boost::get<ArrayType>(_value).clear();
-    } else if (_value.type() == typeid(ObjectType)) {
-        boost::get<ObjectType>(_value).clear();
-    } else if (_value.type() == typeid(NullValue)) {
-
+void EasyEvent::JsonValue::clear(std::error_code& ec) {
+    if (isTypeOf(JsonType::ArrayValue)) {
+        std::get<ArrayType>(_value).clear();
+        ec.assign(0, ec.category());
+    } else if (isTypeOf(JsonType::ObjectValue)) {
+        std::get<ObjectType>(_value).clear();
+        ec.assign(0, ec.category());
+    } else if (isTypeOf(JsonType::NullValue)) {
+        ec.assign(0, ec.category());
     } else {
-        NET4CXX_THROW_EXCEPTION(ValueError, "clear requires complex value");
+        ec = UserErrors::NotSupported;
     }
 }
 
-void JsonValue::resize(size_t newSize) {
-    if (_value.type() == typeid(NullValue)) {
-        *this = JsonValue(JsonType::arrayValue);
+void EasyEvent::JsonValue::resize(size_t newSize, std::error_code& ec) {
+    if (isTypeOf(JsonType::NullValue)) {
+        *this = JsonValue(JsonType::ArrayValue);
     }
-    if (_value.type() != typeid(ArrayType)) {
-        NET4CXX_THROW_EXCEPTION(ValueError, "resize requires array value");
+    if (!isTypeOf(JsonType::ArrayValue)) {
+        ec = UserErrors::NotSupported;
+        return;
     }
-    boost::get<ArrayType>(_value).resize(newSize);
+    std::get<ArrayType>(_value).resize(newSize);
+    ec.assign(0, ec.category());
 }
 
-JsonValue& JsonValue::operator[](size_t index) {
-    if (_value.type() == typeid(NullValue)) {
-        *this = JsonValue(JsonType::arrayValue);
-    } else if (_value.type() != typeid(ArrayType)) {
-        NET4CXX_THROW_EXCEPTION(ValueError, "operator[](index) requires array value");
+EasyEvent::JsonValue& EasyEvent::JsonValue::operator[](size_t index) {
+    if (isTypeOf(JsonType::NullValue)) {
+        *this = JsonValue(JsonType::ArrayValue);
+    } else if (!isTypeOf(JsonType::ArrayValue)) {
+        std::error_code ec;
+        ec = UserErrors::NotSupported;
+        throwError(ec, "JsonValue");
     }
-    auto &array = boost::get<ArrayType>(_value);
+    auto &array = std::get<ArrayType>(_value);
     if (index >= array.size()) {
         array.resize(index + 1);
     }
     return array[index];
 }
 
-JsonValue& JsonValue::operator[](int index) {
+EasyEvent::JsonValue& EasyEvent::JsonValue::operator[](int index) {
     if (index < 0) {
-        NET4CXX_THROW_EXCEPTION(ValueError, "index cannot be negative");
+        std::error_code ec;
+        ec = UserErrors::OutOfRange;
+        throwError(ec, "JsonValue");
     }
     return (*this)[static_cast<size_t>(index)];
 }
 
-const JsonValue& JsonValue::operator[](size_t index) const {
-    if (_value.type() == typeid(NullValue)) {
+const EasyEvent::JsonValue& EasyEvent::JsonValue::operator[](size_t index) const {
+    if (isTypeOf(JsonType::NullValue)) {
         return nullSingleton();
-    } else if (_value.type() == typeid(ArrayType)) {
-        auto &array = boost::get<ArrayType>(_value);
+    } else if (isTypeOf(JsonType::ArrayValue)) {
+        auto &array = std::get<ArrayType>(_value);
         if (index < array.size()) {
             return array[index];
         } else {
             return nullSingleton();
         }
     } else {
-        NET4CXX_THROW_EXCEPTION(ValueError, "operator[](index)const requires array value");
+        std::error_code ec;
+        ec = UserErrors::NotSupported;
+        throwError(ec, "JsonValue");
+        return nullSingleton(); // unreachable
     }
 }
 
-const JsonValue& JsonValue::operator[](int index) const {
+const EasyEvent::JsonValue& EasyEvent::JsonValue::operator[](int index) const {
     if (index < 0) {
-        NET4CXX_THROW_EXCEPTION(ValueError, "index cannot be negative");
+        std::error_code ec;
+        ec = UserErrors::OutOfRange;
+        throwError(ec, "JsonValue");
     }
     return (*this)[static_cast<size_t>(index)];
 }
 
-JsonValue& JsonValue::operator[](const char *key) {
-    if (_value.type() == typeid(NullValue)) {
-        *this = JsonValue(JsonType::objectValue);
-    } else if (_value.type() != typeid(ObjectType)) {
-        NET4CXX_THROW_EXCEPTION(ValueError, "operator[](key) requires object value");
+EasyEvent::JsonValue& EasyEvent::JsonValue::operator[](const char *key) {
+    if (isTypeOf(JsonType::NullValue)) {
+        *this = JsonValue(JsonType::ObjectValue);
+    } else if (!isTypeOf(JsonType::ObjectValue)) {
+        std::error_code ec;
+        ec = UserErrors::NotSupported;
+        throwError(ec, "JsonValue");
     }
-    auto &object = boost::get<ObjectType>(_value);
+    auto &object = std::get<ObjectType>(_value);
     auto it = object.find(key);
     if (it == object.end()) {
         it = object.insert(it, std::make_pair(key, nullSingleton()));
@@ -797,33 +812,36 @@ JsonValue& JsonValue::operator[](const char *key) {
     return it->second;
 }
 
-const JsonValue& JsonValue::operator[](const char *key) const {
+const EasyEvent::JsonValue& EasyEvent::JsonValue::operator[](const char *key) const {
     const JsonValue *found = find(key);
     return found ? *found : nullSingleton();
 }
 
-JsonValue JsonValue::get(const char *key, const JsonValue &defaultValue) const {
+EasyEvent::JsonValue EasyEvent::JsonValue::get(const char *key, const JsonValue &defaultValue) const {
     const JsonValue *found = find(key);
     return found ? *found : defaultValue;
 }
 
-const JsonValue* JsonValue::find(const char *key) const {
-    if (_value.type() == typeid(NullValue)) {
+const EasyEvent::JsonValue* EasyEvent::JsonValue::find(const char *key) const {
+    if (isTypeOf(JsonType::NullValue)) {
         return nullptr;
-    } else if (_value.type() == typeid(ObjectType)) {
-        auto &object = boost::get<ObjectType>(_value);
+    } else if (isTypeOf(JsonType::ObjectValue)) {
+        auto &object = std::get<ObjectType>(_value);
         auto it = object.find(key);
         return it != object.end() ? &(it->second) : nullptr;
     } else {
-        NET4CXX_THROW_EXCEPTION(ValueError, "find requires object value or null value");
+        std::error_code ec;
+        ec = UserErrors::NotSupported;
+        throwError(ec, "JsonValue");
+        return nullptr; // unreachable
     }
 }
 
-bool JsonValue::removeMember(const char *key, JsonValue *removed) {
-    if (_value.type() != typeid(ObjectType)) {
+bool EasyEvent::JsonValue::removeMember(const char *key, JsonValue *removed) {
+    if (!isTypeOf(JsonType::ObjectValue)) {
         return false;
     }
-    auto &object = boost::get<ObjectType>(_value);
+    auto &object = std::get<ObjectType>(_value);
     auto it = object.find(key);
     if (it == object.end()) {
         return false;
@@ -835,11 +853,11 @@ bool JsonValue::removeMember(const char *key, JsonValue *removed) {
     return true;
 }
 
-bool JsonValue::removeIndex(size_t index, JsonValue *removed) {
-    if (_value.type() != typeid(ArrayType)) {
+bool EasyEvent::JsonValue::removeIndex(size_t index, JsonValue *removed) {
+    if (!isTypeOf(JsonType::ArrayValue)) {
         return false;
     }
-    auto &array = boost::get<ArrayType>(_value);
+    auto &array = std::get<ArrayType>(_value);
     if (index >= array.size()) {
         return false;
     }
@@ -850,37 +868,39 @@ bool JsonValue::removeIndex(size_t index, JsonValue *removed) {
     return true;
 }
 
-StringVector JsonValue::getMemberNames() const {
-    StringVector members;
-    if (_value.type() == typeid(NullValue)) {
+std::vector<std::string> EasyEvent::JsonValue::getMemberNames() const {
+    std::vector<std::string> members;
+    if (isTypeOf(JsonType::NullValue)) {
 
-    } else if (_value.type() == typeid(ObjectType)) {
-        auto &object = boost::get<ObjectType>(_value);
+    } else if (isTypeOf(JsonType::ObjectValue)) {
+        auto &object = std::get<ObjectType>(_value);
         members.reserve(object.size());
         for (auto &kv: object) {
             members.push_back(kv.first);
         }
     } else {
-        NET4CXX_THROW_EXCEPTION(ValueError, "getMemberNames requires object value");
+        std::error_code ec;
+        ec = UserErrors::NotSupported;
+        throwError(ec, "JsonValue");
     }
     return members;
 }
 
-std::string JsonValue::toStyledString() const {
+std::string EasyEvent::JsonValue::toStyledString() const {
     StreamWriterBuilder builder;
-    std::string out = hasComment(COMMENT_BEFORE) ? "\n" : "";
+    std::string out = hasComment(CommentBefore) ? "\n" : "";
     out += writeString(builder, *this);
     out += "\n";
     return out;
 }
 
-const JsonValue& JsonValue::nullSingleton() {
+const EasyEvent::JsonValue& EasyEvent::JsonValue::nullSingleton() {
     static const JsonValue nullStatic;
     return nullStatic;
 }
 
 
-BuiltStyledStreamWriter::BuiltStyledStreamWriter(
+EasyEvent::BuiltStyledStreamWriter::BuiltStyledStreamWriter(
         std::string indentation,
         CommentStyle cs,
         std::string colonSymbol,
@@ -901,7 +921,7 @@ BuiltStyledStreamWriter::BuiltStyledStreamWriter(
 
 }
 
-int BuiltStyledStreamWriter::write(const JsonValue &root, std::ostream *sout) {
+int EasyEvent::BuiltStyledStreamWriter::write(const JsonValue &root, std::ostream *sout) {
     _sout = sout;
     _addChildValues = false;
     _indented = true;
@@ -918,38 +938,38 @@ int BuiltStyledStreamWriter::write(const JsonValue &root, std::ostream *sout) {
     return 0;
 }
 
-void BuiltStyledStreamWriter::writeValue(const JsonValue &value) {
+void EasyEvent::BuiltStyledStreamWriter::writeValue(const JsonValue &value) {
     switch (value.type()) {
-        case JsonType::nullValue: {
+        case JsonType::NullValue: {
             pushValue(_nullSymbol);
             break;
         }
-        case JsonType::intValue: {
+        case JsonType::IntValue: {
             pushValue(std::to_string(value.asInt64()));
             break;
         }
-        case JsonType::uintValue: {
+        case JsonType::UintValue: {
             pushValue(std::to_string(value.asUInt64()));
             break;
         }
-        case JsonType::realValue: {
+        case JsonType::RealValue: {
             pushValue(valueToString(value.asDouble(), _useSpecialFloats, _precision));
             break;
         }
-        case JsonType::stringValue: {
+        case JsonType::StringValue: {
             pushValue(valueToQuotedString(value.asString()));
             break;
         }
-        case JsonType::boolValue: {
+        case JsonType::BoolValue: {
             pushValue(value.asBool() ? "true" : "false");
             break;
         }
-        case JsonType::arrayValue: {
+        case JsonType::ArrayValue: {
             writeArrayValue(value);
             break;
         }
-        case JsonType::objectValue: {
-            StringVector members = value.getMemberNames();
+        case JsonType::ObjectValue: {
+            std::vector<std::string> members = value.getMemberNames();
             if (members.empty()) {
                 pushValue("{}");
             } else {
@@ -975,7 +995,7 @@ void BuiltStyledStreamWriter::writeValue(const JsonValue &value) {
     }
 }
 
-void BuiltStyledStreamWriter::writeArrayValue(const JsonValue &value) {
+void EasyEvent::BuiltStyledStreamWriter::writeArrayValue(const JsonValue &value) {
     size_t size = value.size();
     if (size == 0) {
         pushValue("[]");
@@ -1006,7 +1026,7 @@ void BuiltStyledStreamWriter::writeArrayValue(const JsonValue &value) {
             unindent();
             writeWithIndent("]");
         } else {
-            NET4CXX_ASSERT(_childValues.size() == size);
+            Assert(_childValues.size() == size);
             *_sout << "[";
             if (!_indentation.empty()) {
                 *_sout << " ";
@@ -1025,7 +1045,7 @@ void BuiltStyledStreamWriter::writeArrayValue(const JsonValue &value) {
     }
 }
 
-bool BuiltStyledStreamWriter::isMultilineArray(const JsonValue &value) {
+bool EasyEvent::BuiltStyledStreamWriter::isMultilineArray(const JsonValue &value) {
     size_t size = value.size();
     bool isMultiLine = size * 3 >= _rightMargin;
     _childValues.clear();
@@ -1050,17 +1070,17 @@ bool BuiltStyledStreamWriter::isMultilineArray(const JsonValue &value) {
     return isMultiLine;
 }
 
-void BuiltStyledStreamWriter::writeCommentBeforeValue(const JsonValue &root) {
+void EasyEvent::BuiltStyledStreamWriter::writeCommentBeforeValue(const JsonValue &root) {
     if (_cs == CommentStyle::None) {
         return;
     }
-    if (!root.hasComment(COMMENT_BEFORE)) {
+    if (!root.hasComment(CommentBefore)) {
         return;
     }
     if (!_indented) {
         writeIndent();
     }
-    const std::string &comment = root.getComment(COMMENT_BEFORE);
+    const std::string &comment = root.getComment(CommentBefore);
     for (auto iter = comment.begin(); iter != comment.end(); ++iter) {
         *_sout << *iter;
         if (*iter == '\n' && (iter + 1) != comment.end() && *(iter + 1) == '/') {
@@ -1070,31 +1090,31 @@ void BuiltStyledStreamWriter::writeCommentBeforeValue(const JsonValue &root) {
     _indented = false;
 }
 
-void BuiltStyledStreamWriter::writeCommentAfterValueOnSameLine(const JsonValue &root) {
+void EasyEvent::BuiltStyledStreamWriter::writeCommentAfterValueOnSameLine(const JsonValue &root) {
     if (_cs == CommentStyle::None) {
         return;
     }
-    if (root.hasComment(COMMENT_ON_SAME_LINE)) {
-        *_sout << " " << root.getComment(COMMENT_ON_SAME_LINE);
+    if (root.hasComment(CommentOnSameLine)) {
+        *_sout << " " << root.getComment(CommentOnSameLine);
     }
-    if (root.hasComment(COMMENT_AFTER)) {
+    if (root.hasComment(CommentAfter)) {
         writeIndent();
-        *_sout << root.getComment(COMMENT_AFTER);
+        *_sout << root.getComment(CommentAfter);
     }
 }
 
-bool BuiltStyledStreamWriter::hasCommentForValue(const JsonValue &value) {
-    return value.hasComment(COMMENT_BEFORE)
-           || value.hasComment(COMMENT_ON_SAME_LINE)
-           || value.hasComment(COMMENT_AFTER);
+bool EasyEvent::BuiltStyledStreamWriter::hasCommentForValue(const JsonValue &value) {
+    return value.hasComment(CommentBefore) ||
+           value.hasComment(CommentOnSameLine) ||
+           value.hasComment(CommentAfter);
 }
 
 
-StreamWriterBuilder::StreamWriterBuilder() {
+EasyEvent::StreamWriterBuilder::StreamWriterBuilder() {
     setDefaults(&_settings);
 }
 
-StreamWriter* StreamWriterBuilder::newStreamWriter() const {
+EasyEvent::StreamWriter* EasyEvent::StreamWriterBuilder::newStreamWriter() const {
     std::string indentation = _settings["indentation"].asString();
     std::string cs_str = _settings["commentStyle"].asString();
     bool eyc = _settings["enableYAMLCompatibility"].asBool();
@@ -1107,7 +1127,10 @@ StreamWriter* StreamWriterBuilder::newStreamWriter() const {
     } else if (cs_str == "None") {
         cs = CommentStyle::None;
     } else {
-        NET4CXX_THROW_EXCEPTION(ValueError, "commentStyle must be 'All' or 'None'");
+        std::error_code ec;
+        ec = UserErrors::InvalidValue;
+        throwError(ec, "StreamWriterBuilder");
+        Assert(false);
     }
     std::string colonSymbol = " : ";
     if (eyc) {
@@ -1125,7 +1148,7 @@ StreamWriter* StreamWriterBuilder::newStreamWriter() const {
                                        std::move(endingLineFeedSymbol), usf, pre);
 }
 
-static void getValidWriterKeys(StringSet *validKeys) {
+static void getValidWriterKeys(std::set<std::string> *validKeys) {
     validKeys->clear();
     validKeys->insert("indentation");
     validKeys->insert("commentStyle");
@@ -1135,15 +1158,15 @@ static void getValidWriterKeys(StringSet *validKeys) {
     validKeys->insert("precision");
 }
 
-bool StreamWriterBuilder::validate(JsonValue *invalid) const {
+bool EasyEvent::StreamWriterBuilder::validate(JsonValue *invalid) const {
     JsonValue myInvalid;
     if (!invalid) {
         invalid = &myInvalid;
     }
     JsonValue &inv = *invalid;
-    StringSet validKeys;
+    std::set<std::string> validKeys;
     getValidWriterKeys(&validKeys);
-    StringVector keys = _settings.getMemberNames();
+    std::vector<std::string> keys = _settings.getMemberNames();
     for (auto &key: keys) {
         if (validKeys.find(key) == validKeys.end()) {
             inv[key] = _settings[key];
@@ -1152,7 +1175,7 @@ bool StreamWriterBuilder::validate(JsonValue *invalid) const {
     return inv.empty();
 }
 
-void StreamWriterBuilder::setDefaults(JsonValue *settings) {
+void EasyEvent::StreamWriterBuilder::setDefaults(JsonValue *settings) {
     (*settings)["commentStyle"] = "All";
     (*settings)["indentation"] = "\t";
     (*settings)["enableYAMLCompatibility"] = false;
@@ -1162,14 +1185,14 @@ void StreamWriterBuilder::setDefaults(JsonValue *settings) {
 }
 
 
-std::string writeString(const StreamWriter::Factory &factory, const JsonValue &root) {
+std::string EasyEvent::writeString(const StreamWriter::Factory &factory, const JsonValue &root) {
     std::ostringstream sout;
     std::unique_ptr<StreamWriter> writer(factory.newStreamWriter());
     writer->write(root, &sout);
     return sout.str();
 }
 
-std::ostream& operator<<(std::ostream &sout, const JsonValue &root) {
+std::ostream& EasyEvent::operator<<(std::ostream &sout, const JsonValue &root) {
     StreamWriterBuilder builder;
     std::unique_ptr<StreamWriter> writer(builder.newStreamWriter());
     writer->write(root, &sout);

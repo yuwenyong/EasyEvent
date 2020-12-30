@@ -247,9 +247,21 @@ namespace EasyEvent {
             return isNull();
         }
 
-        void clear();
+        void clear(std::error_code& ec);
 
-        void resize(size_t newSize);
+        void clear() {
+            std::error_code ec;
+            clear(ec);
+            throwError(ec, "JsonValue");
+        }
+
+        void resize(size_t newSize, std::error_code& ec);
+
+        void resize(size_t newSize) {
+            std::error_code ec;
+            resize(newSize, ec);
+            throwError(ec, "JsonValue");
+        }
 
         JsonValue& operator[](size_t index);
 

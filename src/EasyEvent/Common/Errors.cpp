@@ -24,6 +24,8 @@ std::string EasyEvent::UserErrorCategory::message(int ev) const {
             return "out of range";
         case UserErrors::UnexpectedBehaviour:
             return "unexpected behaviour";
+        case UserErrors::InvalidValue:
+            return "invalid value";
         default:
             return "(unrecognized error)";
     }
