@@ -18,6 +18,7 @@ namespace EasyEvent {
         OutOfRange = 6,
         UnexpectedBehaviour = 7,
         InvalidValue = 8,
+        ParsingFailed = 9,
     };
 
     class EASY_EVENT_API UserErrorCategory: public std::error_category {

@@ -117,77 +117,21 @@ namespace EasyEvent {
 
         int compare(const JsonValue &other) const;
 
-        std::string asString(std::error_code& ec) const;
+        std::string asString() const;
 
-        std::string asString() const {
-            std::error_code ec;
-            auto result = asString(ec);
-            throwError(ec, "JsonValue");
-            return result;
-        }
+        int asInt() const;
 
-        int asInt(std::error_code& ec) const;
+        unsigned int asUInt() const;
 
-        int asInt() const {
-            std::error_code ec;
-            auto result = asInt(ec);
-            throwError(ec, "JsonValue");
-            return result;
-        }
+        int64_t asInt64() const;
 
-        unsigned int asUInt(std::error_code& ec) const;
+        uint64_t asUInt64() const;
 
-        unsigned int asUInt() const {
-            std::error_code ec;
-            auto result = asUInt(ec);
-            throwError(ec, "JsonValue");
-            return result;
-        }
+        float asFloat() const;
 
-        int64_t asInt64(std::error_code& ec) const;
+        double asDouble() const;
 
-        int64_t asInt64() const {
-            std::error_code ec;
-            auto result = asInt64(ec);
-            throwError(ec, "JsonValue");
-            return result;
-        }
-
-        uint64_t asUInt64(std::error_code& ec) const;
-
-        uint64_t asUInt64() const {
-            std::error_code ec;
-            auto result = asUInt64(ec);
-            throwError(ec, "JsonValue");
-            return result;
-        }
-
-        float asFloat(std::error_code& ec) const;
-
-        float asFloat() const {
-            std::error_code ec;
-            auto result = asFloat(ec);
-            throwError(ec, "JsonValue");
-            return result;
-        }
-
-        double asDouble(std::error_code& ec) const;
-
-        double asDouble() const {
-            std::error_code ec;
-            auto result = asDouble(ec);
-            throwError(ec, "JsonValue");
-            return result;
-        }
-
-        bool asBool(std::error_code& ec) const;
-
-        bool asBool() const {
-            std::error_code ec;
-            auto result = asBool(ec);
-            throwError(ec, "JsonValue");
-            return result;
-        }
+        bool asBool() const;
 
         bool isTypeOf(JsonType type) const {
             return _value.index() == (unsigned long)type;
@@ -247,21 +191,9 @@ namespace EasyEvent {
             return isNull();
         }
 
-        void clear(std::error_code& ec);
+        void clear();
 
-        void clear() {
-            std::error_code ec;
-            clear(ec);
-            throwError(ec, "JsonValue");
-        }
-
-        void resize(size_t newSize, std::error_code& ec);
-
-        void resize(size_t newSize) {
-            std::error_code ec;
-            resize(newSize, ec);
-            throwError(ec, "JsonValue");
-        }
+        void resize(size_t newSize);
 
         JsonValue& operator[](size_t index);
 

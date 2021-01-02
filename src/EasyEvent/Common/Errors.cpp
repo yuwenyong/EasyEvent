@@ -26,6 +26,8 @@ std::string EasyEvent::UserErrorCategory::message(int ev) const {
             return "unexpected behaviour";
         case UserErrors::InvalidValue:
             return "invalid value";
+        case UserErrors::ParsingFailed:
+            return "parsing failed";
         default:
             return "(unrecognized error)";
     }

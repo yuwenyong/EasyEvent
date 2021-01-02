@@ -306,26 +306,24 @@ int EasyEvent::JsonValue::compare(const JsonValue &other) const {
     return 0;
 }
 
-std::string EasyEvent::JsonValue::asString(std::error_code& ec) const {
-    return std::visit([&ec](auto&& arg) {
+std::string EasyEvent::JsonValue::asString() const {
+    return std::visit([](auto&& arg) {
         using T = std::decay_t<decltype(arg)>;
         if constexpr (std::is_same_v<T, NullValue>) {
-            ec.assign(0, ec.category());
             return std::string{};
         } else if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t>) {
-            ec.assign(0, ec.category());
             return std::to_string(arg);
         } else if constexpr (std::is_same_v<T, double>) {
-            ec.assign(0, ec.category());
             return valueToString(arg);
         } else if constexpr (std::is_same_v<T, std::string>) {
-            ec.assign(0, ec.category());
             return arg;
         } else if constexpr (std::is_same_v<T, bool>) {
-            ec.assign(0, ec.category());
             return arg ? std::string("true") : std::string("false");
-        } else if constexpr (std::is_same_v<T, ArrayType> || std::is_same_v<T, ObjectType>) {
-            ec = UserErrors::NotConvertible;
+        } else if constexpr (std::is_same_v<T, ArrayType>) {
+            throwError(UserErrors::NotConvertible, "array is not convertible to string");
+            return std::string{};
+        } else if constexpr (std::is_same_v<T, ObjectType>) {
+            throwError(UserErrors::NotConvertible, "object is not convertible to string");
             return std::string{};
         } else {
             static_assert(FailType<T>{});
@@ -333,226 +331,238 @@ std::string EasyEvent::JsonValue::asString(std::error_code& ec) const {
     }, _value);
 }
 
-int EasyEvent::JsonValue::asInt(std::error_code& ec) const {
-    return std::visit([&ec](auto&& arg) {
+int EasyEvent::JsonValue::asInt() const {
+    return std::visit([](auto&& arg) {
         using T = std::decay_t<decltype(arg)>;
         if constexpr (std::is_same_v<T, NullValue>) {
-            ec.assign(0, ec.category());
             return 0;
         } else if constexpr (std::is_same_v<T, int64_t>) {
             if (arg < std::numeric_limits<int>::min() || arg > std::numeric_limits<int>::max()) {
-                ec = UserErrors::OutOfRange;
+                throwError(UserErrors::OutOfRange, "int64 out of int range");
                 return 0;
             } else {
-                ec.assign(0, ec.category());
                 return static_cast<int>(arg);
             }
         } else if constexpr (std::is_same_v<T, uint64_t>) {
-            if (arg > std::numeric_limits<int>::max()) {
-                ec = UserErrors::OutOfRange;
+            if (arg > (uint64_t)std::numeric_limits<int>::max()) {
+                throwError(UserErrors::OutOfRange, "uint64 out of int range");
                 return 0;
             } else {
-                ec.assign(0, ec.category());
                 return static_cast<int>(arg);
             }
         } else if constexpr (std::is_same_v<T, double>) {
             if (!InRange(arg, std::numeric_limits<int>::min(), std::numeric_limits<int>::max())) {
-                ec = UserErrors::OutOfRange;
+                throwError(UserErrors::OutOfRange, "double out of int range");
                 return 0;
             } else {
-                ec.assign(0, ec.category());
                 return static_cast<int>(arg);
             }
-        } else if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, ArrayType> || std::is_same_v<T, ObjectType>) {
-            ec = UserErrors::NotConvertible;
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            throwError(UserErrors::NotConvertible, "string is not convertible to int");
             return 0;
         } else if constexpr (std::is_same_v<T, bool>) {
-            ec.assign(0, ec.category());
             return arg ? 1 : 0;
+        } else if constexpr (std::is_same_v<T, ArrayType>) {
+            throwError(UserErrors::NotConvertible, "array is not convertible to int");
+           return 0;
+        } else if constexpr (std::is_same_v<T, ObjectType>) {
+            throwError(UserErrors::NotConvertible, "object is not convertible to int");
+            return 0;
         } else {
             static_assert(FailType<T>{});
         }
     }, _value);
 }
 
-unsigned int EasyEvent::JsonValue::asUInt(std::error_code& ec) const {
-    return std::visit([&ec](auto&& arg) {
+unsigned int EasyEvent::JsonValue::asUInt() const {
+    return std::visit([](auto&& arg) {
         using T = std::decay_t<decltype(arg)>;
         if constexpr (std::is_same_v<T, NullValue>) {
-            ec.assign(0, ec.category());
             return 0u;
         } else if constexpr (std::is_same_v<T, int64_t>) {
             if (arg < 0 || arg > std::numeric_limits<unsigned int>::max()) {
-                ec = UserErrors::OutOfRange;
+                throwError(UserErrors::OutOfRange, "int64 out of uint range");
                 return 0u;
             } else {
-                ec.assign(0, ec.category());
                 return static_cast<unsigned int>(arg);
             }
         } else if constexpr (std::is_same_v<T, uint64_t>) {
             if (arg > std::numeric_limits<unsigned int>::max()) {
-                ec = UserErrors::OutOfRange;
+                throwError(UserErrors::OutOfRange, "uint64 out of uint range");
                 return 0u;
             } else {
-                ec.assign(0, ec.category());
                 return static_cast<unsigned int>(arg);
             }
         } else if constexpr (std::is_same_v<T, double>) {
             if (!InRange(arg, 0, std::numeric_limits<unsigned int>::max())) {
-                ec = UserErrors::OutOfRange;
+                throwError(UserErrors::OutOfRange, "double out of uint range");
                 return 0u;
             } else {
-                ec.assign(0, ec.category());
                 return static_cast<unsigned int>(arg);
             }
-        } else if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, ArrayType> || std::is_same_v<T, ObjectType>) {
-            ec = UserErrors::NotConvertible;
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            throwError(UserErrors::NotConvertible, "string is not convertible to uint");
             return 0u;
         } else if constexpr (std::is_same_v<T, bool>) {
-            ec.assign(0, ec.category());
             return arg ? 1u : 0u;
+        } else if constexpr (std::is_same_v<T, ArrayType>) {
+            throwError(UserErrors::NotConvertible, "array is not convertible to uint");
+            return 0u;
+        } else if constexpr (std::is_same_v<T, ObjectType>) {
+            throwError(UserErrors::NotConvertible, "object is not convertible to uint");
+            return 0u;
         } else {
             static_assert(FailType<T>{});
         }
     }, _value);
 }
 
-int64_t EasyEvent::JsonValue::asInt64(std::error_code& ec) const {
-    return std::visit([&ec](auto&& arg) {
+int64_t EasyEvent::JsonValue::asInt64() const {
+    return std::visit([](auto&& arg) {
         using T = std::decay_t<decltype(arg)>;
         if constexpr (std::is_same_v<T, NullValue>) {
-            ec.assign(0, ec.category());
             return INT64(0);
         } else if constexpr (std::is_same_v<T, int64_t>) {
-            ec.assign(0, ec.category());
             return arg;
         } else if constexpr (std::is_same_v<T, uint64_t>) {
-            if (arg > std::numeric_limits<int64_t>::max()) {
-                ec = UserErrors::OutOfRange;
+            if (arg > (uint64_t)std::numeric_limits<int64_t>::max()) {
+                throwError(UserErrors::OutOfRange, "uint64 out of int64 range");
                 return INT64(0);
             } else {
-                ec.assign(0, ec.category());
                 return static_cast<int64_t>(arg);
             }
         } else if constexpr (std::is_same_v<T, double>) {
             if (!InRange(arg, std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max())) {
-                ec = UserErrors::OutOfRange;
+                throwError(UserErrors::OutOfRange, "double out of int64 range");
                 return INT64(0);
             } else {
-                ec.assign(0, ec.category());
                 return static_cast<int64_t>(arg);
             }
-        } else if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, ArrayType> || std::is_same_v<T, ObjectType>) {
-            ec = UserErrors::NotConvertible;
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            throwError(UserErrors::NotConvertible, "string is not convertible to int64");
             return INT64(0);
         } else if constexpr (std::is_same_v<T, bool>) {
-            ec.assign(0, ec.category());
             return arg ? INT64(1) : INT64(0);
+        } else if constexpr (std::is_same_v<T, ArrayType>) {
+            throwError(UserErrors::NotConvertible, "array is not convertible to int64");
+            return INT64(0);
+        } else if constexpr (std::is_same_v<T, ObjectType>) {
+            throwError(UserErrors::NotConvertible, "object is not convertible to int64");
+            return INT64(0);
         } else {
             static_assert(FailType<T>{});
         }
     }, _value);
 }
 
-uint64_t EasyEvent::JsonValue::asUInt64(std::error_code& ec) const {
-    return std::visit([&ec](auto&& arg) {
+uint64_t EasyEvent::JsonValue::asUInt64() const {
+    return std::visit([](auto&& arg) {
         using T = std::decay_t<decltype(arg)>;
         if constexpr (std::is_same_v<T, NullValue>) {
-            ec.assign(0, ec.category());
             return UINT64(0);
         } else if constexpr (std::is_same_v<T, int64_t>) {
             if (arg < 0) {
-                ec = UserErrors::OutOfRange;
+                throwError(UserErrors::OutOfRange, "int64 out of uint64 range");
                 return UINT64(0);
             } else {
-                ec.assign(0, ec.category());
                 return static_cast<uint64_t>(arg);
             }
         } else if constexpr (std::is_same_v<T, uint64_t>) {
             return arg;
         } else if constexpr (std::is_same_v<T, double>) {
             if (!InRange(arg, 0, std::numeric_limits<uint64_t>::max())) {
-                ec = UserErrors::OutOfRange;
+                throwError(UserErrors::OutOfRange, "double out of uint64 range");
                 return UINT64(0);
             } else {
-                ec.assign(0, ec.category());
                 return static_cast<uint64_t>(arg);
             }
-        } else if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, ArrayType> || std::is_same_v<T, ObjectType>) {
-            ec = UserErrors::NotConvertible;
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            throwError(UserErrors::NotConvertible, "string is not convertible to uint64");
             return UINT64(0);
         } else if constexpr (std::is_same_v<T, bool>) {
-            ec.assign(0, ec.category());
             return arg ? UINT64(1) : UINT64(0);
+        } else if constexpr (std::is_same_v<T, ArrayType>) {
+            throwError(UserErrors::NotConvertible, "array is not convertible to uint64");
+            return UINT64(0);
+        } else if constexpr (std::is_same_v<T, ObjectType>) {
+            throwError(UserErrors::NotConvertible, "object is not convertible to uint64");
+            return UINT64(0);
         } else {
             static_assert(FailType<T>{});
         }
     }, _value);
 }
 
-float EasyEvent::JsonValue::asFloat(std::error_code& ec) const {
-    return std::visit([&ec](auto&& arg) {
+float EasyEvent::JsonValue::asFloat() const {
+    return std::visit([](auto&& arg) {
         using T = std::decay_t<decltype(arg)>;
         if constexpr (std::is_same_v<T, NullValue>) {
-            ec.assign(0, ec.category());
             return 0.0f;
         } else if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t> || std::is_same_v<T, double>) {
-            ec.assign(0, ec.category());
             return static_cast<float>(arg);
-        } else if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, ArrayType> || std::is_same_v<T, ObjectType>) {
-            ec = UserErrors::NotConvertible;
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            throwError(UserErrors::NotConvertible, "string is not convertible to float");
             return 0.0f;
         } else if constexpr (std::is_same_v<T, bool>) {
-            ec.assign(0, ec.category());
             return arg ? 1.0f : 0.0f;
+        } else if constexpr (std::is_same_v<T, ArrayType>) {
+            throwError(UserErrors::NotConvertible, "array is not convertible to float");
+            return 0.0f;
+        } else if constexpr (std::is_same_v<T, ObjectType>) {
+            throwError(UserErrors::NotConvertible, "object is not convertible to float");
+            return 0.0f;
         } else {
             static_assert(FailType<T>{});
         }
     }, _value);
 }
 
-double EasyEvent::JsonValue::asDouble(std::error_code& ec) const {
-    return std::visit([&ec](auto&& arg) {
+double EasyEvent::JsonValue::asDouble() const {
+    return std::visit([](auto&& arg) {
         using T = std::decay_t<decltype(arg)>;
         if constexpr (std::is_same_v<T, NullValue>) {
-            ec.assign(0, ec.category());
             return 0.0;
         } else if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t>) {
-            ec.assign(0, ec.category());
             return static_cast<double>(arg);
         } else if constexpr (std::is_same_v<T, double>) {
-            ec.assign(0, ec.category());
             return arg;
-        } else if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, ArrayType> || std::is_same_v<T, ObjectType>) {
-            ec = UserErrors::NotConvertible;
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            throwError(UserErrors::NotConvertible, "string is not convertible to double");
             return 0.0;
         } else if constexpr (std::is_same_v<T, bool>) {
-            ec.assign(0, ec.category());
             return arg ? 1.0 : 0.0;
+        } else if constexpr (std::is_same_v<T, ArrayType>) {
+            throwError(UserErrors::NotConvertible, "array is not convertible to double");
+            return 0.0;
+        } else if constexpr (std::is_same_v<T, ObjectType>) {
+            throwError(UserErrors::NotConvertible, "object is not convertible to double");
+            return 0.0;
         } else {
             static_assert(FailType<T>{});
         }
     }, _value);
 }
 
-bool EasyEvent::JsonValue::asBool(std::error_code& ec) const {
-    return std::visit([&ec](auto&& arg) {
+bool EasyEvent::JsonValue::asBool() const {
+    return std::visit([](auto&& arg) {
         using T = std::decay_t<decltype(arg)>;
         if constexpr (std::is_same_v<T, NullValue>) {
-            ec.assign(0, ec.category());
             return false;
         } else if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t>) {
-            ec.assign(0, ec.category());
             return arg != 0;
         } else if constexpr (std::is_same_v<T, double>) {
-            ec.assign(0, ec.category());
             return arg != 0.0;
-        } else if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, ArrayType> || std::is_same_v<T, ObjectType>) {
-            ec = UserErrors::NotConvertible;
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            throwError(UserErrors::NotConvertible, "string is not convertible to bool");
             return false;
         } else if constexpr (std::is_same_v<T, bool>) {
-            ec.assign(0, ec.category());
             return arg;
+        } else if constexpr (std::is_same_v<T, ArrayType>) {
+            throwError(UserErrors::NotConvertible, "array is not convertible to bool");
+            return false;
+        } else if constexpr (std::is_same_v<T, ObjectType>) {
+            throwError(UserErrors::NotConvertible, "object is not convertible to bool");
+            return false;
         } else {
             static_assert(FailType<T>{});
         }
@@ -571,7 +581,7 @@ bool EasyEvent::JsonValue::isInt() const {
         } else if constexpr (std::is_same_v<T, int64_t>) {
             return arg >= std::numeric_limits<int>::min() && arg <= std::numeric_limits<int>::max();
         } else if constexpr (std::is_same_v<T, uint64_t>) {
-            return arg <= std::numeric_limits<int>::max();
+            return arg <= (uint64_t)std::numeric_limits<int>::max();
         } else if constexpr (std::is_same_v<T, double>) {
             return arg >= std::numeric_limits<int>::min() && arg <= std::numeric_limits<int>::max() && IsIntegral(arg);
         } else {
@@ -592,7 +602,7 @@ bool EasyEvent::JsonValue::isInt64() const {
         } else if constexpr (std::is_same_v<T, int64_t>) {
             return true;
         } else if constexpr (std::is_same_v<T, uint64_t>) {
-            return arg <= std::numeric_limits<int64_t>::max();
+            return arg <= (uint64_t)std::numeric_limits<int64_t>::max();
         } else if constexpr (std::is_same_v<T, double>) {
             return arg >= (double)std::numeric_limits<int64_t>::min() &&
                    arg < (double)std::numeric_limits<int64_t>::max() && IsIntegral(arg);
@@ -719,39 +729,33 @@ size_t EasyEvent::JsonValue::size() const {
     }
 }
 
-void EasyEvent::JsonValue::clear(std::error_code& ec) {
+void EasyEvent::JsonValue::clear() {
     if (isTypeOf(JsonType::ArrayValue)) {
         std::get<ArrayType>(_value).clear();
-        ec.assign(0, ec.category());
     } else if (isTypeOf(JsonType::ObjectValue)) {
         std::get<ObjectType>(_value).clear();
-        ec.assign(0, ec.category());
     } else if (isTypeOf(JsonType::NullValue)) {
-        ec.assign(0, ec.category());
+
     } else {
-        ec = UserErrors::NotSupported;
+        throwError(UserErrors::NotSupported, "clear requires complex value");
     }
 }
 
-void EasyEvent::JsonValue::resize(size_t newSize, std::error_code& ec) {
+void EasyEvent::JsonValue::resize(size_t newSize) {
     if (isTypeOf(JsonType::NullValue)) {
         *this = JsonValue(JsonType::ArrayValue);
     }
     if (!isTypeOf(JsonType::ArrayValue)) {
-        ec = UserErrors::NotSupported;
-        return;
+        throwError(UserErrors::NotSupported, "resize requires array value");
     }
     std::get<ArrayType>(_value).resize(newSize);
-    ec.assign(0, ec.category());
 }
 
 EasyEvent::JsonValue& EasyEvent::JsonValue::operator[](size_t index) {
     if (isTypeOf(JsonType::NullValue)) {
         *this = JsonValue(JsonType::ArrayValue);
     } else if (!isTypeOf(JsonType::ArrayValue)) {
-        std::error_code ec;
-        ec = UserErrors::NotSupported;
-        throwError(ec, "JsonValue");
+        throwError(UserErrors::NotSupported, "operator[](index) requires array value");
     }
     auto &array = std::get<ArrayType>(_value);
     if (index >= array.size()) {
@@ -762,9 +766,7 @@ EasyEvent::JsonValue& EasyEvent::JsonValue::operator[](size_t index) {
 
 EasyEvent::JsonValue& EasyEvent::JsonValue::operator[](int index) {
     if (index < 0) {
-        std::error_code ec;
-        ec = UserErrors::OutOfRange;
-        throwError(ec, "JsonValue");
+        throwError(UserErrors::OutOfRange, "index cannot be negative");
     }
     return (*this)[static_cast<size_t>(index)];
 }
@@ -780,18 +782,14 @@ const EasyEvent::JsonValue& EasyEvent::JsonValue::operator[](size_t index) const
             return nullSingleton();
         }
     } else {
-        std::error_code ec;
-        ec = UserErrors::NotSupported;
-        throwError(ec, "JsonValue");
+        throwError(UserErrors::NotSupported, "operator[](index)const requires array value");
         return nullSingleton(); // unreachable
     }
 }
 
 const EasyEvent::JsonValue& EasyEvent::JsonValue::operator[](int index) const {
     if (index < 0) {
-        std::error_code ec;
-        ec = UserErrors::OutOfRange;
-        throwError(ec, "JsonValue");
+        throwError(UserErrors::OutOfRange, "index cannot be negative");
     }
     return (*this)[static_cast<size_t>(index)];
 }
@@ -800,9 +798,7 @@ EasyEvent::JsonValue& EasyEvent::JsonValue::operator[](const char *key) {
     if (isTypeOf(JsonType::NullValue)) {
         *this = JsonValue(JsonType::ObjectValue);
     } else if (!isTypeOf(JsonType::ObjectValue)) {
-        std::error_code ec;
-        ec = UserErrors::NotSupported;
-        throwError(ec, "JsonValue");
+        throwError(UserErrors::NotSupported, "operator[](key) requires object value");
     }
     auto &object = std::get<ObjectType>(_value);
     auto it = object.find(key);
@@ -830,9 +826,7 @@ const EasyEvent::JsonValue* EasyEvent::JsonValue::find(const char *key) const {
         auto it = object.find(key);
         return it != object.end() ? &(it->second) : nullptr;
     } else {
-        std::error_code ec;
-        ec = UserErrors::NotSupported;
-        throwError(ec, "JsonValue");
+        throwError(UserErrors::NotSupported, "find requires object value or null value");
         return nullptr; // unreachable
     }
 }
@@ -879,9 +873,7 @@ std::vector<std::string> EasyEvent::JsonValue::getMemberNames() const {
             members.push_back(kv.first);
         }
     } else {
-        std::error_code ec;
-        ec = UserErrors::NotSupported;
-        throwError(ec, "JsonValue");
+        throwError(UserErrors::NotSupported, "getMemberNames requires object value");
     }
     return members;
 }
@@ -1127,9 +1119,7 @@ EasyEvent::StreamWriter* EasyEvent::StreamWriterBuilder::newStreamWriter() const
     } else if (cs_str == "None") {
         cs = CommentStyle::None;
     } else {
-        std::error_code ec;
-        ec = UserErrors::InvalidValue;
-        throwError(ec, "StreamWriterBuilder");
+        throwError(UserErrors::InvalidValue, "commentStyle must be 'All' or 'None'");
         Assert(false);
     }
     std::string colonSymbol = " : ";
@@ -1200,7 +1190,7 @@ std::ostream& EasyEvent::operator<<(std::ostream &sout, const JsonValue &root) {
 }
 
 
-bool BuiltReader::parse(const char *beginDoc, const char *endDoc, JsonValue &root, bool collectComments) {
+bool EasyEvent::BuiltReader::parse(const char *beginDoc, const char *endDoc, JsonValue &root, bool collectComments) {
     if (_features.allowComments) {
         collectComments = false;
     }
@@ -1226,7 +1216,7 @@ bool BuiltReader::parse(const char *beginDoc, const char *endDoc, JsonValue &roo
         }
     }
     if (_collectComments && !_commentsBefore.empty()) {
-        root.setComment(_commentsBefore, COMMENT_AFTER);
+        root.setComment(_commentsBefore, CommentAfter);
     }
     if (_features.strictRoot) {
         if (!root.isArray() && !root.isObject()) {
@@ -1240,7 +1230,7 @@ bool BuiltReader::parse(const char *beginDoc, const char *endDoc, JsonValue &roo
     return successful;
 }
 
-std::string BuiltReader::getFormattedErrorMessages() const {
+std::string EasyEvent::BuiltReader::getFormattedErrorMessages() const {
     std::string formattedMessage;
     for (auto &error: _errors) {
         formattedMessage += "* " + getLocationLineAndColumn(error.token.start) + "\n";
@@ -1252,7 +1242,7 @@ std::string BuiltReader::getFormattedErrorMessages() const {
     return formattedMessage;
 }
 
-std::vector<BuiltReader::StructuredError> BuiltReader::getStructuredErrors() const {
+std::vector<EasyEvent::BuiltReader::StructuredError> EasyEvent::BuiltReader::getStructuredErrors() const {
     std::vector<StructuredError> allErrors;
     for (auto &error: _errors) {
         StructuredError structured;
@@ -1264,7 +1254,7 @@ std::vector<BuiltReader::StructuredError> BuiltReader::getStructuredErrors() con
     return allErrors;
 }
 
-bool BuiltReader::readToken(Token &token) {
+bool EasyEvent::BuiltReader::readToken(Token &token) {
     skipSpaces();
     token.start = _current;
     char c = getNextChar();
@@ -1367,7 +1357,7 @@ bool BuiltReader::readToken(Token &token) {
     return true;
 }
 
-void BuiltReader::skipSpaces() {
+void EasyEvent::BuiltReader::skipSpaces() {
     for (;_current != _end; ++ _current) {
         char c = *_current;
         if (c != ' ' && c != '\t' && c != '\r' && c != '\n') {
@@ -1376,7 +1366,7 @@ void BuiltReader::skipSpaces() {
     }
 }
 
-bool BuiltReader::match(const char *pattern, int patternLength) {
+bool EasyEvent::BuiltReader::match(const char *pattern, int patternLength) {
     if (_end - _current < patternLength) {
         return false;
     }
@@ -1390,7 +1380,7 @@ bool BuiltReader::match(const char *pattern, int patternLength) {
     return true;
 }
 
-bool BuiltReader::readComment() {
+bool EasyEvent::BuiltReader::readComment() {
     const char *commentBegin = _current - 1;
     char c = getNextChar();
     bool successful = false;
@@ -1403,10 +1393,10 @@ bool BuiltReader::readComment() {
         return false;
     }
     if (_collectComments) {
-        CommentPlacement placement = COMMENT_BEFORE;
+        CommentPlacement placement = CommentBefore;
         if (_lastValueEnd && !containsNewLine(_lastValueEnd, commentBegin)) {
             if (c != '*' || !containsNewLine(commentBegin, _current)) {
-                placement = COMMENT_ON_SAME_LINE;
+                placement = CommentOnSameLine;
             }
         }
         addComment(commentBegin, _current, placement);
@@ -1414,7 +1404,7 @@ bool BuiltReader::readComment() {
     return true;
 }
 
-bool BuiltReader::readCStyleComment() {
+bool EasyEvent::BuiltReader::readCStyleComment() {
     while ((_current + 1) < _end) {
         char c = getNextChar();
         if (c == '*' && *_current == '/') {
@@ -1424,7 +1414,7 @@ bool BuiltReader::readCStyleComment() {
     return getNextChar() == '/';
 }
 
-bool BuiltReader::readCppStyleComment() {
+bool EasyEvent::BuiltReader::readCppStyleComment() {
     while (_current != _end) {
         char c = getNextChar();
         if (c == '\n') {
@@ -1442,7 +1432,7 @@ bool BuiltReader::readCppStyleComment() {
     return true;
 }
 
-bool BuiltReader::readString() {
+bool EasyEvent::BuiltReader::readString() {
     char c = 0;
     while (_current != _end) {
         c = getNextChar();
@@ -1455,7 +1445,7 @@ bool BuiltReader::readString() {
     return c == '"';
 }
 
-bool BuiltReader::readStringSingleQuote() {
+bool EasyEvent::BuiltReader::readStringSingleQuote() {
     char c = 0;
     while (_current != _end) {
         c = getNextChar();
@@ -1468,7 +1458,7 @@ bool BuiltReader::readStringSingleQuote() {
     return c == '\'';
 }
 
-bool BuiltReader::readNumber(bool checkInf) {
+bool EasyEvent::BuiltReader::readNumber(bool checkInf) {
     const char *p = _current;
     if (checkInf && p != _end && *p == 'I') {
         _current = ++p;
@@ -1500,15 +1490,15 @@ bool BuiltReader::readNumber(bool checkInf) {
     return true;
 }
 
-bool BuiltReader::readValue() {
+bool EasyEvent::BuiltReader::readValue() {
     if (static_cast<int>(_nodes.size()) > _features.stackLimit) {
-        NET4CXX_THROW_EXCEPTION(ParsingError, "Exceeded stackLimit in readValue().");
+        throwError(UserErrors::ParsingFailed, "Exceeded stackLimit in readValue().");
     }
     Token token;
     skipCommentTokens(token);
     bool successful = true;
     if (_collectComments && !_commentsBefore.empty()) {
-        currentValue().setComment(std::move(_commentsBefore), COMMENT_BEFORE);
+        currentValue().setComment(std::move(_commentsBefore), CommentBefore);
     }
 
     switch (token.type) {
@@ -1581,10 +1571,10 @@ bool BuiltReader::readValue() {
     return successful;
 }
 
-bool BuiltReader::readObject(Token &token) {
+bool EasyEvent::BuiltReader::readObject(Token &token) {
     Token tokenName;
     std::string name;
-    JsonValue init(JsonType::objectValue);
+    JsonValue init(JsonType::ObjectValue);
     currentValue().swapPayload(init);
     while (readToken(tokenName)) {
         bool initialTokenOk = true;
@@ -1617,7 +1607,7 @@ bool BuiltReader::readObject(Token &token) {
             return addErrorAndRecover("Missing ':' after object member name", colon, tokenObjectEnd);
         }
         if (name.length() >= (1U<<30)) {
-            NET4CXX_THROW_EXCEPTION(ParsingError, "keylength >= 2^30");
+            throwError(UserErrors::ParsingFailed, "keylength >= 2^30");
         }
         if (_features.rejectDupKeys && currentValue().isMember(name)) {
             std::string msg = "Duplicate key: '" + name + "'";
@@ -1647,8 +1637,8 @@ bool BuiltReader::readObject(Token &token) {
     return addErrorAndRecover("Missing '}' or object member name", tokenName, tokenObjectEnd);
 }
 
-bool BuiltReader::readArray(Token &token) {
-    JsonValue init(JsonType::arrayValue);
+bool EasyEvent::BuiltReader::readArray(Token &token) {
+    JsonValue init(JsonType::ArrayValue);
     currentValue().swapPayload(init);
     skipSpaces();
     if (_current != _end && *_current == ']') {
@@ -1682,7 +1672,7 @@ bool BuiltReader::readArray(Token &token) {
     return true;
 }
 
-bool BuiltReader::decodeNumber(Token &token) {
+bool EasyEvent::BuiltReader::decodeNumber(Token &token) {
     JsonValue decoded;
     if (!decodeNumber(token, decoded)) {
         return false;
@@ -1691,7 +1681,7 @@ bool BuiltReader::decodeNumber(Token &token) {
     return true;
 }
 
-bool BuiltReader::decodeNumber(Token &token, JsonValue &decoded) {
+bool EasyEvent::BuiltReader::decodeNumber(Token &token, JsonValue &decoded) {
     const char *current = token.start;
     bool isNegative = *current == '-';
     if (isNegative) {
@@ -1720,7 +1710,7 @@ bool BuiltReader::decodeNumber(Token &token, JsonValue &decoded) {
     }
     if (isNegative) {
         decoded = -static_cast<int64_t>(value);
-    } else if (value <= std::numeric_limits<int64_t>::max()) {
+    } else if (value <= (uint64_t)std::numeric_limits<int64_t>::max()) {
         decoded = static_cast<int64_t>(value);
     } else {
         decoded = value;
@@ -1728,7 +1718,7 @@ bool BuiltReader::decodeNumber(Token &token, JsonValue &decoded) {
     return true;
 }
 
-bool BuiltReader::decodeString(Token &token) {
+bool EasyEvent::BuiltReader::decodeString(Token &token) {
     std::string decodedString;
     if (!decodeString(token, decodedString)) {
         return false;
@@ -1738,7 +1728,7 @@ bool BuiltReader::decodeString(Token &token) {
     return true;
 }
 
-bool BuiltReader::decodeString(Token &token, std::string &decoded) {
+bool EasyEvent::BuiltReader::decodeString(Token &token, std::string &decoded) {
     decoded.reserve(static_cast<size_t >(token.end - token.start + 2));
     const char *current = token.start + 1;
     const char *end = token.end - 1;
@@ -1794,7 +1784,7 @@ bool BuiltReader::decodeString(Token &token, std::string &decoded) {
     return true;
 }
 
-bool BuiltReader::decodeDouble(Token &token) {
+bool EasyEvent::BuiltReader::decodeDouble(Token &token) {
     JsonValue decoded;
     if (!decodeDouble(token, decoded)) {
         return false;
@@ -1803,7 +1793,7 @@ bool BuiltReader::decodeDouble(Token &token) {
     return true;
 }
 
-bool BuiltReader::decodeDouble(Token &token, JsonValue &decoded) {
+bool EasyEvent::BuiltReader::decodeDouble(Token &token, JsonValue &decoded) {
     double value = 0;
     constexpr int bufferSize = 32;
     int count;
@@ -1838,7 +1828,7 @@ bool BuiltReader::decodeDouble(Token &token, JsonValue &decoded) {
     return true;
 }
 
-bool BuiltReader::decodeUnicodeCodePoint(Token &token, const char *&current, const char *end, unsigned int &unicode) {
+bool EasyEvent::BuiltReader::decodeUnicodeCodePoint(Token &token, const char *&current, const char *end, unsigned int &unicode) {
     if (!decodeUnicodeEscapeSequence(token, current, end, unicode)) {
         return false;
     }
@@ -1862,7 +1852,7 @@ bool BuiltReader::decodeUnicodeCodePoint(Token &token, const char *&current, con
     return true;
 }
 
-bool BuiltReader::decodeUnicodeEscapeSequence(Token &token, const char *&current, const char *end,
+bool EasyEvent::BuiltReader::decodeUnicodeEscapeSequence(Token &token, const char *&current, const char *end,
                                               unsigned int &unicode) {
     if (end - current < 4) {
         return addError("Bad unicode escape sequence in string: four digits expected.", token, current);
@@ -1886,7 +1876,7 @@ bool BuiltReader::decodeUnicodeEscapeSequence(Token &token, const char *&current
 
 }
 
-bool BuiltReader::addError(const std::string &message, Token &token, const char *extra) {
+bool EasyEvent::BuiltReader::addError(const std::string &message, Token &token, const char *extra) {
     ErrorInfo info;
     info.token = token;
     info.message = message;
@@ -1895,7 +1885,7 @@ bool BuiltReader::addError(const std::string &message, Token &token, const char 
     return false;
 }
 
-bool BuiltReader::recoverFromError(TokenType skipUntilToken) {
+bool EasyEvent::BuiltReader::recoverFromError(TokenType skipUntilToken) {
     size_t errorCount = _errors.size();
     Token skip;
     for (;;) {
@@ -1910,7 +1900,7 @@ bool BuiltReader::recoverFromError(TokenType skipUntilToken) {
     return false;
 }
 
-void BuiltReader::getLocationLineAndColumn(const char *location, int &line, int &column) const {
+void EasyEvent::BuiltReader::getLocationLineAndColumn(const char *location, int &line, int &column) const {
     const char *current = _begin;
     const char *lastLineStart = current;
     line = 0;
@@ -1932,7 +1922,7 @@ void BuiltReader::getLocationLineAndColumn(const char *location, int &line, int 
     ++line;
 }
 
-std::string BuiltReader::getLocationLineAndColumn(const char *location) const {
+std::string EasyEvent::BuiltReader::getLocationLineAndColumn(const char *location) const {
     int line, column;
     getLocationLineAndColumn(location, line, column);
     char buffer[18 + 16 + 16 + 1];
@@ -1940,18 +1930,18 @@ std::string BuiltReader::getLocationLineAndColumn(const char *location) const {
     return std::string(buffer);
 }
 
-void BuiltReader::addComment(const char *begin, const char *end, CommentPlacement placement) {
-    NET4CXX_ASSERT(_collectComments);
+void EasyEvent::BuiltReader::addComment(const char *begin, const char *end, CommentPlacement placement) {
+    Assert(_collectComments);
     std::string normalized = normalizeEOL(begin, end);
-    if (placement == COMMENT_ON_SAME_LINE) {
-        NET4CXX_ASSERT(_lastValue);
+    if (placement == CommentOnSameLine) {
+        Assert(_lastValue);
         _lastValue->setComment(normalized, placement);
     } else {
         _commentsBefore += normalized;
     }
 }
 
-void BuiltReader::skipCommentTokens(Token &token) {
+void EasyEvent::BuiltReader::skipCommentTokens(Token &token) {
     if (_features.allowComments) {
         do {
             readToken(token);
@@ -1961,7 +1951,7 @@ void BuiltReader::skipCommentTokens(Token &token) {
     }
 }
 
-std::string BuiltReader::normalizeEOL(const char *begin, const char *end) {
+std::string EasyEvent::BuiltReader::normalizeEOL(const char *begin, const char *end) {
     std::string normalized;
     normalized.reserve(static_cast<size_t>(end - begin));
     const char *current = begin;
@@ -1980,7 +1970,7 @@ std::string BuiltReader::normalizeEOL(const char *begin, const char *end) {
     return normalized;
 }
 
-bool BuiltReader::containsNewLine(const char *begin, const char *end) {
+bool EasyEvent::BuiltReader::containsNewLine(const char *begin, const char *end) {
     for (; begin < end; ++begin) {
         if (*begin == '\n' || *begin == '\r') {
             return true;
@@ -1990,7 +1980,7 @@ bool BuiltReader::containsNewLine(const char *begin, const char *end) {
 }
 
 
-bool BuiltCharReader::parse(char const *beginDoc, char const *endDoc, JsonValue *root, std::string *errs) {
+bool EasyEvent::BuiltCharReader::parse(char const *beginDoc, char const *endDoc, JsonValue *root, std::string *errs) {
     bool ok = _reader.parse(beginDoc, endDoc, *root, _collectComments);
     if (errs) {
         *errs = _reader.getFormattedErrorMessages();
@@ -1999,11 +1989,11 @@ bool BuiltCharReader::parse(char const *beginDoc, char const *endDoc, JsonValue 
 }
 
 
-CharReaderBuilder::CharReaderBuilder() {
+EasyEvent::CharReaderBuilder::CharReaderBuilder() {
     setDefaults(&_settings);
 }
 
-CharReader* CharReaderBuilder::newCharReader() const {
+EasyEvent::CharReader* EasyEvent::CharReaderBuilder::newCharReader() const {
     bool collectComments = _settings["collectComments"].asBool();
     ReaderFeatures features;
     features.allowComments = _settings["allowComments"].asBool();
@@ -2018,7 +2008,7 @@ CharReader* CharReaderBuilder::newCharReader() const {
     return new BuiltCharReader(collectComments, features);
 }
 
-static void getValidReaderKeys(StringSet *validKeys) {
+static void getValidReaderKeys(std::set<std::string> *validKeys) {
     validKeys->clear();
     validKeys->insert("collectComments");
     validKeys->insert("allowComments");
@@ -2032,15 +2022,15 @@ static void getValidReaderKeys(StringSet *validKeys) {
     validKeys->insert("allowSpecialFloats");
 }
 
-bool CharReaderBuilder::validate(JsonValue *invalid) const {
+bool EasyEvent::CharReaderBuilder::validate(JsonValue *invalid) const {
     JsonValue myInvalid;
     if (!invalid) {
         invalid = &myInvalid;
     }
     JsonValue &inv = *invalid;
-    StringSet validKeys;
+    std::set<std::string> validKeys;
     getValidReaderKeys(&validKeys);
-    StringVector keys = _settings.getMemberNames();
+    std::vector<std::string> keys = _settings.getMemberNames();
     for (auto &key: keys) {
         if (validKeys.find(key) == validKeys.end()) {
             inv[key] = _settings[key];
@@ -2049,7 +2039,7 @@ bool CharReaderBuilder::validate(JsonValue *invalid) const {
     return inv.empty();
 }
 
-void CharReaderBuilder::setDefaults(JsonValue *settings) {
+void EasyEvent::CharReaderBuilder::setDefaults(JsonValue *settings) {
     (*settings)["collectComments"] = true;
     (*settings)["allowComments"] = true;
     (*settings)["strictRoot"] = false;
@@ -2062,7 +2052,7 @@ void CharReaderBuilder::setDefaults(JsonValue *settings) {
     (*settings)["allowSpecialFloats"] = false;
 }
 
-void CharReaderBuilder::strictMode(JsonValue *settings) {
+void EasyEvent::CharReaderBuilder::strictMode(JsonValue *settings) {
     (*settings)["allowComments"] = false;
     (*settings)["strictRoot"] = true;
     (*settings)["allowDroppedNullPlaceholders"] = false;
@@ -2075,7 +2065,7 @@ void CharReaderBuilder::strictMode(JsonValue *settings) {
 }
 
 
-bool parseFromStream(const CharReader::Factory &factory, std::istream &sin, JsonValue* root, std::string *errs) {
+bool EasyEvent::parseFromStream(const CharReader::Factory &factory, std::istream &sin, JsonValue* root, std::string *errs) {
     std::ostringstream ssin;
     ssin << sin.rdbuf();
     std::string doc = ssin.str();
@@ -2085,12 +2075,12 @@ bool parseFromStream(const CharReader::Factory &factory, std::istream &sin, Json
     return reader->parse(begin, end, root, errs);
 }
 
-std::istream& operator>>(std::istream &sin, JsonValue &root) {
+std::istream& EasyEvent::operator>>(std::istream &sin, JsonValue &root) {
     CharReaderBuilder b;
     std::string errs;
     bool ok = parseFromStream(b, sin, &root, &errs);
     if (!ok) {
-        NET4CXX_THROW_EXCEPTION(ParsingError, errs);
+        throwError(UserErrors::ParsingFailed, errs.c_str());
     }
     return sin;
 }

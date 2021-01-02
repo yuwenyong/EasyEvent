@@ -336,11 +336,11 @@ void EasyEvent::Connection::handleRead() {
         return;
     } catch (std::exception& e) {
         LOG_WARN(_logger) << "Error on read: " << e.what();
-        close(EventErrors::UnexpectedBehaviour);
+        close(UserErrors::UnexpectedBehaviour);
         return;
     } catch (...) {
         LOG_WARN(_logger) << "Unknown error on read event.";
-        close(EventErrors::UnexpectedBehaviour);
+        close(UserErrors::UnexpectedBehaviour);
         return;
     }
     if (pos > 0) {
