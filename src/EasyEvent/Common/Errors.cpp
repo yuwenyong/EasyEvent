@@ -24,10 +24,20 @@ std::string EasyEvent::UserErrorCategory::message(int ev) const {
             return "out of range";
         case UserErrors::UnexpectedBehaviour:
             return "unexpected behaviour";
-        case UserErrors::InvalidValue:
-            return "invalid value";
+        case UserErrors::BadValue:
+            return "bad value";
         case UserErrors::ParsingFailed:
             return "parsing failed";
+        case UserErrors::OperationForbidden:
+            return "operation forbidden";
+        case UserErrors::PreconditionFailed:
+            return "precondition failed";
+        case UserErrors::AlreadyExists:
+            return "already exists";
+        case UserErrors::DuplicateValues:
+            return "duplicate values";
+        case UserErrors::BadState:
+            return "bad state";
         default:
             return "(unrecognized error)";
     }

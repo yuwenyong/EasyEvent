@@ -17,8 +17,13 @@ namespace EasyEvent {
         NotConvertible = 5,
         OutOfRange = 6,
         UnexpectedBehaviour = 7,
-        InvalidValue = 8,
+        BadValue = 8,
         ParsingFailed = 9,
+        OperationForbidden = 10,
+        PreconditionFailed = 11,
+        AlreadyExists = 12,
+        DuplicateValues = 13,
+        BadState = 14,
     };
 
     class EASY_EVENT_API UserErrorCategory: public std::error_category {

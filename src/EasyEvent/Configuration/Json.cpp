@@ -1119,7 +1119,7 @@ EasyEvent::StreamWriter* EasyEvent::StreamWriterBuilder::newStreamWriter() const
     } else if (cs_str == "None") {
         cs = CommentStyle::None;
     } else {
-        throwError(UserErrors::InvalidValue, "commentStyle must be 'All' or 'None'");
+        throwError(UserErrors::BadValue, "commentStyle must be 'All' or 'None'");
         Assert(false);
     }
     std::string colonSymbol = " : ";
