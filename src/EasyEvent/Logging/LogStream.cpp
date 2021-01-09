@@ -11,7 +11,8 @@ EasyEvent::LogStream::~LogStream() {
     if (shouldLog()) {
         auto text = _os.str();
         if (!text.empty()) {
-            auto message = std::make_unique<LogMessage>(_logger, _level, _timestamp, std::move(text));
+            auto message = std::make_unique<LogMessage>(_logger, _fileName, _lineno, _funcName, _level, _timestamp,
+                                                        std::this_thread::get_id(), std::move(text));
             Log::instance().write(std::move(message));
         }
     }

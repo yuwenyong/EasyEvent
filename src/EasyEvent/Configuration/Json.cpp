@@ -320,10 +320,10 @@ std::string EasyEvent::JsonValue::asString() const {
         } else if constexpr (std::is_same_v<T, bool>) {
             return arg ? std::string("true") : std::string("false");
         } else if constexpr (std::is_same_v<T, ArrayType>) {
-            throwError(UserErrors::NotConvertible, "array is not convertible to string");
+            throwError(UserErrors::NotConvertible, "JsonValue", "array is not convertible to string");
             return std::string{};
         } else if constexpr (std::is_same_v<T, ObjectType>) {
-            throwError(UserErrors::NotConvertible, "object is not convertible to string");
+            throwError(UserErrors::NotConvertible, "JsonValue", "object is not convertible to string");
             return std::string{};
         } else {
             static_assert(FailType<T>{});
@@ -338,35 +338,35 @@ int EasyEvent::JsonValue::asInt() const {
             return 0;
         } else if constexpr (std::is_same_v<T, int64_t>) {
             if (arg < std::numeric_limits<int>::min() || arg > std::numeric_limits<int>::max()) {
-                throwError(UserErrors::OutOfRange, "int64 out of int range");
+                throwError(UserErrors::OutOfRange, "JsonValue", "int64 out of int range");
                 return 0;
             } else {
                 return static_cast<int>(arg);
             }
         } else if constexpr (std::is_same_v<T, uint64_t>) {
             if (arg > (uint64_t)std::numeric_limits<int>::max()) {
-                throwError(UserErrors::OutOfRange, "uint64 out of int range");
+                throwError(UserErrors::OutOfRange, "JsonValue", "uint64 out of int range");
                 return 0;
             } else {
                 return static_cast<int>(arg);
             }
         } else if constexpr (std::is_same_v<T, double>) {
             if (!InRange(arg, std::numeric_limits<int>::min(), std::numeric_limits<int>::max())) {
-                throwError(UserErrors::OutOfRange, "double out of int range");
+                throwError(UserErrors::OutOfRange, "JsonValue", "double out of int range");
                 return 0;
             } else {
                 return static_cast<int>(arg);
             }
         } else if constexpr (std::is_same_v<T, std::string>) {
-            throwError(UserErrors::NotConvertible, "string is not convertible to int");
+            throwError(UserErrors::NotConvertible, "JsonValue", "string is not convertible to int");
             return 0;
         } else if constexpr (std::is_same_v<T, bool>) {
             return arg ? 1 : 0;
         } else if constexpr (std::is_same_v<T, ArrayType>) {
-            throwError(UserErrors::NotConvertible, "array is not convertible to int");
+            throwError(UserErrors::NotConvertible, "JsonValue", "array is not convertible to int");
            return 0;
         } else if constexpr (std::is_same_v<T, ObjectType>) {
-            throwError(UserErrors::NotConvertible, "object is not convertible to int");
+            throwError(UserErrors::NotConvertible, "JsonValue", "object is not convertible to int");
             return 0;
         } else {
             static_assert(FailType<T>{});
@@ -381,35 +381,35 @@ unsigned int EasyEvent::JsonValue::asUInt() const {
             return 0u;
         } else if constexpr (std::is_same_v<T, int64_t>) {
             if (arg < 0 || arg > std::numeric_limits<unsigned int>::max()) {
-                throwError(UserErrors::OutOfRange, "int64 out of uint range");
+                throwError(UserErrors::OutOfRange, "JsonValue", "int64 out of uint range");
                 return 0u;
             } else {
                 return static_cast<unsigned int>(arg);
             }
         } else if constexpr (std::is_same_v<T, uint64_t>) {
             if (arg > std::numeric_limits<unsigned int>::max()) {
-                throwError(UserErrors::OutOfRange, "uint64 out of uint range");
+                throwError(UserErrors::OutOfRange, "JsonValue", "uint64 out of uint range");
                 return 0u;
             } else {
                 return static_cast<unsigned int>(arg);
             }
         } else if constexpr (std::is_same_v<T, double>) {
             if (!InRange(arg, 0, std::numeric_limits<unsigned int>::max())) {
-                throwError(UserErrors::OutOfRange, "double out of uint range");
+                throwError(UserErrors::OutOfRange, "JsonValue", "double out of uint range");
                 return 0u;
             } else {
                 return static_cast<unsigned int>(arg);
             }
         } else if constexpr (std::is_same_v<T, std::string>) {
-            throwError(UserErrors::NotConvertible, "string is not convertible to uint");
+            throwError(UserErrors::NotConvertible, "JsonValue", "string is not convertible to uint");
             return 0u;
         } else if constexpr (std::is_same_v<T, bool>) {
             return arg ? 1u : 0u;
         } else if constexpr (std::is_same_v<T, ArrayType>) {
-            throwError(UserErrors::NotConvertible, "array is not convertible to uint");
+            throwError(UserErrors::NotConvertible, "JsonValue", "array is not convertible to uint");
             return 0u;
         } else if constexpr (std::is_same_v<T, ObjectType>) {
-            throwError(UserErrors::NotConvertible, "object is not convertible to uint");
+            throwError(UserErrors::NotConvertible, "JsonValue", "object is not convertible to uint");
             return 0u;
         } else {
             static_assert(FailType<T>{});
@@ -426,28 +426,28 @@ int64_t EasyEvent::JsonValue::asInt64() const {
             return arg;
         } else if constexpr (std::is_same_v<T, uint64_t>) {
             if (arg > (uint64_t)std::numeric_limits<int64_t>::max()) {
-                throwError(UserErrors::OutOfRange, "uint64 out of int64 range");
+                throwError(UserErrors::OutOfRange, "JsonValue", "uint64 out of int64 range");
                 return INT64(0);
             } else {
                 return static_cast<int64_t>(arg);
             }
         } else if constexpr (std::is_same_v<T, double>) {
             if (!InRange(arg, std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max())) {
-                throwError(UserErrors::OutOfRange, "double out of int64 range");
+                throwError(UserErrors::OutOfRange, "JsonValue", "double out of int64 range");
                 return INT64(0);
             } else {
                 return static_cast<int64_t>(arg);
             }
         } else if constexpr (std::is_same_v<T, std::string>) {
-            throwError(UserErrors::NotConvertible, "string is not convertible to int64");
+            throwError(UserErrors::NotConvertible, "JsonValue", "string is not convertible to int64");
             return INT64(0);
         } else if constexpr (std::is_same_v<T, bool>) {
             return arg ? INT64(1) : INT64(0);
         } else if constexpr (std::is_same_v<T, ArrayType>) {
-            throwError(UserErrors::NotConvertible, "array is not convertible to int64");
+            throwError(UserErrors::NotConvertible, "JsonValue", "array is not convertible to int64");
             return INT64(0);
         } else if constexpr (std::is_same_v<T, ObjectType>) {
-            throwError(UserErrors::NotConvertible, "object is not convertible to int64");
+            throwError(UserErrors::NotConvertible, "JsonValue", "object is not convertible to int64");
             return INT64(0);
         } else {
             static_assert(FailType<T>{});
@@ -462,7 +462,7 @@ uint64_t EasyEvent::JsonValue::asUInt64() const {
             return UINT64(0);
         } else if constexpr (std::is_same_v<T, int64_t>) {
             if (arg < 0) {
-                throwError(UserErrors::OutOfRange, "int64 out of uint64 range");
+                throwError(UserErrors::OutOfRange, "JsonValue", "int64 out of uint64 range");
                 return UINT64(0);
             } else {
                 return static_cast<uint64_t>(arg);
@@ -471,21 +471,21 @@ uint64_t EasyEvent::JsonValue::asUInt64() const {
             return arg;
         } else if constexpr (std::is_same_v<T, double>) {
             if (!InRange(arg, 0, std::numeric_limits<uint64_t>::max())) {
-                throwError(UserErrors::OutOfRange, "double out of uint64 range");
+                throwError(UserErrors::OutOfRange, "JsonValue", "double out of uint64 range");
                 return UINT64(0);
             } else {
                 return static_cast<uint64_t>(arg);
             }
         } else if constexpr (std::is_same_v<T, std::string>) {
-            throwError(UserErrors::NotConvertible, "string is not convertible to uint64");
+            throwError(UserErrors::NotConvertible, "JsonValue", "string is not convertible to uint64");
             return UINT64(0);
         } else if constexpr (std::is_same_v<T, bool>) {
             return arg ? UINT64(1) : UINT64(0);
         } else if constexpr (std::is_same_v<T, ArrayType>) {
-            throwError(UserErrors::NotConvertible, "array is not convertible to uint64");
+            throwError(UserErrors::NotConvertible, "JsonValue", "array is not convertible to uint64");
             return UINT64(0);
         } else if constexpr (std::is_same_v<T, ObjectType>) {
-            throwError(UserErrors::NotConvertible, "object is not convertible to uint64");
+            throwError(UserErrors::NotConvertible, "JsonValue", "object is not convertible to uint64");
             return UINT64(0);
         } else {
             static_assert(FailType<T>{});
@@ -501,15 +501,15 @@ float EasyEvent::JsonValue::asFloat() const {
         } else if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t> || std::is_same_v<T, double>) {
             return static_cast<float>(arg);
         } else if constexpr (std::is_same_v<T, std::string>) {
-            throwError(UserErrors::NotConvertible, "string is not convertible to float");
+            throwError(UserErrors::NotConvertible, "JsonValue", "string is not convertible to float");
             return 0.0f;
         } else if constexpr (std::is_same_v<T, bool>) {
             return arg ? 1.0f : 0.0f;
         } else if constexpr (std::is_same_v<T, ArrayType>) {
-            throwError(UserErrors::NotConvertible, "array is not convertible to float");
+            throwError(UserErrors::NotConvertible, "JsonValue", "array is not convertible to float");
             return 0.0f;
         } else if constexpr (std::is_same_v<T, ObjectType>) {
-            throwError(UserErrors::NotConvertible, "object is not convertible to float");
+            throwError(UserErrors::NotConvertible, "JsonValue", "object is not convertible to float");
             return 0.0f;
         } else {
             static_assert(FailType<T>{});
@@ -527,15 +527,15 @@ double EasyEvent::JsonValue::asDouble() const {
         } else if constexpr (std::is_same_v<T, double>) {
             return arg;
         } else if constexpr (std::is_same_v<T, std::string>) {
-            throwError(UserErrors::NotConvertible, "string is not convertible to double");
+            throwError(UserErrors::NotConvertible, "JsonValue", "string is not convertible to double");
             return 0.0;
         } else if constexpr (std::is_same_v<T, bool>) {
             return arg ? 1.0 : 0.0;
         } else if constexpr (std::is_same_v<T, ArrayType>) {
-            throwError(UserErrors::NotConvertible, "array is not convertible to double");
+            throwError(UserErrors::NotConvertible, "JsonValue", "array is not convertible to double");
             return 0.0;
         } else if constexpr (std::is_same_v<T, ObjectType>) {
-            throwError(UserErrors::NotConvertible, "object is not convertible to double");
+            throwError(UserErrors::NotConvertible, "JsonValue", "object is not convertible to double");
             return 0.0;
         } else {
             static_assert(FailType<T>{});
@@ -553,15 +553,15 @@ bool EasyEvent::JsonValue::asBool() const {
         } else if constexpr (std::is_same_v<T, double>) {
             return arg != 0.0;
         } else if constexpr (std::is_same_v<T, std::string>) {
-            throwError(UserErrors::NotConvertible, "string is not convertible to bool");
+            throwError(UserErrors::NotConvertible, "JsonValue", "string is not convertible to bool");
             return false;
         } else if constexpr (std::is_same_v<T, bool>) {
             return arg;
         } else if constexpr (std::is_same_v<T, ArrayType>) {
-            throwError(UserErrors::NotConvertible, "array is not convertible to bool");
+            throwError(UserErrors::NotConvertible, "JsonValue", "array is not convertible to bool");
             return false;
         } else if constexpr (std::is_same_v<T, ObjectType>) {
-            throwError(UserErrors::NotConvertible, "object is not convertible to bool");
+            throwError(UserErrors::NotConvertible, "JsonValue", "object is not convertible to bool");
             return false;
         } else {
             static_assert(FailType<T>{});
@@ -737,7 +737,7 @@ void EasyEvent::JsonValue::clear() {
     } else if (isTypeOf(JsonType::NullValue)) {
 
     } else {
-        throwError(UserErrors::NotSupported, "clear requires complex value");
+        throwError(UserErrors::NotSupported, "JsonValue", "clear requires complex value");
     }
 }
 
@@ -746,7 +746,7 @@ void EasyEvent::JsonValue::resize(size_t newSize) {
         *this = JsonValue(JsonType::ArrayValue);
     }
     if (!isTypeOf(JsonType::ArrayValue)) {
-        throwError(UserErrors::NotSupported, "resize requires array value");
+        throwError(UserErrors::NotSupported, "JsonValue", "resize requires array value");
     }
     std::get<ArrayType>(_value).resize(newSize);
 }
@@ -755,7 +755,7 @@ EasyEvent::JsonValue& EasyEvent::JsonValue::operator[](size_t index) {
     if (isTypeOf(JsonType::NullValue)) {
         *this = JsonValue(JsonType::ArrayValue);
     } else if (!isTypeOf(JsonType::ArrayValue)) {
-        throwError(UserErrors::NotSupported, "operator[](index) requires array value");
+        throwError(UserErrors::NotSupported, "JsonValue", "operator[](index) requires array value");
     }
     auto &array = std::get<ArrayType>(_value);
     if (index >= array.size()) {
@@ -766,7 +766,7 @@ EasyEvent::JsonValue& EasyEvent::JsonValue::operator[](size_t index) {
 
 EasyEvent::JsonValue& EasyEvent::JsonValue::operator[](int index) {
     if (index < 0) {
-        throwError(UserErrors::OutOfRange, "index cannot be negative");
+        throwError(UserErrors::OutOfRange, "JsonValue", "index cannot be negative");
     }
     return (*this)[static_cast<size_t>(index)];
 }
@@ -782,14 +782,14 @@ const EasyEvent::JsonValue& EasyEvent::JsonValue::operator[](size_t index) const
             return nullSingleton();
         }
     } else {
-        throwError(UserErrors::NotSupported, "operator[](index)const requires array value");
+        throwError(UserErrors::NotSupported, "JsonValue", "operator[](index)const requires array value");
         return nullSingleton(); // unreachable
     }
 }
 
 const EasyEvent::JsonValue& EasyEvent::JsonValue::operator[](int index) const {
     if (index < 0) {
-        throwError(UserErrors::OutOfRange, "index cannot be negative");
+        throwError(UserErrors::OutOfRange, "JsonValue", "index cannot be negative");
     }
     return (*this)[static_cast<size_t>(index)];
 }
@@ -798,7 +798,7 @@ EasyEvent::JsonValue& EasyEvent::JsonValue::operator[](const char *key) {
     if (isTypeOf(JsonType::NullValue)) {
         *this = JsonValue(JsonType::ObjectValue);
     } else if (!isTypeOf(JsonType::ObjectValue)) {
-        throwError(UserErrors::NotSupported, "operator[](key) requires object value");
+        throwError(UserErrors::NotSupported, "JsonValue", "operator[](key) requires object value");
     }
     auto &object = std::get<ObjectType>(_value);
     auto it = object.find(key);
@@ -826,7 +826,7 @@ const EasyEvent::JsonValue* EasyEvent::JsonValue::find(const char *key) const {
         auto it = object.find(key);
         return it != object.end() ? &(it->second) : nullptr;
     } else {
-        throwError(UserErrors::NotSupported, "find requires object value or null value");
+        throwError(UserErrors::NotSupported, "JsonValue", "find requires object value or null value");
         return nullptr; // unreachable
     }
 }
@@ -873,7 +873,7 @@ std::vector<std::string> EasyEvent::JsonValue::getMemberNames() const {
             members.push_back(kv.first);
         }
     } else {
-        throwError(UserErrors::NotSupported, "getMemberNames requires object value");
+        throwError(UserErrors::NotSupported, "JsonValue", "getMemberNames requires object value");
     }
     return members;
 }
@@ -1119,7 +1119,7 @@ EasyEvent::StreamWriter* EasyEvent::StreamWriterBuilder::newStreamWriter() const
     } else if (cs_str == "None") {
         cs = CommentStyle::None;
     } else {
-        throwError(UserErrors::BadValue, "commentStyle must be 'All' or 'None'");
+        throwError(UserErrors::BadValue, "StreamWriterBuilder", "commentStyle must be 'All' or 'None'");
         Assert(false);
     }
     std::string colonSymbol = " : ";
@@ -1492,7 +1492,7 @@ bool EasyEvent::BuiltReader::readNumber(bool checkInf) {
 
 bool EasyEvent::BuiltReader::readValue() {
     if (static_cast<int>(_nodes.size()) > _features.stackLimit) {
-        throwError(UserErrors::ParsingFailed, "Exceeded stackLimit in readValue().");
+        throwError(UserErrors::ParsingFailed, "BuiltReader", "Exceeded stackLimit in readValue().");
     }
     Token token;
     skipCommentTokens(token);
@@ -1607,7 +1607,7 @@ bool EasyEvent::BuiltReader::readObject(Token &token) {
             return addErrorAndRecover("Missing ':' after object member name", colon, tokenObjectEnd);
         }
         if (name.length() >= (1U<<30)) {
-            throwError(UserErrors::ParsingFailed, "keylength >= 2^30");
+            throwError(UserErrors::ParsingFailed, "BuiltReader", "keylength >= 2^30");
         }
         if (_features.rejectDupKeys && currentValue().isMember(name)) {
             std::string msg = "Duplicate key: '" + name + "'";
@@ -2080,7 +2080,7 @@ std::istream& EasyEvent::operator>>(std::istream &sin, JsonValue &root) {
     std::string errs;
     bool ok = parseFromStream(b, sin, &root, &errs);
     if (!ok) {
-        throwError(UserErrors::ParsingFailed, errs.c_str());
+        throwError(UserErrors::ParsingFailed, "parseFromStream", errs);
     }
     return sin;
 }

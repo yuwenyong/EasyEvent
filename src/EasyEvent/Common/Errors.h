@@ -43,6 +43,8 @@ namespace EasyEvent {
 
     EASY_EVENT_API [[ noreturn ]] void doThrowError(const std::error_code& err, const char* location);
 
+    EASY_EVENT_API [[ noreturn ]] void doThrowError(const std::error_code& err, const char* location, const char* what);
+
     inline void throwError(const std::error_code& err) {
         if (err) {
             doThrowError(err);
@@ -53,6 +55,16 @@ namespace EasyEvent {
         if (err) {
             doThrowError(err, location);
         }
+    }
+
+    inline void throwError(const std::error_code& err, const char* location, const char* what) {
+        if (err) {
+            doThrowError(err, location, what);
+        }
+    }
+
+    inline void throwError(const std::error_code& err, const char* location, const std::string &what) {
+        throwError(err, location, what.c_str());
     }
 }
 

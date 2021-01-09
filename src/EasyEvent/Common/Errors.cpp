@@ -60,3 +60,11 @@ void EasyEvent::doThrowError(const std::error_code &err, const char *location) {
     std::system_error e(err, whatMsg);
     throw e;
 }
+
+void EasyEvent::doThrowError(const std::error_code &err, const char *location, const char *what) {
+    std::string whatMsg = location;
+    whatMsg += ": ";
+    whatMsg += what;
+    std::system_error e(err, whatMsg);
+    throw e;
+}

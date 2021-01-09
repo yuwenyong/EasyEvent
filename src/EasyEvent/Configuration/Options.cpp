@@ -9,7 +9,7 @@ void EasyEvent::Options::addOpt(const std::string &shortOpt, const std::string &
                                 const std::string &dflt, bool repeat) {
     std::lock_guard<std::mutex> lock(_mutex);
     if (_parsed) {
-        throwError(UserErrors::BadState, "cannot add options after parse() was called");
+        throwError(UserErrors::BadState, "Options","cannot add options after parse() was called");
     }
     checkArgs(shortOpt, longOpt, needArg, dflt);
     addValidOpt(shortOpt, longOpt, needArg, dflt, repeat);
@@ -18,7 +18,7 @@ void EasyEvent::Options::addOpt(const std::string &shortOpt, const std::string &
 std::vector<std::string> EasyEvent::Options::parse(const std::vector<std::string> &args) {
     std::lock_guard<std::mutex> lock(_mutex);
     if (_parsed) {
-        throwError(UserErrors::BadState, "cannot call parse() more than once on the same Option instance");
+        throwError(UserErrors::BadState, "Options","cannot call parse() more than once on the same Option instance");
     }
 
     std::set<std::string> seenNonRepeatOpts;
@@ -50,7 +50,7 @@ std::vector<std::string> EasyEvent::Options::parse(const std::vector<std::string
                 if(seenPos != seenNonRepeatOpts.end()) {
                     std::string err = "`--";
                     err += opt + ":' option cannot be repeated";
-                    throwError(UserErrors::BadValue, err.c_str());
+                    throwError(UserErrors::BadValue, "Options", err);
                 }
                 seenNonRepeatOpts.insert(seenPos, opt);
                 std::string synonym = getSynonym(opt);
@@ -64,12 +64,12 @@ std::vector<std::string> EasyEvent::Options::parse(const std::vector<std::string
                     std::string err = "`";
                     err += opt;
                     err += "': option does not take an argument";
-                    throwError(UserErrors::BadValue, err.c_str());
+                    throwError(UserErrors::BadValue, "Options", err);
                 } else if(p == args[i].size() - 1) {
                     std::string err = "`";
                     err += opt;
                     err += "': option requires an argument";
-                    throwError(UserErrors::BadValue, err.c_str());
+                    throwError(UserErrors::BadValue, "Options", err);
                 }
                 setOpt(opt, "", args[i].substr(p + 1), pos->second->repeat);
                 argDone = true;
@@ -84,7 +84,7 @@ std::vector<std::string> EasyEvent::Options::parse(const std::vector<std::string
                     if(seenPos != seenNonRepeatOpts.end()) {
                         std::string err = "`--";
                         err += opt + ":' option cannot be repeated";
-                        throwError(UserErrors::BadValue, err.c_str());
+                        throwError(UserErrors::BadValue, "Options", err);
                     }
                     seenNonRepeatOpts.insert(seenPos, opt);
                     std::string synonym = getSynonym(opt);
@@ -119,7 +119,7 @@ std::vector<std::string> EasyEvent::Options::parse(const std::vector<std::string
                     }
                     err += opt;
                     err += "' option requires an argument";
-                    throwError(UserErrors::BadValue, err.c_str());
+                    throwError(UserErrors::BadValue, "Options", err);
                 }
                 setOpt(opt, "", args[++i], pos->second->repeat);
             } else {
@@ -147,7 +147,7 @@ std::vector<std::string> EasyEvent::Options::parse(int argc, const char *const *
 bool EasyEvent::Options::isSet(const std::string &opt) const {
     std::lock_guard<std::mutex> lock(_mutex);
     if (!_parsed) {
-        throwError(UserErrors::BadState, "cannot lookup options before calling parse()");
+        throwError(UserErrors::BadState, "Options", "cannot lookup options before calling parse()");
     }
 
     auto pos = checkOptIsValid(opt);
@@ -157,7 +157,7 @@ bool EasyEvent::Options::isSet(const std::string &opt) const {
 std::string EasyEvent::Options::optVal(const std::string &opt) const {
     std::lock_guard<std::mutex> lock(_mutex);
     if (!_parsed) {
-        throwError(UserErrors::BadState, "cannot lookup options before calling parse()");
+        throwError(UserErrors::BadState, "Options", "cannot lookup options before calling parse()");
     }
     auto pos = checkOptHasArg(opt);
     if(pos->second->repeat) {
@@ -168,7 +168,7 @@ std::string EasyEvent::Options::optVal(const std::string &opt) const {
         }
         err += opt;
         err += "': is a repeating option -- use optVals() to get its arguments";
-        throwError(UserErrors::OperationForbidden, err.c_str());
+        throwError(UserErrors::OperationForbidden, "Options", err);
     }
 
     auto p = _optVal.find(opt);
@@ -181,7 +181,7 @@ std::string EasyEvent::Options::optVal(const std::string &opt) const {
 std::vector<std::string> EasyEvent::Options::optVals(const std::string &opt) const {
     std::lock_guard<std::mutex> lock(_mutex);
     if (!_parsed) {
-        throwError(UserErrors::BadState, "cannot lookup options before calling parse()");
+        throwError(UserErrors::BadState, "Options", "cannot lookup options before calling parse()");
     }
 
     auto pos = checkOptHasArg(opt);
@@ -193,7 +193,7 @@ std::vector<std::string> EasyEvent::Options::optVals(const std::string &opt) con
             err.push_back('-');
         }
         err += opt + "': is a non-repeating option -- use optArg() to get its argument";
-        throwError(UserErrors::OperationForbidden, err.c_str());
+        throwError(UserErrors::OperationForbidden, "Options", err);
     }
 
     auto p = _optVals.find(opt);
@@ -436,15 +436,15 @@ std::vector<std::string> EasyEvent::Options::split(const std::string &line) {
             break;
         }
         case SingleQuote: {
-            throwError(UserErrors::ParsingFailed, "missing closing single quote");
+            throwError(UserErrors::ParsingFailed, "Options", "missing closing single quote");
             break;
         }
         case DoubleQuote: {
-            throwError(UserErrors::ParsingFailed, "missing closing double quote");
+            throwError(UserErrors::ParsingFailed, "Options", "missing closing double quote");
             break;
         }
         case ANSIQuote: {
-            throwError(UserErrors::ParsingFailed, "unterminated $' quote");
+            throwError(UserErrors::ParsingFailed, "Options", "unterminated $' quote");
             break;
         }
         default: {
@@ -462,13 +462,13 @@ void EasyEvent::Options::addValidOpt(const std::string &shortOpt, const std::str
         std::string err = "`";
         err += shortOpt;
         err += "': duplicate option";
-        throwError(UserErrors::DuplicateValues, err.c_str());
+        throwError(UserErrors::DuplicateValues, "Options", err);
     }
     if(!longOpt.empty() && _opts.find(longOpt) != _opts.end()) {
         std::string err = "`";
         err += longOpt;
         err += "': duplicate option";
-        throwError(UserErrors::DuplicateValues, err.c_str());
+        throwError(UserErrors::DuplicateValues, "Options", err);
     }
 
     auto opt = std::make_shared<Opt>();
@@ -502,7 +502,7 @@ EasyEvent::Options::OptMapping::iterator EasyEvent::Options::checkOpt(const std:
         }
         err += opt;
         err.push_back('\'');
-        throwError(UserErrors::NotFound, err.c_str());
+        throwError(UserErrors::NotFound, "Options", err);
     }
     return pos;
 }
@@ -583,7 +583,7 @@ EasyEvent::Options::OptMapping::const_iterator EasyEvent::Options::checkOptIsVal
         std::string err = "`";
         err += opt;
         err += "': invalid option";
-        throwError(UserErrors::NotFound, err.c_str());
+        throwError(UserErrors::NotFound, "Options", err);
     }
     return pos;
 }
@@ -597,7 +597,7 @@ EasyEvent::Options::OptMapping::const_iterator EasyEvent::Options::checkOptHasAr
         }
         err += opt;
         err += "': option does not take arguments";
-        throwError(UserErrors::InvalidArgument, err.c_str());
+        throwError(UserErrors::InvalidArgument, "Options", err);
     }
     return pos;
 }
@@ -617,7 +617,7 @@ std::string EasyEvent::Options::getSynonym(const std::string &optName) const {
 void EasyEvent::Options::checkArgs(const std::string &shortOpt, const std::string &longOpt, bool needArg,
                                    const std::string &dflt) {
     if(shortOpt.empty() && longOpt.empty()) {
-        throwError(UserErrors::InvalidArgument, "short and long option cannot both be empty");
+        throwError(UserErrors::InvalidArgument, "Options", "short and long option cannot both be empty");
     }
 
     if(!shortOpt.empty()) {
@@ -625,19 +625,19 @@ void EasyEvent::Options::checkArgs(const std::string &shortOpt, const std::strin
             std::string err = "`";
             err += shortOpt;
             err += "': a short option cannot specify more than one option";
-            throwError(UserErrors::InvalidArgument, err.c_str());
+            throwError(UserErrors::InvalidArgument, "Options", err);
         }
         if(shortOpt.find_first_of(" \t\n\r\f\v") != std::string::npos) {
             std::string err = "`";
             err += shortOpt;
             err += "': a short option cannot be whitespace";
-            throwError(UserErrors::InvalidArgument, err.c_str());
+            throwError(UserErrors::InvalidArgument, "Options", err);
         }
         if(shortOpt[0] == '-') {
             std::string err = "`";
             err += shortOpt;
             err += "': a short option cannot be `-'";
-            throwError(UserErrors::InvalidArgument, err.c_str());
+            throwError(UserErrors::InvalidArgument, "Options", err);
         }
     }
 
@@ -646,17 +646,18 @@ void EasyEvent::Options::checkArgs(const std::string &shortOpt, const std::strin
             std::string err = "`";
             err += longOpt;
             err += "': a long option cannot contain whitespace";
-            throwError(UserErrors::InvalidArgument, err.c_str());
+            throwError(UserErrors::InvalidArgument, "Options", err);
         }
         if(longOpt[0] == '-') {
             std::string err = "`";
             err += longOpt;
             err += "': a long option must not contain a leading `-'";
-            throwError(UserErrors::InvalidArgument, err.c_str());
+            throwError(UserErrors::InvalidArgument, "Options", err);
         }
     }
 
     if(!needArg && !dflt.empty()) {
-        throwError(UserErrors::InvalidArgument, "a default value can be specified only for options requiring an argument");
+        throwError(UserErrors::InvalidArgument, "Options",
+                   "a default value can be specified only for options requiring an argument");
     }
 }
