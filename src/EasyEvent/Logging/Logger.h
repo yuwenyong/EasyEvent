@@ -17,75 +17,104 @@ namespace EasyEvent {
         Logger(const Logger&) = delete;
         Logger& operator=(const Logger&) = delete;
 
-        explicit Logger(const std::string& name, LogLevel level, LoggerFlags flags)
-            : _name(name)
-            , _level(level)
-            , _flags(flags) {
-            if ((_flags & LOGGER_FLAGS_MULTI_THREAD) != 0) {
-                _mutex = std::make_unique<std::mutex>();
-            }
+        explicit Logger(Log* manager, const std::string& name, LogLevel level)
+            : _manager(manager)
+            , _name(name)
+            , _level(level) {
+
         }
 
-        const std::string& getName() const {
+        std::string getName() const {
             return _name;
+        }
+
+        Logger* getParent() const {
+            return _parent;
         }
 
         LogLevel getLevel() const {
             return _level;
         }
 
-        bool isThreadSafe() const {
-            return (_flags & LOGGER_FLAGS_MULTI_THREAD) != 0;
+        void setLevel(LogLevel level) {
+            _level = level;
         }
 
-        bool isAsync() const {
-            return (_flags & LOGGER_FLAGS_ASYNC) != 0;
+        bool propagate() const {
+            return _propagate;
         }
 
-        void addSink(SinkPtr sink) {
-            if (isThreadSafe()) {
-                std::lock_guard<std::mutex> lock(*_mutex);
-                _addSink(std::move(sink));
-            } else {
-                _addSink(std::move(sink));
+        void propagate(bool propagate) {
+            _propagate = propagate;
+        }
+
+        bool disabled() const {
+            return _disabled;
+        }
+
+        void disabled(bool disabled) {
+            _disabled = disabled;
+        }
+
+        void setSink(const SinkPtr& sink) {
+            std::lock_guard<std::mutex> lock(_mutex);
+            _sinks.clear();
+            _sinks.emplace_back(sink);
+            _placeholder = false;
+        }
+
+        void appendSink(const SinkPtr& sink) {
+            std::lock_guard<std::mutex> lock(_mutex);
+            auto iter = std::find(_sinks.begin(), _sinks.end(), sink);
+            if (iter != _sinks.end()) {
+                _sinks.emplace_back(sink);
+                _placeholder = false;
             }
         }
 
-        void delSink(SinkPtr sink) {
-            if (isThreadSafe()) {
-                std::lock_guard<std::mutex> lock(*_mutex);
-                _delSink(std::move(sink));
-            } else {
-                _delSink(std::move(sink));
-            }
-        }
-    protected:
-        void write(std::unique_ptr<LogMessage> &&message) {
-            if (isThreadSafe()) {
-                std::lock_guard<std::mutex> lock(*_mutex);
-                _write(message.get());
-            } else {
-                _write(message.get());
-            }
-        }
-
-        void _write(LogMessage *message);
-
-        void _addSink(SinkPtr sink) {
-            _sinks.emplace_back(std::move(sink));
-        }
-
-        void _delSink(SinkPtr sink) {
+        void removeSink(const SinkPtr& sink) {
+            std::lock_guard<std::mutex> lock(_mutex);
             auto iter = std::remove(_sinks.begin(), _sinks.end(), sink);
             if (iter != _sinks.end()) {
                 _sinks.erase(iter, _sinks.end());
             }
         }
 
+        void resetSinks() {
+            std::lock_guard<std::mutex> lock(_mutex);
+            _sinks.clear();
+        }
+
+        bool shouldLog(const LogLevel level) const;
+
+        void write(LogRecord* record);
+
+        Logger* getChild(const std::string& suffix) const;
+    protected:
+        void setParent(Logger* parent) {
+            _parent = parent;
+        }
+
+        bool placeholder() const {
+            return _placeholder;
+        }
+
+        void placeholder(bool placeholder) {
+            _placeholder = placeholder;
+        }
+
+        void doWrite(LogRecord* record);
+
+        static bool shouldLog(const Logger* logger, LogLevel level);
+
+        std::mutex _mutex;
+        Log* _manager;
         std::string _name;
         LogLevel _level;
-        LoggerFlags _flags;
-        std::unique_ptr<std::mutex> _mutex;
+        Logger* _parent{nullptr};
+        bool _placeholder{true};
+        bool _propagate{true};
+        bool _disabled{false};
         std::vector<SinkPtr> _sinks;
     };
 

@@ -38,38 +38,33 @@ namespace EasyEvent {
         struct MakeSharedTag {};
 
     public:
-        ConsoleSink(bool colored, LogLevel level, SinkFlags flags, MakeSharedTag tag)
-            : ConsoleSink(colored, level, flags) {
+        ConsoleSink(bool colored, LogLevel level, bool multiThread, bool async, const std::string& fmt, MakeSharedTag tag)
+            : ConsoleSink(colored, level, multiThread, async, fmt) {
 
         }
 
-        static SinkPtr create(bool colored=false, LogLevel level=LOG_LEVEL_DEFAULT,
-                              SinkFlags flags=SINK_FLAGS_DEFAULT) {
+        static SinkPtr create(bool colored=false, LogLevel level=LOG_LEVEL_DEFAULT, bool multiThread=false,
+                              bool async=false, const std::string& fmt={}) {
 
-            return std::make_shared<ConsoleSink>(colored, level, flags, MakeSharedTag{});
+            return std::make_shared<ConsoleSink>(colored, level, multiThread, async, fmt, MakeSharedTag{});
         }
     protected:
 
-        ConsoleSink(bool colored, LogLevel level, SinkFlags flags)
-            : Sink(level, flags)
+        ConsoleSink(bool colored, LogLevel level, bool multiThread, bool async, const std::string& fmt)
+            : Sink(level, multiThread, async, fmt)
             , _colored(colored) {
-            if (isThreadSafe()) {
-                _mutex = gMutex;
-            }
+
         }
 
-        void write(LogMessage *message, const std::string &text) override;
-
-        void _write(LogMessage *message, const std::string &text);
+        void onWrite(LogRecord *record, const std::string &text) override;
 
         void setColor(LogLevel level);
 
         void resetColor(LogLevel level);
 
         bool _colored;
-        std::shared_ptr<std::mutex> _mutex;
 
-        static std::shared_ptr<std::mutex> gMutex;
+        static std::mutex gMutex;
         static ColorTypes gColors[NUM_ENABLED_LOG_LEVELS];
     };
 

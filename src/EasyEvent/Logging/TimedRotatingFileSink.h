@@ -22,25 +22,27 @@ namespace EasyEvent {
         struct MakeSharedTag {};
 
     public:
-        TimedRotatingFileSink(std::string fileName, TimedRotatingWhen when, LogLevel level, SinkFlags flags,
+        TimedRotatingFileSink(std::string fileName, TimedRotatingWhen when, LogLevel level, bool multiThread,
+                              bool async, const std::string& fmt,
                               MakeSharedTag tag)
-                              : TimedRotatingFileSink(std::move(fileName), when, level, flags) {
+                              : TimedRotatingFileSink(std::move(fileName), when, level, multiThread, async, fmt) {
 
         }
 
-        ~TimedRotatingFileSink() noexcept override;
-
         static SinkPtr create(std::string fileName, TimedRotatingWhen when=TimedRotatingWhen::Day,
-                              LogLevel level=LOG_LEVEL_DEFAULT, SinkFlags flags=SINK_FLAGS_DEFAULT) {
-            return std::make_shared<TimedRotatingFileSink>(std::move(fileName), when, level, flags,MakeSharedTag{});
+                              LogLevel level=LOG_LEVEL_DEFAULT, bool multiThread=false, bool async=false,
+                              const std::string& fmt={}) {
+            return std::make_shared<TimedRotatingFileSink>(std::move(fileName), when, level, multiThread, async, fmt,
+                                                           MakeSharedTag{});
         }
 
     protected:
-        TimedRotatingFileSink(std::string fileName, TimedRotatingWhen when, LogLevel level, SinkFlags flags);
+        TimedRotatingFileSink(std::string fileName, TimedRotatingWhen when, LogLevel level, bool multiThread,
+                              bool async, const std::string& fmt);
 
-        void write(LogMessage *message, const std::string &text) override;
+        void onWrite(LogRecord *record, const std::string &text) override;
 
-        void _write(LogMessage *message, const std::string &text);
+        void onClose() override;
 
         bool shouldRollover();
 
@@ -59,7 +61,6 @@ namespace EasyEvent {
 
         std::string _fileName;
         TimedRotatingWhen _when;
-        std::unique_ptr<std::mutex> _mutex;
         FILE* _logFile{nullptr};
         Time _rolloverAt;
     };

@@ -6,7 +6,6 @@
 #define EASYEVENT_LOGGING_LOG_H
 
 #include "EasyEvent/Logging/LogCommon.h"
-#include "EasyEvent/Common/TaskPool.h"
 
 
 namespace EasyEvent {
@@ -16,43 +15,30 @@ namespace EasyEvent {
         Log(const Log&) = delete;
         Log& operator=(const Log&) = delete;
 
-        ~Log();
-
-        Logger* getLogger(const std::string& name) const {
-            std::lock_guard<std::mutex> lock(_mutex);
-            auto iter = _loggers.find(name);
-            return iter != _loggers.end() ? iter->second.get() : nullptr;
+        Logger* getRootLogger() const {
+            return _rootLogger;
         }
 
-        Logger* getOrCreateLogger(const std::string& name,
-                                  LogLevel level=LOG_LEVEL_DEFAULT,
-                                  LoggerFlags flags=LOGGER_FLAGS_DEFAULT);
-
-        Logger* createLogger(const std::string& name, LogLevel level, LoggerFlags flags, std::error_code &ec);
-
-        Logger* createLogger(const std::string& name,
-                             LogLevel level=LOG_LEVEL_DEFAULT,
-                             LoggerFlags flags=LOGGER_FLAGS_DEFAULT);
-
-        void write(std::unique_ptr<LogMessage> &&message);
-
-        void stop() {
-            if (_thread) {
-                _thread->stop();
-                _thread->wait();
-            }
-        }
+        Logger* getLogger(const std::string& name);
 
         static Log& instance() {
             static Log log;
             return log;
         }
-    protected:
-        Log() = default;
 
-        std::map<std::string, std::unique_ptr<Logger>> _loggers;
+        static const char* RootLoggerName;
+    protected:
+        Log();
+
+        void initRootLogger();
+
+        Logger* getOrCreateLogger(const std::string& name);
+
+        Logger* createLogger(const std::string& name);
+
         mutable std::mutex _mutex;
-        std::unique_ptr<TaskPool> _thread;
+        std::map<std::string, std::unique_ptr<Logger>> _loggers;
+        Logger* _rootLogger{nullptr};
     };
 
 }

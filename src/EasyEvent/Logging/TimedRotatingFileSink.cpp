@@ -6,36 +6,24 @@
 
 
 EasyEvent::TimedRotatingFileSink::TimedRotatingFileSink(std::string fileName, TimedRotatingWhen when, LogLevel level,
-                                                        SinkFlags flags)
-                                                        : Sink(level, flags)
+                                                        bool multiThread, bool async, const std::string& fmt)
+                                                        : Sink(level, multiThread, async, fmt)
                                                         , _fileName(std::move(fileName))
                                                         , _when(when) {
-    if (isThreadSafe()) {
-        _mutex = std::make_unique<std::mutex>();
-    }
     computeRollover();
     openFile();
 }
 
-EasyEvent::TimedRotatingFileSink::~TimedRotatingFileSink() noexcept {
-    closeFile();
-}
-
-void EasyEvent::TimedRotatingFileSink::write(LogMessage *message, const std::string &text) {
-    if (isThreadSafe()) {
-        std::lock_guard<std::mutex> lock(*_mutex);
-        _write(message, text);
-    } else {
-        _write(message, text);
-    }
-}
-
-void EasyEvent::TimedRotatingFileSink::_write(LogMessage *message, const std::string &text) {
+void EasyEvent::TimedRotatingFileSink::onWrite(LogRecord *record, const std::string &text) {
     if (shouldRollover()) {
         doRollover();
     }
-    fprintf(_logFile, "%s\n", text.c_str());
+    fprintf(_logFile, "%s", text.c_str());
     fflush(_logFile);
+}
+
+void EasyEvent::TimedRotatingFileSink::onClose() {
+    closeFile();
 }
 
 bool EasyEvent::TimedRotatingFileSink::shouldRollover() {

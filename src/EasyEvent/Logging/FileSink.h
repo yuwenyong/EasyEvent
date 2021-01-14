@@ -14,23 +14,22 @@ namespace EasyEvent {
     private:
         struct MakeSharedTag {};
     public:
-        FileSink(std::string fileName, bool trunc, LogLevel level, SinkFlags flags, MakeSharedTag tag)
-            : FileSink(std::move(fileName), trunc, level, flags) {
+        FileSink(std::string fileName, bool trunc, LogLevel level, bool multiThread, bool async, const std::string& fmt,
+                 MakeSharedTag tag)
+            : FileSink(std::move(fileName), trunc, level, multiThread, async, fmt) {
 
         }
-
-        ~FileSink() noexcept override;
 
         static SinkPtr create(std::string fileName, bool trunc=false, LogLevel level=LOG_LEVEL_DEFAULT,
-                              SinkFlags flags=SINK_FLAGS_DEFAULT) {
-            return std::make_shared<FileSink>(std::move(fileName), trunc, level, flags, MakeSharedTag{});
+                              bool multiThread=false, bool async=false, const std::string& fmt={}) {
+            return std::make_shared<FileSink>(std::move(fileName), trunc, level, multiThread, async, fmt, MakeSharedTag{});
         }
     protected:
-        FileSink(std::string fileName, bool trunc, LogLevel level, SinkFlags flags);
+        FileSink(std::string fileName, bool trunc, LogLevel level, bool multiThread, bool async, const std::string& fmt);
 
-        void write(LogMessage *message, const std::string &text) override;
+        void onWrite(LogRecord *record, const std::string &text) override;
 
-        void _write(LogMessage *message, const std::string &text);
+        void onClose() override;
 
         void closeFile() {
             if (_logFile) {
@@ -41,7 +40,6 @@ namespace EasyEvent {
 
         std::string _fileName;
         bool _trunc;
-        std::unique_ptr<std::mutex> _mutex;
         FILE* _logFile{nullptr};
     };
 }

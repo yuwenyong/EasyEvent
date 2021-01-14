@@ -7,7 +7,6 @@
 
 #include "EasyEvent/Logging/LogCommon.h"
 #include "EasyEvent/Common/Time.h"
-#include "EasyEvent/Logging/Logger.h"
 
 
 namespace EasyEvent {
@@ -18,22 +17,11 @@ namespace EasyEvent {
         LogStream(const LogStream&) = delete;
         LogStream& operator=(const LogStream&) = delete;
 
-        LogStream(Logger* logger,
-                  const char* fileName,
-                  int lineno,
-                  const char* funcName,
-                  LogLevel level)
-                : _logger(logger)
-                , _fileName(fileName)
-                , _lineno(lineno)
-                , _funcName(funcName)
-                , _level(level) {
-            _timestamp = Time::now();
-        }
+        LogStream(Logger* logger, const char* fileName, int lineno, const char* funcName, LogLevel level);
 
         template <typename ValueT>
         LogStream& operator<<(ValueT &&val) {
-            if (shouldLog()) {
+            if (_shouldLog) {
                 stream() << std::forward<ValueT>(val);
             }
             return *this;
@@ -45,16 +33,13 @@ namespace EasyEvent {
             return _os;
         }
 
-        bool shouldLog() const {
-            return _logger != nullptr && _level >= _logger->getLevel();
-        }
-
         Logger* _logger;
         const char* _fileName;
         int _lineno;
         const char* _funcName;
         LogLevel _level;
         Time _timestamp;
+        bool _shouldLog;
         std::ostringstream _os;
     };
 

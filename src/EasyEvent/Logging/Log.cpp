@@ -4,64 +4,67 @@
 
 #include "EasyEvent/Logging/Log.h"
 #include "EasyEvent/Logging/Logger.h"
-#include "EasyEvent/Logging/LogMessage.h"
+#include "EasyEvent/Logging/ConsoleSink.h"
 
 
-EasyEvent::Log::~Log() {
-    stop();
-}
+const char* EasyEvent::Log::RootLoggerName = "Root";
 
-EasyEvent::Logger * EasyEvent::Log::getOrCreateLogger(const std::string &name, LogLevel level, LoggerFlags flags) {
-    std::lock_guard<std::mutex> lock(_mutex);
-    auto iter = _loggers.find(name);
-    if (iter == _loggers.end()) {
-        _loggers[name] = std::make_unique<Logger>(name, level, flags);
-        iter = _loggers.find(name);
-        Assert(iter != _loggers.end());
+EasyEvent::Logger * EasyEvent::Log::getLogger(const std::string &name) {
+    if (name == RootLoggerName) {
+        return _rootLogger;
     }
-    return iter->second.get();
+    return getOrCreateLogger(name);
 }
 
-EasyEvent::Logger * EasyEvent::Log::createLogger(const std::string &name,LogLevel level, LoggerFlags flags,
-                                                 std::error_code &ec) {
+EasyEvent::Log::Log() {
+    initRootLogger();
+}
+
+void EasyEvent::Log::initRootLogger() {
+    auto logger = std::make_unique<Logger>(this, RootLoggerName, LOG_LEVEL_DEFAULT);
+    _rootLogger = logger.get();
+    _loggers[RootLoggerName] = std::move(logger);
+    _rootLogger->setSink(ConsoleSink::create(true));
+}
+
+EasyEvent::Logger * EasyEvent::Log::getOrCreateLogger(const std::string &name) {
     std::lock_guard<std::mutex> lock(_mutex);
     auto iter = _loggers.find(name);
+    Logger* logger;
     if (iter == _loggers.end()) {
-        _loggers[name] = std::make_unique<Logger>(name, level, flags);
-        iter = _loggers.find(name);
-        Assert(iter != _loggers.end());
-        ec = {0, ec.category()};
-        return iter->second.get();
+        logger = createLogger(name);
     } else {
-        ec = make_error_code(LoggingErrors::AlreadyRegistered);
-        return nullptr;
+        logger = iter->second.get();
     }
-}
-
-EasyEvent::Logger * EasyEvent::Log::createLogger(const std::string &name, LogLevel level, LoggerFlags flags) {
-    std::error_code ec;
-    auto logger = createLogger(name, level, flags, ec);
-    throwError(ec, "create logger");
     return logger;
 }
 
-void EasyEvent::Log::write(std::unique_ptr<LogMessage> &&message) {
-    Logger* logger = message->getLogger();
-    Assert(logger != nullptr);
-    Assert(getLogger(logger->getName()) == logger);
-    if (logger->isAsync()) {
-        if (!_thread) {
-            std::lock_guard<std::mutex> lock(_mutex);
-            if (!_thread) {
-                _thread = std::make_unique<TaskPool>();
-                _thread->start(1);
-            }
+EasyEvent::Logger * EasyEvent::Log::createLogger(const std::string &name) {
+    auto logger = std::make_unique<Logger>(this, name, LOG_LEVEL_DEFAULT);
+    Logger* result = logger.get(), *current = logger.get();
+
+    _loggers[name] = std::move(logger);
+
+    std::string::size_type pos = name.rfind('.');
+    while (pos != std::string::npos) {
+        std::string parentName = name.substr(0, pos);
+        if (parentName.empty()) {
+            break;
         }
-        _thread->post([message=std::move(message)]() mutable {
-            auto logger = message->getLogger();
-            logger->write(std::move(message));
-        });
-    } else {
-        logger->write(std::move(message));
+        auto iter = _loggers.find(parentName);
+        if (iter != _loggers.end()) {
+            current->setParent(iter->second.get());
+            current = nullptr;
+            break;
+        }
+        auto parentLogger = std::make_unique<Logger>(this, parentName, LOG_LEVEL_DEFAULT);
+        current->setParent(parentLogger.get());
+        current = parentLogger.get();
+        _loggers[parentName] = std::move(parentLogger);
+        pos = name.rfind('.', pos - 1);
     }
+    current->setParent(_rootLogger);
+    return result;
 }
+
+

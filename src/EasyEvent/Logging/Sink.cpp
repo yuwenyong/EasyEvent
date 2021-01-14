@@ -6,46 +6,66 @@
 #include "EasyEvent/Logging/Logger.h"
 
 
-void EasyEvent::Sink::write(LogMessage *message) {
-    if (!shouldLog(message)) {
+EasyEvent::Sink::~Sink() {
+    close();
+}
+
+void EasyEvent::Sink::write(LogRecord *record) {
+    if (!shouldLog(record)) {
         return;
     }
-    std::ostringstream ss;
-
-    if (_flags & SINK_FLAGS_PREFIX_TIMESTAMP) {
-        ss << '[' << message->getTimestamp().toDateTimeString() << ']';
-    }
-
-    if (_flags & SINK_FLAGS_PREFIX_LOG_LEVEL) {
-        ss << '[' << getLevelString(message->getLevel()) << ']';
-    }
-
-    if (_flags & SINK_FLAGS_PREFIX_LOGGER_NAME) {
-        ss << '[' << message->getLogger()->getName() << "] ";
-    }
-
-    ss << message->getText();
-    std::string data = ss.str();
-    if (!data.empty() && data.back() == '\n') {
-        data.pop_back();
-    }
-    write(message, data);
-}
-
-const char * EasyEvent::Sink::getLevelString(LogLevel level) {
-    switch (level)
-    {
-        case LOG_LEVEL_CRITICAL:
-            return "crit";
-        case LOG_LEVEL_ERROR:
-            return "fail";
-        case LOG_LEVEL_WARN:
-            return "warn";
-        case LOG_LEVEL_INFO:
-            return "info";
-        case LOG_LEVEL_DEBUG:
-            return "dbug";
-        default:
-            return "disabled";
+    if (_multiThread) {
+        std::lock_guard<std::mutex> lock(*_mutex);
+        doWrite(record);
+    } else {
+        doWrite(record);
     }
 }
+
+void EasyEvent::Sink::onClose() {
+
+}
+
+void EasyEvent::Sink::doClose() {
+    if (!_closed) {
+        if (_queue) {
+            _queue->stop();
+            _queue->wait();
+            _queue.reset();
+        }
+        onClose();
+        _closed = true;
+    }
+}
+
+void EasyEvent::Sink::doWrite(LogRecord *record) {
+    if (_closed) {
+        return;
+    }
+    if (_async) {
+        writeAsync(record);
+    } else {
+        writeSync(record);
+    }
+}
+
+void EasyEvent::Sink::writeSync(LogRecord *record) {
+    std::string text = _formatter.format(record);
+    onWrite(record, text);
+}
+
+void EasyEvent::Sink::writeAsync(LogRecord *record) {
+    ensureQueueCreated();
+    auto clonedRecord = record->clone(this);
+    _queue->post([record=std::move(clonedRecord)]() mutable {
+        record->writeAsync();
+    });
+}
+
+void EasyEvent::Sink::ensureQueueCreated() {
+    if (!_queue) {
+        _queue = std::make_unique<TaskPool>();
+        _queue->start(1);
+    }
+}
+

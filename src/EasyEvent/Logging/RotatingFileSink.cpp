@@ -6,37 +6,25 @@
 
 
 EasyEvent::RotatingFileSink::RotatingFileSink(std::string fileName, size_t maxBytes, size_t backupCount, LogLevel level,
-                                              SinkFlags flags)
-                                              : Sink(level, flags)
+                                              bool multiThread, bool async, const std::string& fmt)
+                                              : Sink(level, multiThread, async, fmt)
                                               , _fileName(std::move(fileName))
                                               , _maxBytes(maxBytes)
                                               , _backupCount(std::max(backupCount, (size_t)1u)) {
-    if (isThreadSafe()) {
-        _mutex = std::make_unique<std::mutex>();
-    }
     openFile();
 }
 
-EasyEvent::RotatingFileSink::~RotatingFileSink() noexcept {
-    closeFile();
-}
-
-void EasyEvent::RotatingFileSink::write(LogMessage *message, const std::string &text) {
-    if (isThreadSafe()) {
-        std::lock_guard<std::mutex> lock(*_mutex);
-        _write(message, text);
-    } else {
-        _write(message, text);
-    }
-}
-
-void EasyEvent::RotatingFileSink::_write(LogMessage *message, const std::string &text) {
+void EasyEvent::RotatingFileSink::onWrite(LogRecord *record, const std::string &text) {
     if (shouldRollover(text)) {
         doRollover();
     }
-    fprintf(_logFile, "%s\n", text.c_str());
+    fprintf(_logFile, "%s", text.c_str());
     fflush(_logFile);
-    _fileSize += text.size() + 1;
+    _fileSize += text.size();
+}
+
+void EasyEvent::RotatingFileSink::onClose() {
+    closeFile();
 }
 
 void EasyEvent::RotatingFileSink::doRollover() {
