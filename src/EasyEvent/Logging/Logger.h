@@ -59,8 +59,10 @@ namespace EasyEvent {
         void setSink(const SinkPtr& sink) {
             std::lock_guard<std::mutex> lock(_mutex);
             _sinks.clear();
-            _sinks.emplace_back(sink);
-            _placeholder = false;
+            if (sink) {
+                _sinks.emplace_back(sink);
+                _placeholder = false;
+            }
         }
 
         void appendSink(const SinkPtr& sink) {

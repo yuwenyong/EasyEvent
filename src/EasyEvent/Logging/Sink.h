@@ -9,6 +9,7 @@
 #include "EasyEvent/Logging/LogRecord.h"
 #include "EasyEvent/Logging/Formatter.h"
 #include "EasyEvent/Common/TaskPool.h"
+#include "EasyEvent/Configuration/Json.h"
 
 
 namespace EasyEvent {
@@ -110,6 +111,34 @@ namespace EasyEvent {
         std::unique_ptr<TaskPool> _queue;
         Formatter _formatter;
         bool _closed{false};
+    };
+
+
+    class EASY_EVENT_API SinkFactory {
+    public:
+        virtual ~SinkFactory() = default;
+
+        virtual SinkPtr create(const JsonValue& setting, LogLevel level, bool multiThread, bool async,
+                               const std::string& fmt) const = 0;
+
+        static std::string parseName(const JsonValue& settings);
+
+        static std::string parseType(const JsonValue& settings);
+
+        static LogLevel parseLevel(const JsonValue& settings);
+
+        static bool parseMultiThread(const JsonValue& settings);
+
+        static bool parseAsync(const JsonValue& settings);
+
+        static std::string parseFormat(const JsonValue& settings);
+
+        static const std::string Name;
+        static const std::string Type;
+        static const std::string Level;
+        static const std::string MultiThread;
+        static const std::string Async;
+        static const std::string Format;
     };
 
 }

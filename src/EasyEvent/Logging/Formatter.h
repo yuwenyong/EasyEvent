@@ -30,6 +30,8 @@ namespace EasyEvent {
         }
 
         std::string format(const LogRecord* record) const;
+
+        static const std::string DefaultFormat;
     protected:
         enum class NodeType {
             Text = 0,
@@ -55,7 +57,6 @@ namespace EasyEvent {
         std::string _fmt;
         std::vector<Node> _nodes;
 
-        static const std::string DefaultFormat;
         static const std::map<std::string, NodeType> PatternMapping;
     };
 

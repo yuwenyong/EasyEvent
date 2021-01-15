@@ -48,7 +48,7 @@ bool EasyEvent::Logger::shouldLog(const Logger *logger, LogLevel level) {
     if (logger->disabled()) {
         return false;
     }
-    if (logger->getLevel() < level) {
+    if (logger->getLevel() > level) {
         return false;
     }
     return true;

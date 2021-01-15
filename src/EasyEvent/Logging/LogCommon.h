@@ -25,6 +25,7 @@ namespace EasyEvent {
     class LogRecord;
     class Logger;
     class Sink;
+    class SinkFactory;
 
     using SinkPtr = std::shared_ptr<Sink>;
 

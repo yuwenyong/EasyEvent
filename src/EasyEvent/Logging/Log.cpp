@@ -63,7 +63,9 @@ EasyEvent::Logger * EasyEvent::Log::createLogger(const std::string &name) {
         _loggers[parentName] = std::move(parentLogger);
         pos = name.rfind('.', pos - 1);
     }
-    current->setParent(_rootLogger);
+    if (current) {
+        current->setParent(_rootLogger);
+    }
     return result;
 }
 
