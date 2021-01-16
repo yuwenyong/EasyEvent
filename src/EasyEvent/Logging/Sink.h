@@ -118,7 +118,7 @@ namespace EasyEvent {
     public:
         virtual ~SinkFactory() = default;
 
-        virtual SinkPtr create(const JsonValue& setting, LogLevel level, bool multiThread, bool async,
+        virtual SinkPtr create(const JsonValue& settings, LogLevel level, bool multiThread, bool async,
                                const std::string& fmt) const = 0;
 
         static std::string parseName(const JsonValue& settings);

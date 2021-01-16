@@ -86,8 +86,11 @@ std::string EasyEvent::SinkFactory::parseType(const JsonValue &settings) {
 }
 
 EasyEvent::LogLevel EasyEvent::SinkFactory::parseLevel(const JsonValue &settings) {
-    JsonValue defaultLevel("debug");
-    std::string level = settings.get(Level, defaultLevel).asString();
+    std::string level = "debug";
+    const JsonValue* value = settings.find(Level);
+    if (value) {
+        level = value->asString();
+    }
     if (stricmp(level.c_str(), "critical") == 0) {
         return LOG_LEVEL_CRITICAL;
     } else if (stricmp(level.c_str(), "error") == 0) {
@@ -99,23 +102,35 @@ EasyEvent::LogLevel EasyEvent::SinkFactory::parseLevel(const JsonValue &settings
     } else if (stricmp(level.c_str(), "debug") == 0) {
         return LOG_LEVEL_DEBUG;
     } else {
-        std::string errMsg = "Invalid value `" + level + "' for log level";
+        std::string errMsg = "Invalid value `" + level + "' for " + Level;
         throwError(UserErrors::BadValue, "SinkFactory", errMsg);
         return LOG_LEVEL_DISABLE;
     }
 }
 
 bool EasyEvent::SinkFactory::parseMultiThread(const JsonValue &settings) {
-    JsonValue defaultValue(false);
-    return settings.get(MultiThread, defaultValue).asBool();
+    bool multiThread = false;
+    const JsonValue* value = settings.find(MultiThread);
+    if (value) {
+        multiThread = value->asBool();
+    }
+    return multiThread;
 }
 
 bool EasyEvent::SinkFactory::parseAsync(const JsonValue &settings) {
-    JsonValue defaultValue(false);
-    return settings.get(Async, defaultValue).asBool();
+    bool async = false;
+    const JsonValue* value = settings.find(Async);
+    if (value) {
+        async = value->asBool();
+    }
+    return async;
 }
 
 std::string EasyEvent::SinkFactory::parseFormat(const JsonValue &settings) {
-    JsonValue defaultValue(Formatter::DefaultFormat);
-    return settings.get(Format, defaultValue).asString();
+    std::string format = Formatter::DefaultFormat;
+    const JsonValue* value = settings.find(Format);
+    if (value) {
+        format = value->asString();
+    }
+    return format;
 }

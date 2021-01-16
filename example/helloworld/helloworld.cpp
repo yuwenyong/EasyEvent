@@ -58,9 +58,11 @@ void testJson(Logger* logger) {
 }
 
 int main (int argc, char **argv) {
-    Logger* logger = Log::instance().createLogger("Test", LOG_LEVEL_DEBUG, LOGGER_FLAGS_ASYNC);
-    assert(logger != nullptr);
-    logger->addSink(ConsoleSink::create(true, LOG_LEVEL_DEBUG, (SinkFlags)(SINK_FLAGS_DEFAULT|SINK_FLAGS_PREFIX_LOGGER_NAME)));
+    Logger* parent = Log::instance().getLogger("HelloWorld");
+    Assert(parent != nullptr);
+    Logger* logger = Log::instance().getLogger("HelloWorld.child");
+    logger->setLevel(LOG_LEVEL_DEBUG);
+
 //    logger->addSink(FileSink::create("./test.log", true));
 //    logger->addSink(RotatingFileSink::create("./rtest.log", 1024, 3));
 //    logger->addSink(TimedRotatingFileSink::create("./trtest.log", TimedRotatingWhen::Minute));
@@ -71,6 +73,8 @@ int main (int argc, char **argv) {
     for (auto& addr: addrs) {
         LOG_INFO(logger) << addr;
     }
+
+    LOG_INFO(logger) << "Thread Id:" << std::this_thread::get_id();
 
     IOLoop ioLoop(logger, true, true);
     ioLoop.addCallback([logger]() {

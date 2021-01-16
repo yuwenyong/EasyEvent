@@ -38,6 +38,8 @@ std::string EasyEvent::UserErrorCategory::message(int ev) const {
             return "duplicate values";
         case UserErrors::BadState:
             return "bad state";
+        case UserErrors::ArgumentRequired:
+            return "argument required";
         default:
             return "(unrecognized error)";
     }

@@ -92,8 +92,7 @@ protected:
 };
 
 int main (int argc, char **argv) {
-    Logger* logger = Log::instance().createLogger("EchoClient", LOG_LEVEL_DEBUG, LOGGER_FLAGS_ASYNC);
-    logger->addSink(ConsoleSink::create(true, LOG_LEVEL_DEBUG));
+    Logger* logger = Log::instance().getLogger("EchoClient");
 
     IOLoop ioLoop(logger, false);
     Session::getInstance().start(&ioLoop, logger);

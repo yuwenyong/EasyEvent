@@ -118,3 +118,21 @@ void EasyEvent::ConsoleSink::resetColor(LogLevel level) {
     fprintf(stdout, "\x1b[0m");
 #endif
 }
+
+
+const std::string EasyEvent::ConsoleSinkFactory::Colored = "colored";
+
+EasyEvent::SinkPtr EasyEvent::ConsoleSinkFactory::create(const JsonValue &settings, LogLevel level, bool multiThread,
+                                                         bool async, const std::string &fmt) const {
+    bool colored = parseColored(settings);
+    return ConsoleSink::create(colored, level, multiThread, async, fmt);
+}
+
+bool EasyEvent::ConsoleSinkFactory::parseColored(const JsonValue &settings) {
+    bool colored = false;
+    const JsonValue* value = settings.find(Colored);
+    if (value) {
+        colored = value->asBool();
+    }
+    return colored;
+}

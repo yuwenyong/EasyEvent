@@ -68,6 +68,17 @@ namespace EasyEvent {
         static ColorTypes gColors[NUM_ENABLED_LOG_LEVELS];
     };
 
+
+    class EASY_EVENT_API ConsoleSinkFactory: public SinkFactory {
+    public:
+        SinkPtr create(const JsonValue& settings, LogLevel level, bool multiThread, bool async,
+                       const std::string& fmt) const override;
+
+        static bool parseColored(const JsonValue& settings);
+
+        static const std::string Colored;
+    };
+
 }
 
 

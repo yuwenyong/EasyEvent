@@ -10,6 +10,7 @@
 
 
 namespace EasyEvent {
+
     class EASY_EVENT_API FileSink: public Sink {
     private:
         struct MakeSharedTag {};
@@ -42,6 +43,21 @@ namespace EasyEvent {
         bool _trunc;
         FILE* _logFile{nullptr};
     };
+
+
+    class EASY_EVENT_API FileSinkFactory: public SinkFactory {
+    public:
+        SinkPtr create(const JsonValue &settings, LogLevel level, bool multiThread, bool async,
+                       const std::string &fmt) const override;
+
+        static std::string parseFileName(const JsonValue& settings);
+
+        static bool parseTrunc(const JsonValue& settings);
+
+        static const std::string FileName;
+        static const std::string Trunc;
+    };
+
 }
 
 #endif //EASYEVENT_LOGGING_FILESINK_H

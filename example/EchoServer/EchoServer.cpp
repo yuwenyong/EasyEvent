@@ -43,8 +43,7 @@ protected:
 };
 
 int main (int argc, char **argv) {
-    Logger* logger = Log::instance().createLogger("EchoServer", LOG_LEVEL_DEBUG, LOGGER_FLAGS_ASYNC);
-    logger->addSink(ConsoleSink::create(true, LOG_LEVEL_DEBUG));
+    Logger* logger = Log::instance().getLogger("EchoServer");
 
     IOLoop ioLoop(logger, true);
     LOG_INFO(logger) << "Start listening on port: " << 12345;

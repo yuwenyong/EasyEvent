@@ -24,6 +24,7 @@ namespace EasyEvent {
         AlreadyExists = 12,
         DuplicateValues = 13,
         BadState = 14,
+        ArgumentRequired = 15,
     };
 
     class EASY_EVENT_API UserErrorCategory: public std::error_category {
