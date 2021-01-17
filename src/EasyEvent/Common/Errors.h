@@ -67,6 +67,11 @@ namespace EasyEvent {
     inline void throwError(const std::error_code& err, const char* location, const std::string &what) {
         throwError(err, location, what.c_str());
     }
+
+    inline void throwGenericError(const char* location) {
+        std::error_code ec(errno, std::generic_category());
+        throwError(ec, location);
+    }
 }
 
 namespace std {

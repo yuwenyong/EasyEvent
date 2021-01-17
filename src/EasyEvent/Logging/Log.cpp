@@ -4,8 +4,11 @@
 
 #include "EasyEvent/Logging/Log.h"
 #include "EasyEvent/Logging/Logger.h"
+#include "EasyEvent/Logging/Sink.h"
 #include "EasyEvent/Logging/ConsoleSink.h"
-
+#include "EasyEvent/Logging/FileSink.h"
+#include "EasyEvent/Logging/RotatingFileSink.h"
+#include "EasyEvent/Logging/TimedRotatingFileSink.h"
 
 const char* EasyEvent::Log::RootLoggerName = "Root";
 
@@ -16,7 +19,21 @@ EasyEvent::Logger * EasyEvent::Log::getLogger(const std::string &name) {
     return getOrCreateLogger(name);
 }
 
+bool EasyEvent::Log::registerFactory(const std::string &type, std::unique_ptr<SinkFactory> &&factory) {
+    std::lock_guard<std::mutex> lock(_mutex);
+    if (_factories.find(type) != _factories.end()) {
+        return false;
+    }
+    _factories[type] = std::move(factory);
+    return true;
+}
+
+void EasyEvent::Log::configure(const JsonValue &settings) {
+
+}
+
 EasyEvent::Log::Log() {
+    setupBuiltinFactories();
     initRootLogger();
 }
 
@@ -25,6 +42,10 @@ void EasyEvent::Log::initRootLogger() {
     _rootLogger = logger.get();
     _loggers[RootLoggerName] = std::move(logger);
     _rootLogger->setSink(ConsoleSink::create(true));
+}
+
+void EasyEvent::Log::setupBuiltinFactories() {
+
 }
 
 EasyEvent::Logger * EasyEvent::Log::getOrCreateLogger(const std::string &name) {

@@ -11,6 +11,9 @@ EasyEvent::FileSink::FileSink(std::string fileName, bool trunc, LogLevel level, 
     , _fileName(std::move(fileName))
     , _trunc(trunc) {
     _logFile = fopen(_fileName.c_str(), _trunc ? "w" : "a");
+    if (!_logFile) {
+        throwGenericError("FileSink");
+    }
 }
 
 void EasyEvent::FileSink::onWrite(LogRecord *record, const std::string &text) {
@@ -42,8 +45,8 @@ std::string EasyEvent::FileSinkFactory::parseFileName(const JsonValue &settings)
     }
     std::string fileName = value->asString();
     if (fileName.empty()) {
-        std::string errMsg = "Invalid value `" + fileName + "' for " + FileName;
-        throwError(UserErrors::BadValue, "FileSinkSinkFactory", errMsg);
+        std::string errMsg = FileName + " can't be empty";
+        throwError(UserErrors::BadValue, "FileSinkFactory", errMsg);
     }
     return fileName;
 }

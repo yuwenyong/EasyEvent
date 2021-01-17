@@ -64,6 +64,20 @@ namespace EasyEvent {
         FILE* _logFile{nullptr};
         Time _rolloverAt;
     };
+
+
+    class EASY_EVENT_API TimedRotatingFileSinkFactory: public SinkFactory {
+    public:
+        SinkPtr create(const JsonValue &settings, LogLevel level, bool multiThread, bool async,
+                       const std::string &fmt) const override;
+
+        static std::string parseFileName(const JsonValue& settings);
+
+        static TimedRotatingWhen parseMWhen(const JsonValue& settings);
+
+        static const std::string FileName;
+        static const std::string When;
+    };
 }
 
 #endif //EASYEVENT_LOGGING_TIMEDROTATINGFILESINK_H

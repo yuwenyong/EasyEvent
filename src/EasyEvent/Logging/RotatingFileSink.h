@@ -10,6 +10,7 @@
 
 
 namespace EasyEvent {
+
     class EASY_EVENT_API RotatingFileSink: public Sink {
     private:
         struct MakeSharedTag {};
@@ -64,6 +65,24 @@ namespace EasyEvent {
         FILE* _logFile{nullptr};
         size_t _fileSize;
     };
+
+
+    class EASY_EVENT_API RotatingFileSinkFactory: public SinkFactory {
+    public:
+        SinkPtr create(const JsonValue &settings, LogLevel level, bool multiThread, bool async,
+                       const std::string &fmt) const override;
+
+        static std::string parseFileName(const JsonValue& settings);
+
+        static size_t parseMaxBytes(const JsonValue& settings);
+
+        static size_t parseBackupCount(const JsonValue& settings);
+
+        static const std::string FileName;
+        static const std::string MaxBytes;
+        static const std::string BackupCount;
+    };
+
 }
 
 #endif //EASYEVENT_LOGGING_ROTATINGFILESINK_H

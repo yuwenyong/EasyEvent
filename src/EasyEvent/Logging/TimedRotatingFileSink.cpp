@@ -127,4 +127,51 @@ void EasyEvent::TimedRotatingFileSink::openFile() {
         fileName += suffix;
     }
     _logFile = fopen(fileName.c_str(), "a");
+    if (!_logFile) {
+        throwGenericError("TimedRotatingFileSink");
+    }
+}
+
+
+const std::string EasyEvent::TimedRotatingFileSinkFactory::FileName = "fileName";
+const std::string EasyEvent::TimedRotatingFileSinkFactory::When = "when";
+
+EasyEvent::SinkPtr EasyEvent::TimedRotatingFileSinkFactory::create(const JsonValue &settings, LogLevel level, bool multiThread,
+                                                                   bool async, const std::string &fmt) const {
+    std::string fileName = parseFileName(settings);
+    TimedRotatingWhen when = parseMWhen(settings);
+    return TimedRotatingFileSink::create(std::move(fileName), when, level, multiThread, async, fmt);
+}
+
+std::string EasyEvent::TimedRotatingFileSinkFactory::parseFileName(const JsonValue &settings) {
+    const JsonValue* value = settings.find(FileName);
+    if (!value) {
+        std::string errMsg = "Argument `" + FileName + "' is required";
+        throwError(UserErrors::ArgumentRequired, "TimedRotatingFileSinkFactory", errMsg);
+    }
+    std::string fileName = value->asString();
+    if (fileName.empty()) {
+        std::string errMsg = FileName + " can't be empty";
+        throwError(UserErrors::BadValue, "TimedRotatingFileSinkFactory", errMsg);
+    }
+    return fileName;
+}
+
+EasyEvent::TimedRotatingWhen EasyEvent::TimedRotatingFileSinkFactory::parseMWhen(const JsonValue &settings) {
+    std::string when = "day";
+    const JsonValue* value = settings.find(When);
+    if (value) {
+        when = value->asString();
+    }
+    if (stricmp(when.c_str(), "day") == 0) {
+        return TimedRotatingWhen::Day;
+    } else if (stricmp(when.c_str(), "hour") == 0) {
+        return TimedRotatingWhen::Hour;
+    } else if (stricmp(when.c_str(), "minute") == 0) {
+        return TimedRotatingWhen::Minute;
+    } else {
+        std::string errMsg = "Invalid value `" + when + "' for " + When;
+        throwError(UserErrors::BadValue, "TimedRotatingFileSinkFactory", errMsg);
+        return TimedRotatingWhen::Day;
+    }
 }

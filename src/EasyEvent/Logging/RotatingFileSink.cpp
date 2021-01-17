@@ -57,5 +57,55 @@ void EasyEvent::RotatingFileSink::doRollover() {
 
 void EasyEvent::RotatingFileSink::openFile() {
     _logFile = fopen(_fileName.c_str(), "a");
+    if (!_logFile) {
+        throwGenericError("RotatingFileSink");
+    }
     _fileSize = (size_t)ftell(_logFile);
+}
+
+
+const std::string EasyEvent::RotatingFileSinkFactory::FileName = "fileName";
+const std::string EasyEvent::RotatingFileSinkFactory::MaxBytes = "maxBytes";
+const std::string EasyEvent::RotatingFileSinkFactory::BackupCount = "backupCount";
+
+
+EasyEvent::SinkPtr EasyEvent::RotatingFileSinkFactory::create(const JsonValue &settings, LogLevel level, bool multiThread,
+                                                              bool async, const std::string &fmt) const {
+    std::string fileName = parseFileName(settings);
+    size_t maxBytes = parseMaxBytes(settings);
+    size_t backupCount = parseBackupCount(settings);
+    return RotatingFileSink::create(std::move(fileName), maxBytes, backupCount, level, multiThread, async, fmt);
+
+}
+
+std::string EasyEvent::RotatingFileSinkFactory::parseFileName(const JsonValue &settings) {
+    const JsonValue* value = settings.find(FileName);
+    if (!value) {
+        std::string errMsg = "Argument `" + FileName + "' is required";
+        throwError(UserErrors::ArgumentRequired, "RotatingFileSinkFactory", errMsg);
+    }
+    std::string fileName = value->asString();
+    if (fileName.empty()) {
+        std::string errMsg = FileName + " can't be empty";
+        throwError(UserErrors::BadValue, "RotatingFileSinkFactory", errMsg);
+    }
+    return fileName;
+}
+
+size_t EasyEvent::RotatingFileSinkFactory::parseMaxBytes(const JsonValue &settings) {
+    const JsonValue* value = settings.find(MaxBytes);
+    if (!value) {
+        std::string errMsg = "Argument `" + MaxBytes + "' is required";
+        throwError(UserErrors::ArgumentRequired, "RotatingFileSinkFactory", errMsg);
+    }
+    return (size_t)value->asUInt64();
+}
+
+size_t EasyEvent::RotatingFileSinkFactory::parseBackupCount(const JsonValue &settings) {
+    const JsonValue* value = settings.find(BackupCount);
+    if (!value) {
+        std::string errMsg = "Argument `" + BackupCount + "' is required";
+        throwError(UserErrors::ArgumentRequired, "RotatingFileSinkFactory", errMsg);
+    }
+    return (size_t)value->asUInt64();
 }
