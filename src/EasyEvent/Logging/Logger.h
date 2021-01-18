@@ -92,6 +92,12 @@ namespace EasyEvent {
         void write(LogRecord* record);
 
         Logger* getChild(const std::string& suffix) const;
+
+        static const std::string Name;
+        static const std::string Level;
+        static const std::string Propagate;
+        static const std::string Disabled;
+        static const std::string Sinks;
     protected:
         void setParent(Logger* parent) {
             _parent = parent;

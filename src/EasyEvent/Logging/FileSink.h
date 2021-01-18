@@ -54,6 +54,7 @@ namespace EasyEvent {
 
         static bool parseTrunc(const JsonValue& settings);
 
+        static const std::string TypeName;
         static const std::string FileName;
         static const std::string Trunc;
     };

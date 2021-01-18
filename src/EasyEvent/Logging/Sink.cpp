@@ -78,11 +78,31 @@ const std::string EasyEvent::SinkFactory::Async = "async";
 const std::string EasyEvent::SinkFactory::Format = "format";
 
 std::string EasyEvent::SinkFactory::parseName(const JsonValue &settings) {
-    return settings[Name].asString();
+    const JsonValue* value = settings.find(Name);
+    if (!value) {
+        std::string errMsg = "Argument `" + Name + "' is required";
+        throwError(UserErrors::ArgumentRequired, "SinkFactory", errMsg);
+    }
+    std::string name = value->asString();
+    if (name.empty()) {
+        std::string errMsg = Name + " can't be empty";
+        throwError(UserErrors::BadValue, "SinkFactory", errMsg);
+    }
+    return name;
 }
 
 std::string EasyEvent::SinkFactory::parseType(const JsonValue &settings) {
-    return settings[Type].asString();
+    const JsonValue* value = settings.find(Type);
+    if (!value) {
+        std::string errMsg = "Argument `" + Type + "' is required";
+        throwError(UserErrors::ArgumentRequired, "SinkFactory", errMsg);
+    }
+    std::string type = value->asString();
+    if (type.empty()) {
+        std::string errMsg = Type + " can't be empty";
+        throwError(UserErrors::BadValue, "SinkFactory", errMsg);
+    }
+    return type;
 }
 
 EasyEvent::LogLevel EasyEvent::SinkFactory::parseLevel(const JsonValue &settings) {

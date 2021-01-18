@@ -75,6 +75,7 @@ namespace EasyEvent {
 
         static TimedRotatingWhen parseMWhen(const JsonValue& settings);
 
+        static const std::string TypeName;
         static const std::string FileName;
         static const std::string When;
     };

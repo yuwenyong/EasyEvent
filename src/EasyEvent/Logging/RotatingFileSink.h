@@ -78,6 +78,7 @@ namespace EasyEvent {
 
         static size_t parseBackupCount(const JsonValue& settings);
 
+        static const std::string TypeName;
         static const std::string FileName;
         static const std::string MaxBytes;
         static const std::string BackupCount;

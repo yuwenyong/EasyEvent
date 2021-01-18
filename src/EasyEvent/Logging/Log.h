@@ -6,6 +6,7 @@
 #define EASYEVENT_LOGGING_LOG_H
 
 #include "EasyEvent/Logging/LogCommon.h"
+#include "EasyEvent/Logging/Sink.h"
 #include "EasyEvent/Configuration/Json.h"
 
 
@@ -26,6 +27,22 @@ namespace EasyEvent {
 
         void configure(const JsonValue& settings);
 
+        void setLevel(LogLevel level);
+
+        LogLevel getLevel() const;
+
+        bool disabled() const;
+
+        void disabled(bool disabled);
+
+        void setSink(const SinkPtr& sink);
+
+        void appendSink(const SinkPtr& sink);
+
+        void removeSink(const SinkPtr& sink);
+
+        void resetSinks();
+
         static Log& instance() {
             static Log log;
             return log;
@@ -43,10 +60,17 @@ namespace EasyEvent {
 
         Logger* createLogger(const std::string& name);
 
+        void configureSinks(const JsonValue& settings, std::map<std::string, SinkPtr>& sinks);
+
+        void configureLoggers(const JsonValue& settings, const std::map<std::string, SinkPtr>& sinks);
+
         mutable std::mutex _mutex;
         std::map<std::string, std::unique_ptr<Logger>> _loggers;
         std::map<std::string, std::unique_ptr<SinkFactory>> _factories;
         Logger* _rootLogger{nullptr};
+
+        static const std::string Sinks;
+        static const std::string Loggers;
     };
 
 }

@@ -128,11 +128,12 @@ void EasyEvent::TimedRotatingFileSink::openFile() {
     }
     _logFile = fopen(fileName.c_str(), "a");
     if (!_logFile) {
-        throwGenericError("TimedRotatingFileSink");
+        throwError(errno, "TimedRotatingFileSink");
     }
 }
 
 
+const std::string EasyEvent::TimedRotatingFileSinkFactory::TypeName = "TimedRotatingFile";
 const std::string EasyEvent::TimedRotatingFileSinkFactory::FileName = "fileName";
 const std::string EasyEvent::TimedRotatingFileSinkFactory::When = "when";
 

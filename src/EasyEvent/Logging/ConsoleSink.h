@@ -76,6 +76,7 @@ namespace EasyEvent {
 
         static bool parseColored(const JsonValue& settings);
 
+        static const std::string TypeName;
         static const std::string Colored;
     };
 

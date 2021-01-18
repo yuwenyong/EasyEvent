@@ -12,7 +12,7 @@ EasyEvent::FileSink::FileSink(std::string fileName, bool trunc, LogLevel level, 
     , _trunc(trunc) {
     _logFile = fopen(_fileName.c_str(), _trunc ? "w" : "a");
     if (!_logFile) {
-        throwGenericError("FileSink");
+        throwError(errno, "FileSink");
     }
 }
 
@@ -26,6 +26,7 @@ void EasyEvent::FileSink::onClose() {
 }
 
 
+const std::string EasyEvent::FileSinkFactory::TypeName = "File";
 const std::string EasyEvent::FileSinkFactory::FileName = "fileName";
 const std::string EasyEvent::FileSinkFactory::Trunc = "trunc";
 

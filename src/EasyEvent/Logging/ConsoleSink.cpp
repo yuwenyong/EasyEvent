@@ -120,6 +120,7 @@ void EasyEvent::ConsoleSink::resetColor(LogLevel level) {
 }
 
 
+const std::string EasyEvent::ConsoleSinkFactory::TypeName = "Console";
 const std::string EasyEvent::ConsoleSinkFactory::Colored = "colored";
 
 EasyEvent::SinkPtr EasyEvent::ConsoleSinkFactory::create(const JsonValue &settings, LogLevel level, bool multiThread,

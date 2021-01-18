@@ -7,6 +7,12 @@
 #include "EasyEvent/Logging/Sink.h"
 
 
+const std::string EasyEvent::Logger::Name = "name";
+const std::string EasyEvent::Logger::Level = "level";
+const std::string EasyEvent::Logger::Propagate = "propagate";
+const std::string EasyEvent::Logger::Disabled = "disabled";
+const std::string EasyEvent::Logger::Sinks = "sinks";
+
 bool EasyEvent::Logger::shouldLog(LogLevel level) const {
     const Logger* current = this;
     while (current != nullptr) {

@@ -58,12 +58,13 @@ void EasyEvent::RotatingFileSink::doRollover() {
 void EasyEvent::RotatingFileSink::openFile() {
     _logFile = fopen(_fileName.c_str(), "a");
     if (!_logFile) {
-        throwGenericError("RotatingFileSink");
+        throwError(errno, "RotatingFileSink");
     }
     _fileSize = (size_t)ftell(_logFile);
 }
 
 
+const std::string EasyEvent::RotatingFileSinkFactory::TypeName = "RotatingFile";
 const std::string EasyEvent::RotatingFileSinkFactory::FileName = "fileName";
 const std::string EasyEvent::RotatingFileSinkFactory::MaxBytes = "maxBytes";
 const std::string EasyEvent::RotatingFileSinkFactory::BackupCount = "backupCount";
