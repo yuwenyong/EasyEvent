@@ -27,6 +27,8 @@ namespace EasyEvent {
 
         void configure(const JsonValue& settings);
 
+        void configure(const char* filename);
+
         void setLevel(LogLevel level);
 
         LogLevel getLevel() const;

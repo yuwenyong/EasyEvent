@@ -223,6 +223,7 @@ typedef uint8_t uint8;
 #include <stdexcept>
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <iomanip>
 #include <utility>
 #include <type_traits>

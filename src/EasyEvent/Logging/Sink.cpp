@@ -121,6 +121,8 @@ EasyEvent::LogLevel EasyEvent::SinkFactory::parseLevel(const JsonValue &settings
         return LOG_LEVEL_INFO;
     } else if (stricmp(level.c_str(), "debug") == 0) {
         return LOG_LEVEL_DEBUG;
+    } else if (stricmp(level.c_str(), "disable") == 0) {
+        return LOG_LEVEL_DISABLE;
     } else {
         std::string errMsg = "Invalid value `" + level + "' for " + Level;
         throwError(UserErrors::BadValue, "SinkFactory", errMsg);

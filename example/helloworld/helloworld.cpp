@@ -58,8 +58,7 @@ void testJson(Logger* logger) {
 }
 
 int main (int argc, char **argv) {
-    Logger* parent = Log::instance().getLogger("HelloWorld");
-    Assert(parent != nullptr);
+//    Log::instance().configure("/home/yuwenyong/docs/logconf.json");
     Logger* logger = Log::instance().getLogger("HelloWorld.child");
     logger->setLevel(LOG_LEVEL_DEBUG);
 

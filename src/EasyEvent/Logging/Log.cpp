@@ -39,6 +39,16 @@ void EasyEvent::Log::configure(const JsonValue &settings) {
     configureLoggers(settings, sinks);
 }
 
+void EasyEvent::Log::configure(const char *filename) {
+    std::ifstream infile(filename, std::ios_base::in);
+    std::shared_ptr<void> localClose(nullptr, [&infile](void*) {
+        infile.close();
+    });
+    JsonValue settings;
+    infile >> settings;
+    configure(settings);
+}
+
 EasyEvent::LogLevel EasyEvent::Log::getLevel() const {
     return _rootLogger->getLevel();
 }
@@ -77,7 +87,7 @@ EasyEvent::Log::Log() {
 }
 
 void EasyEvent::Log::initRootLogger() {
-    auto logger = std::make_unique<Logger>(this, RootLoggerName, LOG_LEVEL_DEFAULT);
+    auto logger = LoggerFactory::create(this, RootLoggerName, LOG_LEVEL_DEFAULT);
     _rootLogger = logger.get();
     _loggers[RootLoggerName] = std::move(logger);
     _rootLogger->setSink(ConsoleSink::create(true));
@@ -102,7 +112,7 @@ EasyEvent::Logger * EasyEvent::Log::getOrCreateLogger(const std::string &name) {
 }
 
 EasyEvent::Logger * EasyEvent::Log::createLogger(const std::string &name) {
-    auto logger = std::make_unique<Logger>(this, name, LOG_LEVEL_DEFAULT);
+    auto logger = LoggerFactory::create(this, name, LOG_LEVEL_DEFAULT);
     Logger* result = logger.get(), *current = logger.get();
 
     _loggers[name] = std::move(logger);
@@ -119,7 +129,7 @@ EasyEvent::Logger * EasyEvent::Log::createLogger(const std::string &name) {
             current = nullptr;
             break;
         }
-        auto parentLogger = std::make_unique<Logger>(this, parentName, LOG_LEVEL_DEFAULT);
+        auto parentLogger = LoggerFactory::create(this, parentName, LOG_LEVEL_DEFAULT);
         current->setParent(parentLogger.get());
         current = parentLogger.get();
         _loggers[parentName] = std::move(parentLogger);
@@ -140,7 +150,7 @@ void EasyEvent::Log::configureSinks(const JsonValue &settings, std::map<std::str
         }
         auto numSinks = sinksConf->size();
         for (size_t i = 0; i < numSinks; ++i) {
-            const JsonValue& sinkConf = sinksConf[i];
+            const JsonValue& sinkConf = (*sinksConf)[i];
             std::string name = SinkFactory::parseName(sinkConf);
             if (sinks.find(name) != sinks.end()) {
                 std::string errMsg = "Duplicate sink name `" + name + "' found";
@@ -171,7 +181,38 @@ void EasyEvent::Log::configureLoggers(const JsonValue &settings, const std::map<
         }
         auto numLoggers = loggersConf->size();
         for (size_t i = 0; i < numLoggers; ++i) {
-            //const JsonValue& loggerConf = loggersConf[i];
+            const JsonValue& loggerConf = (*loggersConf)[i];
+            std::string name = LoggerFactory::parseName(loggerConf);
+            auto level = LoggerFactory::parseLevel(loggerConf);
+            auto propagate = LoggerFactory::parsePropagate(loggerConf);
+            auto disabled = LoggerFactory::parseDisabled(loggerConf);
+            auto sinkNames = LoggerFactory::parseSinks(loggerConf);
+            if (sinkNames && !sinkNames->empty()) {
+                for (auto& sinkName: *sinkNames) {
+                    if (sinks.find(sinkName) == sinks.end()) {
+                        std::string errMsg = "Sink name `" + sinkName + "' not found";
+                        throwError(UserErrors::NotFound, "Log", errMsg);
+                    }
+                }
+            }
+            Logger* logger = getOrCreateLogger(name);
+            Assert(logger != nullptr);
+            if (level) {
+                logger->setLevel(*level);
+            }
+            if (propagate) {
+                logger->propagate(*propagate);
+            }
+            if (disabled) {
+                logger->disabled(*disabled);
+            }
+            if (sinkNames) {
+                logger->resetSinks();
+                for (auto& sinkName: *sinkNames) {
+                    auto iter = sinks.find(sinkName);
+                    logger->appendSink(iter->second);
+                }
+            }
         }
     }
 }

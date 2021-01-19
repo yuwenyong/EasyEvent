@@ -6,6 +6,7 @@
 #define EASYEVENT_LOGGING_LOGGER_H
 
 #include "EasyEvent/Logging/LogCommon.h"
+#include "EasyEvent/Configuration/Json.h"
 
 
 namespace EasyEvent {
@@ -68,7 +69,7 @@ namespace EasyEvent {
         void appendSink(const SinkPtr& sink) {
             std::lock_guard<std::mutex> lock(_mutex);
             auto iter = std::find(_sinks.begin(), _sinks.end(), sink);
-            if (iter != _sinks.end()) {
+            if (iter == _sinks.end()) {
                 _sinks.emplace_back(sink);
                 _placeholder = false;
             }
@@ -92,12 +93,6 @@ namespace EasyEvent {
         void write(LogRecord* record);
 
         Logger* getChild(const std::string& suffix) const;
-
-        static const std::string Name;
-        static const std::string Level;
-        static const std::string Propagate;
-        static const std::string Disabled;
-        static const std::string Sinks;
     protected:
         void setParent(Logger* parent) {
             _parent = parent;
@@ -124,6 +119,30 @@ namespace EasyEvent {
         bool _propagate{true};
         bool _disabled{false};
         std::vector<SinkPtr> _sinks;
+    };
+
+
+    class EASY_EVENT_API LoggerFactory {
+    public:
+        static std::unique_ptr<Logger> create(Log* manager, const std::string& name, LogLevel level) {
+            return std::make_unique<Logger>(manager, name, level);
+        }
+
+        static std::string parseName(const JsonValue& settings);
+
+        static std::optional<LogLevel> parseLevel(const JsonValue& settings);
+
+        static std::optional<bool> parsePropagate(const JsonValue& settings);
+
+        static std::optional<bool> parseDisabled(const JsonValue& settings);
+
+        static std::optional<std::vector<std::string>> parseSinks(const JsonValue& settings);
+
+        static const std::string Name;
+        static const std::string Level;
+        static const std::string Propagate;
+        static const std::string Disabled;
+        static const std::string Sinks;
     };
 
 }
