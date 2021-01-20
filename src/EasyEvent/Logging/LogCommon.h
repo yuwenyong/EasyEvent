@@ -28,6 +28,33 @@ namespace EasyEvent {
     class SinkFactory;
 
     using SinkPtr = std::shared_ptr<Sink>;
+
+    class Bin {
+    public:
+        Bin(const void* data, size_t size): _data(data), _size(size) {}
+
+        Bin(const void* data, size_t size, size_t maxSize): _data(data), _size(size), _maxSize(maxSize) {}
+
+        const void* getData() const {
+            return _data;
+        }
+
+        size_t getSize() const {
+            return _size;
+        }
+
+        size_t getMaxSize() const {
+            return _maxSize;
+        }
+    private:
+        const void* _data;
+        size_t _size;
+        size_t _maxSize{0};
+    };
+
+    EASY_EVENT_API void dumpData(const void* data, size_t size, std::ostream& strm);
+
+    EASY_EVENT_API std::ostream& operator<<(std::ostream &sout, const Bin &bin);
 }
 
 #endif //EASYEVENT_LOGGING_LOGCOMMON_H

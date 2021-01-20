@@ -8,6 +8,14 @@
 #include "EasyEvent/Logging/Log.h"
 
 
+EasyEvent::LogStream::LogStream(const char *fileName,
+                                int lineno,
+                                const char *funcName,
+                                LogLevel level)
+        : LogStream(Log::instance().getRootLogger(), fileName, lineno, funcName, level) {
+
+}
+
 EasyEvent::LogStream::LogStream(Logger *logger,
                                 const char *fileName,
                                 int lineno,

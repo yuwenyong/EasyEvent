@@ -62,6 +62,8 @@ int main (int argc, char **argv) {
     Logger* logger = Log::instance().getLogger("HelloWorld.child");
     logger->setLevel(LOG_LEVEL_DEBUG);
 
+    std::vector<uint8> binData = {1, 2, 3, 4, 5, 6};
+    LOG_ERROR_RT() << Bin(binData.data(), binData.size(), 3);
 //    logger->addSink(FileSink::create("./test.log", true));
 //    logger->addSink(RotatingFileSink::create("./rtest.log", 1024, 3));
 //    logger->addSink(TimedRotatingFileSink::create("./trtest.log", TimedRotatingWhen::Minute));
