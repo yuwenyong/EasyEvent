@@ -9,9 +9,8 @@
 
 thread_local EasyEvent::IOLoop* EasyEvent::IOLoop::_current = nullptr;
 
-EasyEvent::IOLoop::IOLoop(Logger *logger, bool installSignalHandlers, bool makeCurrent)
-    : _logger(logger)
-    , _waker(std::make_shared<Interrupter>()) {
+EasyEvent::IOLoop::IOLoop(bool installSignalHandlers, bool makeCurrent)
+    : _waker(std::make_shared<Interrupter>()) {
 
 #if defined(EASY_EVENT_USE_EPOLL)
     _epollFd = doEpollCreate();
@@ -188,9 +187,9 @@ void EasyEvent::IOLoop::start() {
             try {
                 callback();
             } catch (std::exception& e) {
-                LOG_ERROR(_logger) << "Exception in callback: " << e.what();
+                LOG_ERROR(AppLogger()) << "Exception in callback: " << e.what();
             } catch (...) {
-                LOG_ERROR(_logger) << "Unknown error in callback.";
+                LOG_ERROR(AppLogger()) << "Unknown error in callback.";
             }
             callback = nullptr;
         }
@@ -200,9 +199,9 @@ void EasyEvent::IOLoop::start() {
             try {
                 timer->callback();
             } catch (std::exception& e) {
-                LOG_ERROR(_logger) << "Exception in timer callback: " << e.what();
+                LOG_ERROR(AppLogger()) << "Exception in timer callback: " << e.what();
             } catch (...) {
-                LOG_ERROR(_logger) << "Unknown error in timer callback.";
+                LOG_ERROR(AppLogger()) << "Unknown error in timer callback.";
             }
             timer = nullptr;
         }
@@ -282,9 +281,9 @@ void EasyEvent::IOLoop::start() {
                     auto handler = iter->second;
                     handler->handleEvents((IOEvents)event.second);
                 } catch (std::exception& e) {
-                    LOG_ERROR(_logger) << "Exception in handler: " << e.what();
+                    LOG_ERROR(AppLogger()) << "Exception in handler: " << e.what();
                 } catch (...) {
-                    LOG_ERROR(_logger) << "Unknown error in handler.";
+                    LOG_ERROR(AppLogger()) << "Unknown error in handler.";
                 }
             }
         }
@@ -308,9 +307,9 @@ void EasyEvent::IOLoop::start() {
                 auto handler = iter->second;
                 handler->handleEvents((IOEvents)events[i].events);
             } catch (std::exception& e) {
-                LOG_ERROR(_logger) << "Exception in handler: " << e.what();
+                LOG_ERROR(AppLogger()) << "Exception in handler: " << e.what();
             } catch (...) {
-                LOG_ERROR(_logger) << "Unknown error in handler.";
+                LOG_ERROR(AppLogger()) << "Unknown error in handler.";
             }
         }
 #else
@@ -336,9 +335,9 @@ void EasyEvent::IOLoop::start() {
                 auto handler = iter->second;
                 handler->handleEvents((IOEvents)it->revents);
             } catch (std::exception& e) {
-                LOG_ERROR(_logger) << "Exception in handler: " << e.what();
+                LOG_ERROR(AppLogger()) << "Exception in handler: " << e.what();
             } catch (...) {
-                LOG_ERROR(_logger) << "Unknown error in handler.";
+                LOG_ERROR(AppLogger()) << "Unknown error in handler.";
             }
         }
 #endif
@@ -389,25 +388,25 @@ EasyEvent::ResolveHandle EasyEvent::IOLoop::resolve(std::string host, unsigned s
 
 void EasyEvent::IOLoop::installSignalHandlers() {
     _signalHandles.emplace_back(SignalCtrl::instance().add(SIGTERM, [this](int sigNum) {
-        LOG_INFO(_logger) << "Received SIGTERM, shutting down.";
+        LOG_INFO(SysLogger()) << "Received SIGTERM, shutting down.";
         stop();
     }));
 
     _signalHandles.emplace_back(SignalCtrl::instance().add(SIGINT, [this](int sigNum) {
-        LOG_INFO(_logger) << "Received SIGINT, shutting down.";
+        LOG_INFO(SysLogger()) << "Received SIGINT, shutting down.";
         stop();
     }));
 
 #if defined(SIGBREAK)
     _signalHandles.emplace_back(SignalCtrl::instance().add(SIGBREAK, [this](int sigNum) {
-            LOG_INFO(_logger) << "Received SIGBREAK, shutting down.";
+            LOG_INFO(SysLogger()) << "Received SIGBREAK, shutting down.";
             stop();
         }));
 #endif
 
 #if defined(SIGQUIT)
     _signalHandles.emplace_back(SignalCtrl::instance().add(SIGQUIT, [this](int sigNum) {
-        LOG_INFO(_logger) << "Received SIGQUIT, shutting down.";
+        LOG_INFO(SysLogger()) << "Received SIGQUIT, shutting down.";
         stop();
     }));
 #endif

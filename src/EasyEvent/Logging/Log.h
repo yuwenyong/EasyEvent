@@ -17,7 +17,7 @@ namespace EasyEvent {
         Log(const Log&) = delete;
         Log& operator=(const Log&) = delete;
 
-        Logger* getRootLogger() const {
+        Logger* getLogger() const {
             return _rootLogger;
         }
 

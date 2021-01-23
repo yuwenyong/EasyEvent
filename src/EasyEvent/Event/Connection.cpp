@@ -9,7 +9,6 @@
 
 EasyEvent::Connection::Connection(IOLoop *ioLoop, SocketType socket, size_t maxReadBufferSize, size_t maxWriteBufferSize)
                                   : _ioLoop(ioLoop ? ioLoop : IOLoop::current())
-                                  , _logger(_ioLoop->getLogger())
                                   , _socket(socket)
                                   , _maxReadBufferSize(maxReadBufferSize ? maxReadBufferSize : DefaultMaxReadBufferSize)
                                   , _maxWriteBufferSize(maxWriteBufferSize)
@@ -29,7 +28,7 @@ EasyEvent::Connection::~Connection() noexcept {
 
 void EasyEvent::Connection::handleEvents(IOEvents events) {
     if (closed()) {
-        LOG_WARN(_logger) << "Got events for closed connection.";
+        LOG_WARN(SysLogger()) << "Got events for closed connection.";
         return;
     }
 
@@ -79,19 +78,19 @@ void EasyEvent::Connection::handleEvents(IOEvents events) {
         }
     } catch (std::system_error& e) {
         if (e.code() == EventErrors::UnsatisfiableRead) {
-            LOG_INFO(_logger) << "Unsatisfiable read, closing connection.";
+            LOG_INFO(SysLogger()) << "Unsatisfiable read, closing connection.";
             close(EventErrors::UnsatisfiableRead);
         } else {
-            LOG_ERROR(_logger) << "Uncaught system error, closing connection: " << e.what();
+            LOG_ERROR(SysLogger()) << "Uncaught system error, closing connection: " << e.what();
             close(e.code());
             throw;
         }
     } catch (std::exception& e) {
-        LOG_ERROR(_logger) << "Uncaught exception closing connection: " << e.what();
+        LOG_ERROR(SysLogger()) << "Uncaught exception closing connection: " << e.what();
         close(UserErrors::UnexpectedBehaviour);
         throw;
     } catch (...) {
-        LOG_ERROR(_logger) << "Uncaught unknown exception closing connection";
+        LOG_ERROR(SysLogger()) << "Uncaught unknown exception closing connection";
         close(UserErrors::UnexpectedBehaviour);
         throw;
     }
@@ -134,7 +133,7 @@ void EasyEvent::Connection::readUntilRegex(const std::string &regex, Task<void(s
         tryInlineRead();
     } catch (std::system_error& e) {
         if (e.code() == EventErrors::UnsatisfiableRead) {
-            LOG_INFO(_logger) << "Unsatisfiable read, closing connection";
+            LOG_INFO(SysLogger()) << "Unsatisfiable read, closing connection";
             close(e.code());
         } else {
             throw;
@@ -152,7 +151,7 @@ void EasyEvent::Connection::readUntil(std::string delimiter, Task<void(std::stri
         tryInlineRead();
     } catch (std::system_error& e) {
         if (e.code() == EventErrors::UnsatisfiableRead) {
-            LOG_INFO(_logger) << "Unsatisfiable read, closing connection";
+            LOG_INFO(SysLogger()) << "Unsatisfiable read, closing connection";
             close(e.code());
         } else {
             throw;
@@ -268,13 +267,13 @@ void EasyEvent::Connection::maybeRunCloseCallback() {
                 try {
                     callback(_error);
                 } catch (std::system_error& e) {
-                    LOG_ERROR(_logger) << "Uncaught system error in close callback: " << e.what();
+                    LOG_ERROR(AppLogger()) << "Uncaught system error in close callback: " << e.what();
                     throw;
                 } catch (std::exception& e) {
-                    LOG_ERROR(_logger) << "Uncaught exception in close callback: " << e.what();
+                    LOG_ERROR(AppLogger()) << "Uncaught exception in close callback: " << e.what();
                     throw;
                 } catch (...) {
-                    LOG_ERROR(_logger) << "Uncaught exception in close callback: Unknown error.";
+                    LOG_ERROR(AppLogger()) << "Uncaught exception in close callback: Unknown error.";
                     throw;
                 }
             });
@@ -331,15 +330,15 @@ void EasyEvent::Connection::handleRead() {
         if (e.code() == EventErrors::UnsatisfiableRead) {
             throw;
         }
-        LOG_WARN(_logger) << "System error on read: " << e.what();
+        LOG_WARN(SysLogger()) << "System error on read: " << e.what();
         close(e.code());
         return;
     } catch (std::exception& e) {
-        LOG_WARN(_logger) << "Error on read: " << e.what();
+        LOG_WARN(SysLogger()) << "Error on read: " << e.what();
         close(UserErrors::UnexpectedBehaviour);
         return;
     } catch (...) {
-        LOG_WARN(_logger) << "Unknown error on read event.";
+        LOG_WARN(SysLogger()) << "Unknown error on read event.";
         close(UserErrors::UnexpectedBehaviour);
         return;
     }
@@ -373,15 +372,15 @@ void EasyEvent::Connection::runReadCallback(size_t size) {
                     try {
                         callback(std::move(result));
                     } catch (std::system_error& e) {
-                        LOG_ERROR(_logger) << "Uncaught system error in read callback: " << e.what();
+                        LOG_ERROR(AppLogger()) << "Uncaught system error in read callback: " << e.what();
                         close(e.code());
                         throw;
                     } catch (std::exception& e) {
-                        LOG_ERROR(_logger) << "Uncaught exception in read callback: " << e.what();
+                        LOG_ERROR(AppLogger()) << "Uncaught exception in read callback: " << e.what();
                         close(EventErrors::ReadCallbackFailed);
                         throw;
                     } catch (...) {
-                        LOG_ERROR(_logger) << "Uncaught exception in read callback: Unknown error.";
+                        LOG_ERROR(AppLogger()) << "Uncaught exception in read callback: Unknown error.";
                         close(EventErrors::ReadCallbackFailed);
                         throw;
                     }
@@ -445,7 +444,7 @@ size_t EasyEvent::Connection::readToBuffer() {
     _readBuffer.writeCompleted((size_t)bytesRead);
 
     if (_readBuffer.getActiveSize() > _maxReadBufferSize) {
-        LOG_ERROR(_logger) << "Reached maximum read buffer size";
+        LOG_ERROR(SysLogger()) << "Reached maximum read buffer size";
         close();
         throwError(EventErrors::ConnectionBufferFull, "Connection");
     }
@@ -514,7 +513,7 @@ void EasyEvent::Connection::handleWrite() {
                 break;
             } else {
                 if (!isConnReset(ec)) {
-                    LOG_WARN(_logger) << "Write error: " << ec << "(" << ec.message() << ")";
+                    LOG_WARN(SysLogger()) << "Write error: " << ec << "(" << ec.message() << ")";
                 }
                 close(ec);
                 return;
@@ -535,15 +534,15 @@ void EasyEvent::Connection::handleWrite() {
                         try {
                             callback();
                         } catch (std::system_error& e) {
-                            LOG_ERROR(_logger) << "Uncaught system error in write callback: " << e.what();
+                            LOG_ERROR(AppLogger()) << "Uncaught system error in write callback: " << e.what();
                             close(e.code());
                             throw;
                         } catch (std::exception& e) {
-                            LOG_ERROR(_logger) << "Uncaught exception in write callback: " << e.what();
+                            LOG_ERROR(AppLogger()) << "Uncaught exception in write callback: " << e.what();
                             close(EventErrors::WriteCallbackFailed);
                             throw;
                         } catch (...) {
-                            LOG_ERROR(_logger) << "Uncaught exception in write callback: Unknown error.";
+                            LOG_ERROR(AppLogger()) << "Uncaught exception in write callback: Unknown error.";
                             close(EventErrors::WriteCallbackFailed);
                             throw;
                         }
@@ -589,19 +588,19 @@ void EasyEvent::Connection::runConnectCallback(std::error_code ec) {
             try {
                 callback(ec);
             } catch (std::system_error& e) {
-                LOG_ERROR(_logger) << "Uncaught system error in connect callback: " << e.what();
+                LOG_ERROR(AppLogger()) << "Uncaught system error in connect callback: " << e.what();
                 throw;
             } catch (std::exception& e) {
-                LOG_ERROR(_logger) << "Uncaught exception in connect callback: " << e.what();
+                LOG_ERROR(AppLogger()) << "Uncaught exception in connect callback: " << e.what();
                 throw;
             } catch (...) {
-                LOG_ERROR(_logger) << "Uncaught exception in connect callback: Unknown error.";
+                LOG_ERROR(AppLogger()) << "Uncaught exception in connect callback: Unknown error.";
                 throw;
             }
         });
     }
     if (ec) {
-        LOG_WARN(_logger) << "Connect error: " << ec << "(" << ec.message() << ")";
+        LOG_WARN(SysLogger()) << "Connect error: " << ec << "(" << ec.message() << ")";
         close(ec);
     } else {
         _connecting = false;

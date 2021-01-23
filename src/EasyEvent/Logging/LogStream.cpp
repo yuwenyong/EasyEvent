@@ -12,7 +12,7 @@ EasyEvent::LogStream::LogStream(const char *fileName,
                                 int lineno,
                                 const char *funcName,
                                 LogLevel level)
-        : LogStream(Log::instance().getRootLogger(), fileName, lineno, funcName, level) {
+        : LogStream(Log::instance().getLogger(), fileName, lineno, funcName, level) {
 
 }
 

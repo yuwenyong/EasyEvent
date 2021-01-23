@@ -25,13 +25,9 @@ namespace EasyEvent {
         IOLoop(const IOLoop&) = delete;
         IOLoop& operator=(const IOLoop&) = delete;
 
-        explicit IOLoop(Logger* logger=nullptr, bool installSignalHandlers=false, bool makeCurrent=false);
+        explicit IOLoop(bool installSignalHandlers=false, bool makeCurrent=false);
 
         ~IOLoop() noexcept;
-
-        Logger* getLogger() const {
-            return _logger;
-        }
 
         void addHandler(const SelectablePtr& handler, IOEvents events);
 
@@ -90,7 +86,6 @@ namespace EasyEvent {
 #endif
 
         SocketInit _sockInit;
-        Logger* _logger;
 
 #if defined(EASY_EVENT_USE_SELECT)
         WinFdSetAdapter _readFdSet;

@@ -7,6 +7,7 @@
 
 #include "EasyEvent/Common/Config.h"
 #include "EasyEvent/Common/Errors.h"
+#include "EasyEvent/Shared/Loggers.h"
 
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
 #   include <winerror.h>

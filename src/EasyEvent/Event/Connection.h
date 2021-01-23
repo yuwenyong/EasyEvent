@@ -242,7 +242,6 @@ namespace EasyEvent {
         }
 
         IOLoop* _ioLoop;
-        Logger* _logger;
         SocketType _socket;
         size_t _maxReadBufferSize;
         size_t _maxWriteBufferSize;

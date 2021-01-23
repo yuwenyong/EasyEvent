@@ -88,7 +88,6 @@ namespace EasyEvent {
     protected:
         explicit TcpServer(IOLoop* ioLoop, size_t maxBufferSize)
                 : _ioLoop(ioLoop ? ioLoop : IOLoop::current())
-                , _logger(_ioLoop->getLogger())
                 , _maxBufferSize(maxBufferSize) {
 
         }
@@ -107,7 +106,6 @@ namespace EasyEvent {
         void handleIncomingConnection(SocketType socket, const Address& address);
 
         IOLoop* _ioLoop;
-        Logger* _logger;
         std::map<SocketType, TcpListenerHolder> _handlers;
         std::vector<SocketHolder> _pendingSockets;
         bool _started{false};
