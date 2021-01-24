@@ -15,23 +15,71 @@ void test(IOLoop* ioLoop, Logger* logger) {
     });
 }
 
+void testJson(Logger* logger) {
+    JsonValue root{JsonType::ObjectValue};
+    root["str"] = "Hello world";
+    root["int"] = 3000;
+    root["double"] = 10001.1023;
+    root["bool"] = false;
+    root["null"] = nullptr;
+    root["array"] = JsonValue(JsonType::ArrayValue);
+    root["array"][0] = 1;
+    root["array"][1] = "stt";
+    root["array"][2] = JsonValue(JsonType::ObjectValue);
+    root["array"][2]["t"] = "ttt";
+    root["object"] = JsonValue(JsonType::ObjectValue);
+    root["object"]["key"] = "ttt";
+    root["object"]["obj"] = JsonValue(JsonType::ObjectValue);
+    root["object"]["obj"]["s"] = "test";
+    root["object"]["obj"]["a"] = JsonValue(JsonType::ArrayValue);
+    root["object"]["obj"]["a"][0] = "ttt";
+    root["object"]["zzz"] = true;
+    JsonValue cp, nu;
+    LOG_ERROR(logger) << root;
+    cp = root;
+    nu = root;
+    nu["object"]["key"] = "t2";
+    LOG_ERROR(logger) << cp;
+    if (cp == root) {
+        LOG_ERROR(logger) << "cp == root";
+    }  else {
+        LOG_ERROR(logger) << "cp != root";
+    }
+    if (nu == root) {
+        LOG_ERROR(logger)<< "nu == root";
+    }  else {
+        LOG_ERROR(logger) << "nu != root";
+    }
+    std::stringstream ss;
+    JsonValue result;
+    ss << cp;
+    ss >> result;
+    LOG_ERROR(logger) << "result: " << result;
+}
+
 int main (int argc, char **argv) {
-    Logger* logger = Log::instance().createLogger("Test", LOG_LEVEL_DEBUG, LOGGER_FLAGS_ASYNC);
-    assert(logger != nullptr);
-    logger->addSink(ConsoleSink::create(true, LOG_LEVEL_DEBUG, (SinkFlags)(SINK_FLAGS_DEFAULT|SINK_FLAGS_PREFIX_LOGGER_NAME)));
+    UnusedParameter(argc);
+    UnusedParameter(argv);
+//    Log::instance().configure("/home/yuwenyong/docs/logconf.json");
+    Logger* logger = Log::instance().getLogger("HelloWorld.child");
+    logger->setLevel(LOG_LEVEL_DEBUG);
+
+    std::vector<uint8> binData = {1, 2, 3, 4, 5, 6};
+    LOG_ERROR_RT() << Bin(binData.data(), binData.size(), 3);
 //    logger->addSink(FileSink::create("./test.log", true));
 //    logger->addSink(RotatingFileSink::create("./rtest.log", 1024, 3));
 //    logger->addSink(TimedRotatingFileSink::create("./trtest.log", TimedRotatingWhen::Minute));
 
-    std::error_code ec = SocketErrors::Interrupted;
-    LOG_ERROR(logger) << ec << "(" << ec.message() << ")";
+//    testJson(logger);
 
     auto addrs = Resolver::getAddresses("", 2, EnableBoth, false, true);
     for (auto& addr: addrs) {
         LOG_INFO(logger) << addr;
     }
 
-    IOLoop ioLoop(logger, true, true);
+    LOG_INFO(logger) << "Thread Id:" << std::this_thread::get_id();
+
+    IOLoop ioLoop(true, true);
     ioLoop.addCallback([logger]() {
         int i = 1;
         LOG_DEBUG(logger) << "Task " << i;

@@ -102,7 +102,7 @@ namespace EasyEvent {
 
         explicit TcpClient(IOLoop* ioLoop, MakeSharedTag tag)
             : TcpClient(ioLoop) {
-
+            UnusedParameter(tag);
         }
 
         void connect(Task<void(ConnectionPtr, const std::error_code&)>&& callback,

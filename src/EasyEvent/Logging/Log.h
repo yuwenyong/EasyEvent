@@ -6,7 +6,8 @@
 #define EASYEVENT_LOGGING_LOG_H
 
 #include "EasyEvent/Logging/LogCommon.h"
-#include "EasyEvent/Common/TaskPool.h"
+#include "EasyEvent/Logging/Sink.h"
+#include "EasyEvent/Configuration/Json.h"
 
 
 namespace EasyEvent {
@@ -16,43 +17,62 @@ namespace EasyEvent {
         Log(const Log&) = delete;
         Log& operator=(const Log&) = delete;
 
-        ~Log();
-
-        Logger* getLogger(const std::string& name) const {
-            std::lock_guard<std::mutex> lock(_mutex);
-            auto iter = _loggers.find(name);
-            return iter != _loggers.end() ? iter->second.get() : nullptr;
+        Logger* getLogger() const {
+            return _rootLogger;
         }
 
-        Logger* getOrCreateLogger(const std::string& name,
-                                  LogLevel level=LOG_LEVEL_DEFAULT,
-                                  LoggerFlags flags=LOGGER_FLAGS_DEFAULT);
+        Logger* getLogger(const std::string& name);
 
-        Logger* createLogger(const std::string& name, LogLevel level, LoggerFlags flags, std::error_code &ec);
+        bool registerFactory(const std::string& type, std::unique_ptr<SinkFactory>&& factory);
 
-        Logger* createLogger(const std::string& name,
-                             LogLevel level=LOG_LEVEL_DEFAULT,
-                             LoggerFlags flags=LOGGER_FLAGS_DEFAULT);
+        void configure(const JsonValue& settings);
 
-        void write(std::unique_ptr<LogMessage> &&message);
+        void configure(const char* filename);
 
-        void stop() {
-            if (_thread) {
-                _thread->stop();
-                _thread->wait();
-            }
-        }
+        void setLevel(LogLevel level);
+
+        LogLevel getLevel() const;
+
+        bool disabled() const;
+
+        void disabled(bool disabled);
+
+        void setSink(const SinkPtr& sink);
+
+        void appendSink(const SinkPtr& sink);
+
+        void removeSink(const SinkPtr& sink);
+
+        void resetSinks();
 
         static Log& instance() {
             static Log log;
             return log;
         }
-    protected:
-        Log() = default;
 
-        std::map<std::string, std::unique_ptr<Logger>> _loggers;
+        static const char* RootLoggerName;
+    protected:
+        Log();
+
+        void initRootLogger();
+
+        void setupBuiltinFactories();
+
+        Logger* getOrCreateLogger(const std::string& name);
+
+        Logger* createLogger(const std::string& name);
+
+        void configureSinks(const JsonValue& settings, std::map<std::string, SinkPtr>& sinks);
+
+        void configureLoggers(const JsonValue& settings, const std::map<std::string, SinkPtr>& sinks);
+
         mutable std::mutex _mutex;
-        std::unique_ptr<TaskPool> _thread;
+        std::map<std::string, std::unique_ptr<Logger>> _loggers;
+        std::map<std::string, std::unique_ptr<SinkFactory>> _factories;
+        Logger* _rootLogger{nullptr};
+
+        static const std::string Sinks;
+        static const std::string Loggers;
     };
 
 }

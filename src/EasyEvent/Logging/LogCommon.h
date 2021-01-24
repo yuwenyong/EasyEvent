@@ -21,50 +21,40 @@ namespace EasyEvent {
         NUM_ENABLED_LOG_LEVELS                       = 5,
     };
 
-    enum LoggerFlags {
-        LOGGER_FLAGS_NONE                           = 0x00,
-        LOGGER_FLAGS_MULTI_THREAD                   = 0x01,
-        LOGGER_FLAGS_ASYNC                          = 0x02,
-        LOGGER_FLAGS_DEFAULT                        = LOGGER_FLAGS_NONE,
-    };
-
-    enum SinkFlags {
-        SINK_FLAGS_NONE                             = 0x00,
-        SINK_FLAGS_PREFIX_TIMESTAMP                 = 0x01,
-        SINK_FLAGS_PREFIX_LOG_LEVEL                 = 0x02,
-        SINK_FLAGS_PREFIX_LOGGER_NAME               = 0x04,
-        SINK_FLAGS_MULTI_THREAD                     = 0x08,
-        SINK_FLAGS_DEFAULT                          = SINK_FLAGS_PREFIX_TIMESTAMP | SINK_FLAGS_PREFIX_LOG_LEVEL
-    };
-
-    class LogMessage;
+    class Log;
+    class LogRecord;
     class Logger;
     class Sink;
+    class SinkFactory;
 
     using SinkPtr = std::shared_ptr<Sink>;
 
-    enum class LoggingErrors {
-        AlreadyRegistered = 1,
-    };
-
-    class EASY_EVENT_API LoggingErrorCategory: public std::error_category {
+    class Bin {
     public:
-        [[nodiscard]] const char* name() const noexcept override;
-        [[nodiscard]] std::string message(int ev) const override;
+        Bin(const void* data, size_t size): _data(data), _size(size) {}
+
+        Bin(const void* data, size_t size, size_t maxSize): _data(data), _size(size), _maxSize(maxSize) {}
+
+        const void* getData() const {
+            return _data;
+        }
+
+        size_t getSize() const {
+            return _size;
+        }
+
+        size_t getMaxSize() const {
+            return _maxSize;
+        }
+    private:
+        const void* _data;
+        size_t _size;
+        size_t _maxSize{0};
     };
 
-    EASY_EVENT_API const std::error_category& getLoggingErrorCategory();
+    EASY_EVENT_API void dumpData(const void* data, size_t size, std::ostream& strm);
 
-    inline std::error_code make_error_code(LoggingErrors err) {
-        return {static_cast<int>(err), getLoggingErrorCategory()};
-    }
-}
-
-namespace std {
-
-    template <>
-    struct is_error_code_enum<EasyEvent::LoggingErrors>: public true_type {};
-
+    EASY_EVENT_API std::ostream& operator<<(std::ostream &sout, const Bin &bin);
 }
 
 #endif //EASYEVENT_LOGGING_LOGCOMMON_H

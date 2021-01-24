@@ -10,7 +10,11 @@
 #include "EasyEvent/Common/TaskPool.h"
 #include "EasyEvent/Common/Time.h"
 
+#include "EasyEvent/Configuration/Json.h"
+#include "EasyEvent/Configuration/Options.h"
+
 #include "EasyEvent/Logging/Log.h"
+#include "EasyEvent/Logging/Logger.h"
 #include "EasyEvent/Logging/LogStream.h"
 #include "EasyEvent/Logging/ConsoleSink.h"
 #include "EasyEvent/Logging/FileSink.h"

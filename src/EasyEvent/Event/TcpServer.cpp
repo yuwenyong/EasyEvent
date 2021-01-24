@@ -15,6 +15,7 @@ EasyEvent::TcpListener::~TcpListener() noexcept {
 }
 
 void EasyEvent::TcpListener::handleEvents(IOEvents events) {
+    UnusedParameter(events);
     Address address;
     std::error_code ec;
     for (int i = 0; i < DefaultBacklog; ++i) {
@@ -144,8 +145,8 @@ void EasyEvent::TcpServer::handleIncomingConnection(SocketType socket, const Add
         auto connection = Connection::create(_ioLoop, socket, _maxBufferSize);
         handleConnection(std::move(connection), address);
     } catch (std::exception& e) {
-        LOG_ERROR(_logger) << "Error in connection callback: " << e.what();
+        LOG_ERROR(AppLogger()) << "Error in connection callback: " << e.what();
     } catch (...) {
-        LOG_ERROR(_logger) << "Unknown error in connection callback";
+        LOG_ERROR(AppLogger()) << "Unknown error in connection callback";
     }
 }

@@ -5,7 +5,7 @@
 #include "EasyEvent/Logging/ConsoleSink.h"
 
 
-std::shared_ptr<std::mutex> EasyEvent::ConsoleSink::gMutex = std::make_shared<std::mutex>();
+std::mutex EasyEvent::ConsoleSink::gMutex = {};
 
 EasyEvent::ColorTypes EasyEvent::ConsoleSink::gColors[EasyEvent::NUM_ENABLED_LOG_LEVELS] = {
     EasyEvent::ColorTypes::LGRAY,
@@ -15,23 +15,15 @@ EasyEvent::ColorTypes EasyEvent::ConsoleSink::gColors[EasyEvent::NUM_ENABLED_LOG
     EasyEvent::ColorTypes::RED
 };
 
-void EasyEvent::ConsoleSink::write(LogMessage *message, const std::string &text) {
-    if (isThreadSafe()) {
-        std::lock_guard<std::mutex> lock(*_mutex);
-        _write(message, text);
-    } else {
-        _write(message, text);
-    }
-}
-
-void EasyEvent::ConsoleSink::_write(LogMessage *message, const std::string &text) {
-    LogLevel level = message->getLevel();
+void EasyEvent::ConsoleSink::onWrite(LogRecord *record, const std::string &text) {
+    std::lock_guard<std::mutex> lock(gMutex);
+    LogLevel level = record->getLevel();
     if (_colored) {
         setColor(level);
-        fprintf(stdout, "%s\n", text.c_str());
+        fprintf(stdout, "%s", text.c_str());
         resetColor(level);
     } else {
-        fprintf(stdout, "%s\n", text.c_str());
+        fprintf(stdout, "%s", text.c_str());
     }
 }
 
@@ -119,10 +111,30 @@ void EasyEvent::ConsoleSink::setColor(LogLevel level) {
 }
 
 void EasyEvent::ConsoleSink::resetColor(LogLevel level) {
+    UnusedParameter(level);
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleTextAttribute(hConsole, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
 #else
     fprintf(stdout, "\x1b[0m");
 #endif
+}
+
+
+const std::string EasyEvent::ConsoleSinkFactory::TypeName = "Console";
+const std::string EasyEvent::ConsoleSinkFactory::Colored = "colored";
+
+EasyEvent::SinkPtr EasyEvent::ConsoleSinkFactory::create(const JsonValue &settings, LogLevel level, bool multiThread,
+                                                         bool async, const std::string &fmt) const {
+    bool colored = parseColored(settings);
+    return ConsoleSink::create(colored, level, multiThread, async, fmt);
+}
+
+bool EasyEvent::ConsoleSinkFactory::parseColored(const JsonValue &settings) {
+    bool colored = false;
+    const JsonValue* value = settings.find(Colored);
+    if (value) {
+        colored = value->asBool();
+    }
+    return colored;
 }

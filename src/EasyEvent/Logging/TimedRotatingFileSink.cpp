@@ -6,36 +6,25 @@
 
 
 EasyEvent::TimedRotatingFileSink::TimedRotatingFileSink(std::string fileName, TimedRotatingWhen when, LogLevel level,
-                                                        SinkFlags flags)
-                                                        : Sink(level, flags)
+                                                        bool multiThread, bool async, const std::string& fmt)
+                                                        : Sink(level, multiThread, async, fmt)
                                                         , _fileName(std::move(fileName))
                                                         , _when(when) {
-    if (isThreadSafe()) {
-        _mutex = std::make_unique<std::mutex>();
-    }
     computeRollover();
     openFile();
 }
 
-EasyEvent::TimedRotatingFileSink::~TimedRotatingFileSink() noexcept {
-    closeFile();
-}
-
-void EasyEvent::TimedRotatingFileSink::write(LogMessage *message, const std::string &text) {
-    if (isThreadSafe()) {
-        std::lock_guard<std::mutex> lock(*_mutex);
-        _write(message, text);
-    } else {
-        _write(message, text);
-    }
-}
-
-void EasyEvent::TimedRotatingFileSink::_write(LogMessage *message, const std::string &text) {
+void EasyEvent::TimedRotatingFileSink::onWrite(LogRecord *record, const std::string &text) {
+    UnusedParameter(record);
     if (shouldRollover()) {
         doRollover();
     }
-    fprintf(_logFile, "%s\n", text.c_str());
+    fprintf(_logFile, "%s", text.c_str());
     fflush(_logFile);
+}
+
+void EasyEvent::TimedRotatingFileSink::onClose() {
+    closeFile();
 }
 
 bool EasyEvent::TimedRotatingFileSink::shouldRollover() {
@@ -139,4 +128,52 @@ void EasyEvent::TimedRotatingFileSink::openFile() {
         fileName += suffix;
     }
     _logFile = fopen(fileName.c_str(), "a");
+    if (!_logFile) {
+        throwError(errno, "TimedRotatingFileSink");
+    }
+}
+
+
+const std::string EasyEvent::TimedRotatingFileSinkFactory::TypeName = "TimedRotatingFile";
+const std::string EasyEvent::TimedRotatingFileSinkFactory::FileName = "fileName";
+const std::string EasyEvent::TimedRotatingFileSinkFactory::When = "when";
+
+EasyEvent::SinkPtr EasyEvent::TimedRotatingFileSinkFactory::create(const JsonValue &settings, LogLevel level, bool multiThread,
+                                                                   bool async, const std::string &fmt) const {
+    std::string fileName = parseFileName(settings);
+    TimedRotatingWhen when = parseMWhen(settings);
+    return TimedRotatingFileSink::create(std::move(fileName), when, level, multiThread, async, fmt);
+}
+
+std::string EasyEvent::TimedRotatingFileSinkFactory::parseFileName(const JsonValue &settings) {
+    const JsonValue* value = settings.find(FileName);
+    if (!value) {
+        std::string errMsg = "Argument `" + FileName + "' is required";
+        throwError(UserErrors::ArgumentRequired, "TimedRotatingFileSinkFactory", errMsg);
+    }
+    std::string fileName = value->asString();
+    if (fileName.empty()) {
+        std::string errMsg = FileName + " can't be empty";
+        throwError(UserErrors::BadValue, "TimedRotatingFileSinkFactory", errMsg);
+    }
+    return fileName;
+}
+
+EasyEvent::TimedRotatingWhen EasyEvent::TimedRotatingFileSinkFactory::parseMWhen(const JsonValue &settings) {
+    std::string when = "day";
+    const JsonValue* value = settings.find(When);
+    if (value) {
+        when = value->asString();
+    }
+    if (stricmp(when.c_str(), "day") == 0) {
+        return TimedRotatingWhen::Day;
+    } else if (stricmp(when.c_str(), "hour") == 0) {
+        return TimedRotatingWhen::Hour;
+    } else if (stricmp(when.c_str(), "minute") == 0) {
+        return TimedRotatingWhen::Minute;
+    } else {
+        std::string errMsg = "Invalid value `" + when + "' for " + When;
+        throwError(UserErrors::BadValue, "TimedRotatingFileSinkFactory", errMsg);
+        return TimedRotatingWhen::Day;
+    }
 }

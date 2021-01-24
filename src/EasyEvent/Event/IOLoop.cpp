@@ -9,12 +9,13 @@
 
 thread_local EasyEvent::IOLoop* EasyEvent::IOLoop::_current = nullptr;
 
-EasyEvent::IOLoop::IOLoop(Logger *logger, bool installSignalHandlers, bool makeCurrent)
-    : _logger(logger)
-    , _waker(std::make_shared<Interrupter>()) {
+EasyEvent::IOLoop::IOLoop(bool installSignalHandlers, bool makeCurrent)
+    : _waker(std::make_shared<Interrupter>()) {
 
 #if defined(EASY_EVENT_USE_EPOLL)
     _epollFd = doEpollCreate();
+#elif defined(EASY_EVENT_USE_KQUEUE)
+    _kqueueFd = doKqueueCreate();
 #endif
 
     addHandler(_waker, IO_EVENT_READ);
@@ -38,6 +39,10 @@ EasyEvent::IOLoop::~IOLoop() noexcept {
     if (_epollFd != -1) {
         ::close(_epollFd);
     }
+#elif defined(EASY_EVENT_USE_KQUEUE)
+    if (_kqueueFd != -1) {
+        ::close(_kqueueFd);
+    }
 #endif
     if (_resolveThread) {
         _resolveQueries.terminate();
@@ -46,62 +51,73 @@ EasyEvent::IOLoop::~IOLoop() noexcept {
 }
 
 void EasyEvent::IOLoop::addHandler(const SelectablePtr &handler, IOEvents events) {
-    Assert(_handlers.find(handler->getFD()) == _handlers.end());
+    int fd = handler->getFD();
+    Assert(_handlers.find(fd) == _handlers.end());
 
 #if defined(EASY_EVENT_USE_SELECT)
     if ((events & IO_EVENT_READ) != 0) {
-        Verify(_readFdSet.set(handler->getFD()));
+        Verify(_readFdSet.set(fd));
     }
     if ((events & IO_EVENT_WRITE) != 0) {
-        Verify(_writeFdSet.set(handler->getFD()));
+        Verify(_writeFdSet.set(fd));
     }
-    Verify(_errorFdSet.set(handler->getFD()));
+    Verify(_errorFdSet.set(fd));
 #elif defined(EASY_EVENT_USE_EPOLL)
     epoll_event ev = {0, {0}};
     ev.events = events | IO_EVENT_ERROR;
-    ev.data.fd = handler->getFD();
-    int result = epoll_ctl(_epollFd, EPOLL_CTL_ADD, handler->getFD(), &ev);
+    ev.data.fd = fd;
+    int result = epoll_ctl(_epollFd, EPOLL_CTL_ADD, fd, &ev);
     if (result != 0) {
         std::error_code ec(errno, getSocketErrorCategory());
-        throwError(ec, "add epoll handler");
+        throwError(ec, "IOLoop", "add epoll handler failed");
     }
+#elif defined(EASY_EVENT_USE_KQUEUE)
+    control(fd, events | IO_EVENT_ERROR, EV_ADD);
+    _active[fd] = events | IO_EVENT_ERROR;
 #else
     struct pollfd pollFd;
-    pollFd.fd = handler->getFD();
+    pollFd.fd = fd;
     pollFd.events = events | IO_EVENT_ERROR;
     pollFd.revents = 0;
     _pollFdSet.emplace_back(pollFd);
 #endif
 
-    _handlers[handler->getFD()] = handler;
+    _handlers[fd] = handler;
 }
 
 void EasyEvent::IOLoop::updateHandler(const SelectablePtr &handler, IOEvents events) {
-    Assert(_handlers.find(handler->getFD()) != _handlers.end());
+    int fd = handler->getFD();
+    Assert(_handlers.find(fd) != _handlers.end());
 
 #if defined(EASY_EVENT_USE_SELECT)
     if ((events & IO_EVENT_READ) != 0) {
-        _readFdSet.set(handler->getFD());
+        _readFdSet.set(fd);
     } else {
-        _readFdSet.clr(handler->getFD());
+        _readFdSet.clr(fd);
     }
     if ((events & IO_EVENT_WRITE) != 0) {
-        _writeFdSet.set(handler->getFD());
+        _writeFdSet.set(fd);
     } else {
-        _writeFdSet.clr(handler->getFD());
+        _writeFdSet.clr(fd);
     }
 #elif defined(EASY_EVENT_USE_EPOLL)
     epoll_event ev = {0, {0}};
     ev.events = events | IO_EVENT_ERROR;
-    ev.data.fd = handler->getFD();
-    int result = epoll_ctl(_epollFd, EPOLL_CTL_MOD, handler->getFD(), &ev);
+    ev.data.fd = fd;
+    int result = epoll_ctl(_epollFd, EPOLL_CTL_MOD, fd, &ev);
     if (result != 0) {
         std::error_code ec(errno, getSocketErrorCategory());
-        throwError(ec, "update epoll handler");
+        throwError(ec, "IOLoop", "update epoll handler failed");
     }
+#elif defined(EASY_EVENT_USE_KQUEUE)
+    auto iter = _active.find(fd);
+    Assert(iter != _active.end());
+    control(fd, iter->second, EV_DELETE);
+    control(fd, events | IO_EVENT_ERROR, EV_ADD);
+    iter->second = events | IO_EVENT_ERROR;
 #else
     for (size_t i = 0; i != _pollFdSet.size(); ++i) {
-        if (_pollFdSet[i].fd == handler->getFD()) {
+        if (_pollFdSet[i].fd == fd) {
             _pollFdSet[i].events = events | IO_EVENT_ERROR;
             break;
         }
@@ -110,22 +126,29 @@ void EasyEvent::IOLoop::updateHandler(const SelectablePtr &handler, IOEvents eve
 }
 
 void EasyEvent::IOLoop::removeHandler(const SelectablePtr &handler) {
-    Assert(_handlers.find(handler->getFD()) != _handlers.end());
+    int fd = handler->getFD();
+    Assert(_handlers.find(fd) != _handlers.end());
 
 #if defined(EASY_EVENT_USE_SELECT)
-    _readFdSet.clr(handler->getFD());
-    _writeFdSet.clr(handler->getFD());
-    Verify(_errorFdSet.clr(handler->getFD()));
+    _readFdSet.clr(fd);
+    _writeFdSet.clr(fd);
+    Verify(_errorFdSet.clr(fd));
 #elif defined(EASY_EVENT_USE_EPOLL)
     epoll_event ev = {0, {0}};
-    int result = epoll_ctl(_epollFd, EPOLL_CTL_DEL, handler->getFD(), &ev);
+    int result = epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, &ev);
     if (result != 0) {
         std::error_code ec(errno, getSocketErrorCategory());
-        throwError(ec, "remove epoll handler");
+        throwError(ec, "IOLoop", "remove epoll handler failed");
     }
+#elif defined(EASY_EVENT_USE_KQUEUE)
+    auto iter = _active.find(fd);
+    Assert(iter != _active.end());
+    IOEvents events = iter->second;
+    _active.erase(iter);
+    control(fd, events, EV_DELETE);
 #else
     for (size_t i = 0; i != _pollFdSet.size(); ++i) {
-        if (_pollFdSet[i].fd == handler->getFD()) {
+        if (_pollFdSet[i].fd == fd) {
             if (i != _pollFdSet.size() - 1) {
                 _pollFdSet[i] = _pollFdSet[_pollFdSet.size() - 1];
             }
@@ -135,7 +158,7 @@ void EasyEvent::IOLoop::removeHandler(const SelectablePtr &handler) {
     }
 #endif
 
-    _handlers.erase(handler->getFD());
+    _handlers.erase(fd);
 }
 
 void EasyEvent::IOLoop::start() {
@@ -173,6 +196,9 @@ void EasyEvent::IOLoop::start() {
     std::unordered_map<SocketType, IOEvents> events;
 #elif defined(EASY_EVENT_USE_EPOLL)
     epoll_event events[256];
+#elif defined(EASY_EVENT_USE_KQUEUE)
+    struct kevent kevents[256];
+    std::unordered_map<SocketType, IOEvents> events;
 #else
     std::vector<struct pollfd> pollFdSet;
 #endif
@@ -188,9 +214,9 @@ void EasyEvent::IOLoop::start() {
             try {
                 callback();
             } catch (std::exception& e) {
-                LOG_ERROR(_logger) << "Exception in callback: " << e.what();
+                LOG_ERROR(AppLogger()) << "Exception in callback: " << e.what();
             } catch (...) {
-                LOG_ERROR(_logger) << "Unknown error in callback.";
+                LOG_ERROR(AppLogger()) << "Unknown error in callback.";
             }
             callback = nullptr;
         }
@@ -200,9 +226,9 @@ void EasyEvent::IOLoop::start() {
             try {
                 timer->callback();
             } catch (std::exception& e) {
-                LOG_ERROR(_logger) << "Exception in timer callback: " << e.what();
+                LOG_ERROR(AppLogger()) << "Exception in timer callback: " << e.what();
             } catch (...) {
-                LOG_ERROR(_logger) << "Unknown error in timer callback.";
+                LOG_ERROR(AppLogger()) << "Unknown error in timer callback.";
             }
             timer = nullptr;
         }
@@ -239,7 +265,7 @@ void EasyEvent::IOLoop::start() {
         } else {
             struct timeval tv;
             tv.tv_sec = (long)pollTimeout.seconds();
-            tv.tv_usec = (long)(pollTimeout.microSeconds() - pollTimeout.seconds() * 1000000);
+            tv.tv_usec = (long)(pollTimeout.microSeconds() % 1000000);
             numEvents = select(0, readFdSet, writeFdSet, errorFdSet, &tv);
         }
         if (numEvents < 0) {
@@ -247,7 +273,7 @@ void EasyEvent::IOLoop::start() {
                 continue;
             }
             ec.assign(WSAGetLastError(), getSocketErrorCategory());
-            throwError(ec, "select");
+            throwError(ec, "IOLoop", "call select failed");
         }
         if (numEvents > 0) {
             events.clear();
@@ -282,9 +308,9 @@ void EasyEvent::IOLoop::start() {
                     auto handler = iter->second;
                     handler->handleEvents((IOEvents)event.second);
                 } catch (std::exception& e) {
-                    LOG_ERROR(_logger) << "Exception in handler: " << e.what();
+                    LOG_ERROR(AppLogger()) << "Exception in handler: " << e.what();
                 } catch (...) {
-                    LOG_ERROR(_logger) << "Unknown error in handler.";
+                    LOG_ERROR(AppLogger()) << "Unknown error in handler.";
                 }
             }
         }
@@ -296,7 +322,7 @@ void EasyEvent::IOLoop::start() {
                 continue;
             }
             ec.assign(errno, getSocketErrorCategory());
-            throwError(ec, "epoll wait");
+            throwError(ec, "IOLoop", "call epoll wait failed");
         }
         for (int i = 0; i < numEvents; ++i) {
             int fd = events[i].data.fd;
@@ -308,9 +334,63 @@ void EasyEvent::IOLoop::start() {
                 auto handler = iter->second;
                 handler->handleEvents((IOEvents)events[i].events);
             } catch (std::exception& e) {
-                LOG_ERROR(_logger) << "Exception in handler: " << e.what();
+                LOG_ERROR(AppLogger()) << "Exception in handler: " << e.what();
             } catch (...) {
-                LOG_ERROR(_logger) << "Unknown error in handler.";
+                LOG_ERROR(AppLogger()) << "Unknown error in handler.";
+            }
+        }
+#elif defined(EASY_EVENT_USE_KQUEUE)
+        timespec ts = {0, 0};
+        if (pollTimeout) {
+            ts.tv_sec = pollTimeout.seconds();
+            ts.tv_nsec = (long)(pollTimeout.microSeconds() % 1000000) * 1000;
+        }
+        numEvents = kevent(_kqueueFd, 0, 0, kevents, 256, &ts);
+        if (numEvents < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            ec.assign(errno, getSocketErrorCategory());
+            throwError(ec, "IOLoop", "call kqueue failed");
+        }
+        if (numEvents > 0) {
+            events.clear();
+            for (int i = 0; i < numEvents; ++i) {
+                int fd = kevents[i].ident;
+                IOEvents evt = IO_EVENT_NONE;
+                if (kevents[i].filter == EVFILT_READ) {
+                    evt = IO_EVENT_READ;
+                } else if (kevents[i].filter == EVFILT_WRITE) {
+                    if ((kevents[i].flags & EV_EOF) != 0) {
+                        evt = IO_EVENT_ERROR;
+                    } else {
+                        evt = IO_EVENT_WRITE;
+                    }
+                }
+                if ((kevents[i].flags & EV_ERROR) != 0) {
+                    evt |= IO_EVENT_ERROR;
+                }
+                auto iter = events.find(fd);
+                if (iter != events.end()) {
+                    iter->second |= evt;
+                } else {
+                    events.insert(std::make_pair(fd, evt));
+                }
+            }
+
+            for (auto &event: events) {
+                auto iter = _handlers.find(event.first);
+                if (iter == _handlers.end()) {
+                    continue;
+                }
+                try {
+                    auto handler = iter->second;
+                    handler->handleEvents((IOEvents)event.second);
+                } catch (std::exception& e) {
+                    LOG_ERROR(AppLogger()) << "Exception in handler: " << e.what();
+                } catch (...) {
+                    LOG_ERROR(AppLogger()) << "Unknown error in handler.";
+                }
             }
         }
 #else
@@ -321,7 +401,7 @@ void EasyEvent::IOLoop::start() {
                 continue;
             }
             ec.assign(errno, getSocketErrorCategory());
-            throwError(ec, "poll");
+            throwError(ec, "IOLoop", "call poll failed");
         }
         for (auto it = pollFdSet.begin(); it != pollFdSet.end() && numEvents > 0; ++it) {
             if (it->revents == 0) {
@@ -336,9 +416,9 @@ void EasyEvent::IOLoop::start() {
                 auto handler = iter->second;
                 handler->handleEvents((IOEvents)it->revents);
             } catch (std::exception& e) {
-                LOG_ERROR(_logger) << "Exception in handler: " << e.what();
+                LOG_ERROR(AppLogger()) << "Exception in handler: " << e.what();
             } catch (...) {
-                LOG_ERROR(_logger) << "Unknown error in handler.";
+                LOG_ERROR(AppLogger()) << "Unknown error in handler.";
             }
         }
 #endif
@@ -389,25 +469,28 @@ EasyEvent::ResolveHandle EasyEvent::IOLoop::resolve(std::string host, unsigned s
 
 void EasyEvent::IOLoop::installSignalHandlers() {
     _signalHandles.emplace_back(SignalCtrl::instance().add(SIGTERM, [this](int sigNum) {
-        LOG_INFO(_logger) << "Received SIGTERM, shutting down.";
+        UnusedParameter(sigNum);
+        LOG_INFO(SysLogger()) << "Received SIGTERM, shutting down.";
         stop();
     }));
 
     _signalHandles.emplace_back(SignalCtrl::instance().add(SIGINT, [this](int sigNum) {
-        LOG_INFO(_logger) << "Received SIGINT, shutting down.";
+        UnusedParameter(sigNum);
+        LOG_INFO(SysLogger()) << "Received SIGINT, shutting down.";
         stop();
     }));
 
 #if defined(SIGBREAK)
     _signalHandles.emplace_back(SignalCtrl::instance().add(SIGBREAK, [this](int sigNum) {
-            LOG_INFO(_logger) << "Received SIGBREAK, shutting down.";
+            LOG_INFO(SysLogger()) << "Received SIGBREAK, shutting down.";
             stop();
         }));
 #endif
 
 #if defined(SIGQUIT)
     _signalHandles.emplace_back(SignalCtrl::instance().add(SIGQUIT, [this](int sigNum) {
-        LOG_INFO(_logger) << "Received SIGQUIT, shutting down.";
+        UnusedParameter(sigNum);
+        LOG_INFO(SysLogger()) << "Received SIGQUIT, shutting down.";
         stop();
     }));
 #endif
@@ -446,10 +529,36 @@ int EasyEvent::IOLoop::doEpollCreate() {
 
     if (fd == -1) {
         std::error_code ec(errno, getSocketErrorCategory());
-        throwError(ec, "create epoll");
+        throwError(ec, "IOLoop", "create epoll failed");
     }
-
     return fd;
+}
+
+#elif defined(EASY_EVENT_USE_KQUEUE)
+
+int EasyEvent::IOLoop::doKqueueCreate() {
+    int fd = ::kqueue();
+    if (fd == -1) {
+        std::error_code ec(errno, getSocketErrorCategory());
+        throwError(ec, "IOLoop", "create kqueue failed");
+    }
+    return fd;
+}
+
+void EasyEvent::IOLoop::control(int fd, IOEvents events, uint16_t flags) {
+    struct kevent kevents[2];
+    int numOfEvents = 0;
+    if ((events & IO_EVENT_READ) != 0) {
+        EV_SET(&kevents[numOfEvents++], fd, EVFILT_READ, flags, 0, 0, 0);
+    }
+    if ((events & IO_EVENT_WRITE) != 0) {
+        EV_SET(&kevents[numOfEvents++], fd, EVFILT_WRITE, flags, 0, 0, 0);
+    }
+    int result = kevent(_kqueueFd, kevents, numOfEvents, 0, 0, 0);
+    if (result < 0) {
+        std::error_code ec(errno, getSocketErrorCategory());
+        throwError(ec, "IOLoop", "update kqueue handler failed");
+    }
 }
 
 #endif

@@ -7,6 +7,7 @@
 
 #include "EasyEvent/Common/Config.h"
 #include "EasyEvent/Common/Errors.h"
+#include "EasyEvent/Shared/Loggers.h"
 
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
 #   include <winerror.h>
@@ -32,8 +33,19 @@
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
 #   define EASY_EVENT_USE_SELECT
 #elif EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_LINUX
-#   define EASY_EVENT_USE_EPOLL
-#   include <sys/epoll.h>
+#   include <linux/version.h>
+#   if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,45)
+#       define EASY_EVENT_USE_EPOLL
+#       include <sys/epoll.h>
+#   else
+#       define EASY_EVENT_USE_POLL
+#   endif
+#elif EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_APPLE || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#   define EASY_EVENT_USE_KQUEUE
+#   include <sys/event.h>
+#   if defined(__NetBSD__)
+#       include <sys/param.h>
+#   endif
 #else
 #   define EASY_EVENT_USE_POLL
 #endif
@@ -178,7 +190,6 @@ namespace EasyEvent {
         CloseCallbackFailed = 6,
         ConnectionClosed = 7,
         ConnectionBufferFull = 8,
-        UnexpectedBehaviour = 9,
         AlreadyListening = 10,
         CallbackNotFound = 11,
         AlreadyConnecting = 12,
@@ -240,13 +251,19 @@ namespace EasyEvent {
         IO_EVENT_WRITE = 0x02,
         IO_EVENT_ERROR = 0x04,
     };
-
 #elif defined(EASY_EVENT_USE_EPOLL)
     enum IOEvents: unsigned int {
         IO_EVENT_NONE = 0,
         IO_EVENT_READ = EPOLLIN,
         IO_EVENT_WRITE = EPOLLOUT,
         IO_EVENT_ERROR = EPOLLERR | EPOLLHUP,
+    };
+#elif defined(EASY_EVENT_USE_KQUEUE)
+    enum IOEvents: unsigned int {
+        IO_EVENT_NONE = 0,
+        IO_EVENT_READ = 0x01,
+        IO_EVENT_WRITE = 0x02,
+        IO_EVENT_ERROR = 0x04,
     };
 #else
     enum IOEvents: short {
