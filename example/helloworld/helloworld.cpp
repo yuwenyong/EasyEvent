@@ -77,7 +77,7 @@ int main (int argc, char **argv) {
 
     LOG_INFO(logger) << "Thread Id:" << std::this_thread::get_id();
 
-    IOLoop ioLoop(logger, true, true);
+    IOLoop ioLoop(true, true);
     ioLoop.addCallback([logger]() {
         int i = 1;
         LOG_DEBUG(logger) << "Task " << i;

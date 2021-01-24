@@ -33,8 +33,19 @@
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
 #   define EASY_EVENT_USE_SELECT
 #elif EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_LINUX
-#   define EASY_EVENT_USE_EPOLL
-#   include <sys/epoll.h>
+#   include <linux/version.h>
+#   if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,45)
+#       define EASY_EVENT_USE_EPOLL
+#       include <sys/epoll.h>
+#   else
+#       define EASY_EVENT_USE_POLL
+#   endif
+#elif EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_APPLE || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#   define EASY_EVENT_USE_KQUEUE
+#   include <sys/event.h>
+#   if defined(__NetBSD__)
+#       include <sys/param.h>
+#   endif
 #else
 #   define EASY_EVENT_USE_POLL
 #endif
@@ -248,6 +259,7 @@ namespace EasyEvent {
         IO_EVENT_WRITE = EPOLLOUT,
         IO_EVENT_ERROR = EPOLLERR | EPOLLHUP,
     };
+#elif defined(EASY_EVENT_USE_KQUEUE)
 #else
     enum IOEvents: short {
         IO_EVENT_NONE = 0,

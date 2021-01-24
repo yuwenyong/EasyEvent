@@ -76,7 +76,7 @@ SocketType EasyEvent::SocketOps::Socket(int af, int type, int protocol, std::err
         ::setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, reinterpret_cast<const char*>(&optval), sizeof(optval));
     }
     return s;
-#elif EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_APPLE || EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_UNIX
+#elif EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_APPLE || defined(__FreeBSD__)
     SocketType s = ::socket(af, type, protocol);
     getLastError(ec, s < 0);
 
@@ -180,7 +180,7 @@ int EasyEvent::SocketOps::Ioctl(SocketType s, int cmd, IoctlArgType *arg, std::e
     }
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
     int result = ::ioctlsocket(s, cmd, arg);
-#elif EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_APPLE || EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_UNIX
+#elif EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_APPLE || defined(__NetBSD__) || defined(__FreeBSD__) || defined(__OpenBSD__)
     int result = ::ioctl(s, static_cast<unsigned int>(cmd), arg);
 #else
     int result = ::ioctl(s, static_cast<unsigned long>(cmd), arg);
@@ -223,7 +223,7 @@ SocketType EasyEvent::SocketOps::Accept(SocketType s, sockaddr *addr, size_t *ad
     if (newSock == InvalidSocket) {
         return newSock;
     }
-#if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_APPLE || EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_UNIX
+#if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_APPLE || defined(__FreeBSD__)
     int optval = 1;
     int result = ::setsockopt(newSock, SOL_SOCKET, SO_NOSIGPIPE, &optval, sizeof(optval));
     getLastError(ec, result != 0);
@@ -480,6 +480,31 @@ int EasyEvent::SocketOps::GetAddrInfo(const char *host, const char *service, con
     service = (service && *service) ? service : nullptr;
     clearLastError();
     int error = ::getaddrinfo(host, service, hints, result);
+#if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_APPLE
+    if (error == 0 && service && isdigit(static_cast<unsigned char>(service[0]))) {
+        unsigned short port = htons((uint16_t)atoi(service));
+        for (addrinfo* ai = *result; ai; ai = ai->ai_next) {
+            switch (ai->ai_family) {
+                case AF_INET: {
+                    sockaddr_in* sinptr = reinterpret_cast<sockaddr_in*>(ai->ai_addr);
+                    if (sinptr->sin_port == 0) {
+                        sinptr->sin_port = port;
+                    }
+                    break;
+                }
+                case AF_INET6: {
+                    sockaddr_in6* sin6ptr = reinterpret_cast<sockaddr_in6*>(ai->ai_addr);
+                    if (sin6ptr->sin6_port == 0) {
+                        sin6ptr->sin6_port = port;
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
+#endif
     ec = translateAddrInfoError(error);
     return error;
 }

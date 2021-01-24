@@ -138,6 +138,7 @@ typedef unsigned long long UInt64;
 #include <ctime>
 #include <cerrno>
 #include <csignal>
+#include <cstddef>
 
 
 #ifdef _WIN32
@@ -157,22 +158,19 @@ typedef unsigned long long UInt64;
 #define EASY_EVENT_PLATFORM_WINDOWS     0
 #define EASY_EVENT_PLATFORM_LINUX       1
 #define EASY_EVENT_PLATFORM_APPLE       2
-#define EASY_EVENT_PLATFORM_INTEL       3
-#define EASY_EVENT_PLATFORM_UNIX        4
+#define EASY_EVENT_PLATFORM_UNIX        3
 
-// must be first (win 64 also define _WIN32)
-#if defined( _WIN64 )
+
+#if defined(_WIN64) || defined(__WIN32__) || defined(WIN32) || defined(_WIN32)
 #  define EASY_EVENT_PLATFORM EASY_EVENT_PLATFORM_WINDOWS
-#elif defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
-#  define EASY_EVENT_PLATFORM EASY_EVENT_PLATFORM_WINDOWS
-#elif defined( __linux__ )
+#elif defined(__linux__)
 #  define EASY_EVENT_PLATFORM EASY_EVENT_PLATFORM_LINUX
-#elif defined( __APPLE_CC__ )
+#elif defined(__MACH__) && defined(__APPLE__)
 #  define EASY_EVENT_PLATFORM EASY_EVENT_PLATFORM_APPLE
-#elif defined( __INTEL_COMPILER )
-#  define EASY_EVENT_PLATFORM EASY_EVENT_PLATFORM_INTEL
-#else
+#elif defined(unix) || defined(__unix__) || defined(__unix)
 #  define EASY_EVENT_PLATFORM EASY_EVENT_PLATFORM_UNIX
+#else
+#  error "Unknown platform"
 #endif
 
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_LINUX || EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_APPLE
