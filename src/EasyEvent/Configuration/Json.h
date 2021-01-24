@@ -364,6 +364,8 @@ namespace EasyEvent {
     }
 
     inline bool operator<(const JsonValue::NullValue &lhs, const JsonValue::NullValue &rhs) {
+        UnusedParameter(lhs);
+        UnusedParameter(rhs);
         return false;
     }
 
@@ -380,6 +382,8 @@ namespace EasyEvent {
     }
 
     inline bool operator==(const JsonValue::NullValue &lhs, const JsonValue::NullValue &rhs) {
+        UnusedParameter(lhs);
+        UnusedParameter(rhs);
         return true;
     }
 

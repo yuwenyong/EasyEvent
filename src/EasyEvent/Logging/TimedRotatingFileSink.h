@@ -26,7 +26,7 @@ namespace EasyEvent {
                               bool async, const std::string& fmt,
                               MakeSharedTag tag)
                               : TimedRotatingFileSink(std::move(fileName), when, level, multiThread, async, fmt) {
-
+            UnusedParameter(tag);
         }
 
         static SinkPtr create(std::string fileName, TimedRotatingWhen when=TimedRotatingWhen::Day,

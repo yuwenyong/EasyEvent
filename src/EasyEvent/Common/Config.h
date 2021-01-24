@@ -121,13 +121,15 @@ typedef unsigned long long UInt64;
 #   define EASY_EVENT_DEBUG
 #endif
 
-#define Assert(expr)    assert(expr)
+#define Assert(expr)        assert(expr)
 
 #ifdef EASY_EVENT_DEBUG
-#   define Verify(expr) assert(expr)
+#   define Verify(expr)     assert(expr)
 #else
-#   define Verify(expr) (expr)
+#   define Verify(expr)     (expr)
 #endif
+
+#define UnusedParameter(p)  (void)(p)
 
 
 #include <cassert>

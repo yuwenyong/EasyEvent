@@ -15,6 +15,7 @@ EasyEvent::TcpListener::~TcpListener() noexcept {
 }
 
 void EasyEvent::TcpListener::handleEvents(IOEvents events) {
+    UnusedParameter(events);
     Address address;
     std::error_code ec;
     for (int i = 0; i < DefaultBacklog; ++i) {

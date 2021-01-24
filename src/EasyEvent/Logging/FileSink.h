@@ -18,7 +18,7 @@ namespace EasyEvent {
         FileSink(std::string fileName, bool trunc, LogLevel level, bool multiThread, bool async, const std::string& fmt,
                  MakeSharedTag tag)
             : FileSink(std::move(fileName), trunc, level, multiThread, async, fmt) {
-
+            UnusedParameter(tag);
         }
 
         static SinkPtr create(std::string fileName, bool trunc=false, LogLevel level=LOG_LEVEL_DEFAULT,

@@ -24,8 +24,8 @@ namespace EasyEvent {
                          bool async,
                          const std::string& fmt,
                          MakeSharedTag tag)
-        : RotatingFileSink(std::move(fileName), maxBytes, backupCount, level, multiThread, async, fmt) {
-
+                        : RotatingFileSink(std::move(fileName), maxBytes, backupCount, level, multiThread, async, fmt) {
+            UnusedParameter(tag);
         }
 
         static SinkPtr create(std::string fileName, size_t maxBytes, size_t backupCount,

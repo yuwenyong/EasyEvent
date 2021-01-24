@@ -111,6 +111,7 @@ void EasyEvent::ConsoleSink::setColor(LogLevel level) {
 }
 
 void EasyEvent::ConsoleSink::resetColor(LogLevel level) {
+    UnusedParameter(level);
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleTextAttribute(hConsole, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);

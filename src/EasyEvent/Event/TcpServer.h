@@ -63,7 +63,7 @@ namespace EasyEvent {
 
         explicit TcpServer(IOLoop* ioLoop, size_t maxBufferSize, MakeSharedTag tag)
                 : TcpServer(ioLoop, maxBufferSize) {
-
+            UnusedParameter(tag);
         }
 
         virtual ~TcpServer() noexcept = default;

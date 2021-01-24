@@ -20,7 +20,7 @@ namespace EasyEvent {
         Connection(IOLoop* ioLoop, SocketType socket, size_t maxReadBufferSize, size_t maxWriteBufferSize,
                    MakeSharedTag tag)
             : Connection(ioLoop, socket, maxReadBufferSize, maxWriteBufferSize) {
-
+            UnusedParameter(tag);
         }
 
         Connection(const Connection&) = delete;

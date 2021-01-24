@@ -15,6 +15,7 @@ EasyEvent::RotatingFileSink::RotatingFileSink(std::string fileName, size_t maxBy
 }
 
 void EasyEvent::RotatingFileSink::onWrite(LogRecord *record, const std::string &text) {
+    UnusedParameter(record);
     if (shouldRollover(text)) {
         doRollover();
     }

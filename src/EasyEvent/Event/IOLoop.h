@@ -83,6 +83,10 @@ namespace EasyEvent {
         };
 
         int doEpollCreate();
+#elif defined(EASY_EVENT_USE_KQUEUE)
+        int doKqueueCreate();
+
+        void control(int fd, IOEvents events, uint16_t flags);
 #endif
 
         SocketInit _sockInit;
@@ -93,6 +97,9 @@ namespace EasyEvent {
         WinFdSetAdapter _errorFdSet;
 #elif defined(EASY_EVENT_USE_EPOLL)
         int _epollFd;
+#elif defined(EASY_EVENT_USE_KQUEUE)
+        int _kqueueFd;
+        std::unordered_map<SocketType, IOEvents> _active;
 #else
         std::vector<struct pollfd> _pollFdSet;
 #endif

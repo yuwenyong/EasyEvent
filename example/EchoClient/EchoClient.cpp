@@ -92,6 +92,8 @@ protected:
 };
 
 int main (int argc, char **argv) {
+    UnusedParameter(argc);
+    UnusedParameter(argv);
     Logger* logger = Log::instance().getLogger("EchoClient");
 
     IOLoop ioLoop(false);

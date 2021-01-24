@@ -251,7 +251,6 @@ namespace EasyEvent {
         IO_EVENT_WRITE = 0x02,
         IO_EVENT_ERROR = 0x04,
     };
-
 #elif defined(EASY_EVENT_USE_EPOLL)
     enum IOEvents: unsigned int {
         IO_EVENT_NONE = 0,
@@ -260,6 +259,12 @@ namespace EasyEvent {
         IO_EVENT_ERROR = EPOLLERR | EPOLLHUP,
     };
 #elif defined(EASY_EVENT_USE_KQUEUE)
+    enum IOEvents: unsigned int {
+        IO_EVENT_NONE = 0,
+        IO_EVENT_READ = 0x01,
+        IO_EVENT_WRITE = 0x02,
+        IO_EVENT_ERROR = 0x04,
+    };
 #else
     enum IOEvents: short {
         IO_EVENT_NONE = 0,

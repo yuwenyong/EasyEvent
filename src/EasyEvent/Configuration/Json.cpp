@@ -423,20 +423,20 @@ int64_t EasyEvent::JsonValue::asInt64() const {
         if constexpr (std::is_same_v<T, NullValue>) {
             return INT64(0);
         } else if constexpr (std::is_same_v<T, int64_t>) {
-            return arg;
+            return static_cast<Int64>(arg);
         } else if constexpr (std::is_same_v<T, uint64_t>) {
             if (arg > (uint64_t)std::numeric_limits<int64_t>::max()) {
                 throwError(UserErrors::OutOfRange, "JsonValue", "uint64 out of int64 range");
                 return INT64(0);
             } else {
-                return static_cast<int64_t>(arg);
+                return static_cast<Int64>(arg);
             }
         } else if constexpr (std::is_same_v<T, double>) {
             if (!InRange(arg, std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max())) {
                 throwError(UserErrors::OutOfRange, "JsonValue", "double out of int64 range");
                 return INT64(0);
             } else {
-                return static_cast<int64_t>(arg);
+                return static_cast<Int64>(arg);
             }
         } else if constexpr (std::is_same_v<T, std::string>) {
             throwError(UserErrors::NotConvertible, "JsonValue", "string is not convertible to int64");
@@ -465,16 +465,16 @@ uint64_t EasyEvent::JsonValue::asUInt64() const {
                 throwError(UserErrors::OutOfRange, "JsonValue", "int64 out of uint64 range");
                 return UINT64(0);
             } else {
-                return static_cast<uint64_t>(arg);
+                return static_cast<UInt64>(arg);
             }
         } else if constexpr (std::is_same_v<T, uint64_t>) {
-            return arg;
+            return static_cast<UInt64>(arg);
         } else if constexpr (std::is_same_v<T, double>) {
             if (!InRange(arg, 0, std::numeric_limits<uint64_t>::max())) {
                 throwError(UserErrors::OutOfRange, "JsonValue", "double out of uint64 range");
                 return UINT64(0);
             } else {
-                return static_cast<uint64_t>(arg);
+                return static_cast<UInt64>(arg);
             }
         } else if constexpr (std::is_same_v<T, std::string>) {
             throwError(UserErrors::NotConvertible, "JsonValue", "string is not convertible to uint64");
@@ -1572,6 +1572,7 @@ bool EasyEvent::BuiltReader::readValue() {
 }
 
 bool EasyEvent::BuiltReader::readObject(Token &token) {
+    UnusedParameter(token);
     Token tokenName;
     std::string name;
     JsonValue init(JsonType::ObjectValue);
@@ -1638,6 +1639,7 @@ bool EasyEvent::BuiltReader::readObject(Token &token) {
 }
 
 bool EasyEvent::BuiltReader::readArray(Token &token) {
+    UnusedParameter(token);
     JsonValue init(JsonType::ArrayValue);
     currentValue().swapPayload(init);
     skipSpaces();

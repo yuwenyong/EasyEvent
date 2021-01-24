@@ -40,7 +40,7 @@ namespace EasyEvent {
     public:
         ConsoleSink(bool colored, LogLevel level, bool multiThread, bool async, const std::string& fmt, MakeSharedTag tag)
             : ConsoleSink(colored, level, multiThread, async, fmt) {
-
+            UnusedParameter(tag);
         }
 
         static SinkPtr create(bool colored=false, LogLevel level=LOG_LEVEL_DEFAULT, bool multiThread=false,

@@ -17,6 +17,7 @@ EasyEvent::FileSink::FileSink(std::string fileName, bool trunc, LogLevel level, 
 }
 
 void EasyEvent::FileSink::onWrite(LogRecord *record, const std::string &text) {
+    UnusedParameter(record);
     fprintf(_logFile, "%s", text.c_str());
     fflush(_logFile);
 }
