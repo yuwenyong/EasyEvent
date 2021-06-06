@@ -145,8 +145,8 @@ void EasyEvent::TcpServer::handleIncomingConnection(SocketType socket, const Add
         auto connection = Connection::create(_ioLoop, socket, _maxBufferSize);
         handleConnection(std::move(connection), address);
     } catch (std::exception& e) {
-        LOG_ERROR(AppLogger()) << "Error in connection callback: " << e.what();
+        LOG_ERROR(getLogger()) << "Error in connection callback: " << e.what();
     } catch (...) {
-        LOG_ERROR(AppLogger()) << "Unknown error in connection callback";
+        LOG_ERROR(getLogger()) << "Unknown error in connection callback";
     }
 }

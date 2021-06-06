@@ -7,7 +7,7 @@
 
 #include "EasyEvent/Common/Config.h"
 #include "EasyEvent/Common/Errors.h"
-#include "EasyEvent/Shared/Loggers.h"
+#include "EasyEvent/Logging/Logger.h"
 
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
 #   include <winerror.h>
@@ -194,6 +194,7 @@ namespace EasyEvent {
         CallbackNotFound = 11,
         AlreadyConnecting = 12,
         ConnectTimeout = 13,
+        ConnectCallbackFailed = 14,
     };
 
     class EASY_EVENT_API SocketErrorCategory: public std::error_category {

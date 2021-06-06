@@ -96,7 +96,7 @@ int main (int argc, char **argv) {
     UnusedParameter(argv);
     Logger* logger = Log::instance().getLogger("EchoClient");
 
-    IOLoop ioLoop(false);
+    IOLoop ioLoop(logger, false);
     Session::getInstance().start(&ioLoop, logger);
 
     std::thread consoleThread([]() {
