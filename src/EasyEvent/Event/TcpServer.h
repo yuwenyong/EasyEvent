@@ -68,6 +68,11 @@ namespace EasyEvent {
 
         virtual ~TcpServer() noexcept = default;
 
+        Logger* getLogger()
+        {
+            return _ioLoop->getLogger();
+        }
+
         void listen(unsigned short port, const std::string& address="") {
             auto sockets = bindSockets(port, address);
             addSockets(std::move(sockets));

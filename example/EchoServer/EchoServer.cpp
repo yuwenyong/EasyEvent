@@ -47,7 +47,7 @@ int main (int argc, char **argv) {
     UnusedParameter(argv);
     Logger* logger = Log::instance().getLogger("EchoServer");
 
-    IOLoop ioLoop(true);
+    IOLoop ioLoop(logger, true);
     LOG_INFO(logger) << "Start listening on port: " << 12345;
     auto server = TcpServer::create(&ioLoop);
     server->bind(12345);

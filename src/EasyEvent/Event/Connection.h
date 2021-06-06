@@ -28,6 +28,11 @@ namespace EasyEvent {
 
         ~Connection() noexcept override;
 
+        Logger* getLogger()
+        {
+            return _ioLoop->getLogger();
+        }
+
         void handleEvents(IOEvents events) override;
 
         SocketType getFD() const override;

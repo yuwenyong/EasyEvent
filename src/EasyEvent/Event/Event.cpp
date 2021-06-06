@@ -67,6 +67,8 @@ std::string EasyEvent::EventErrorCategory::message(int ev) const {
             return "already connecting";
         case EventErrors::ConnectTimeout:
             return "connect timeout";
+        case EventErrors::ConnectCallbackFailed:
+            return "connect callback failed";
         default:
             return "(unrecognized error)";
     }
