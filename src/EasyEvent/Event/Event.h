@@ -6,7 +6,7 @@
 #define EASYEVENT_EVENT_EVENT_H
 
 #include "EasyEvent/Common/Config.h"
-#include "EasyEvent/Common/Errors.h"
+#include "EasyEvent/Common/Error.h"
 #include "EasyEvent/Logging/Logger.h"
 
 #if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS

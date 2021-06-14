@@ -5,7 +5,7 @@
 #ifndef EASYEVENT_EASYEVENT_H
 #define EASYEVENT_EASYEVENT_H
 
-#include "EasyEvent/Common/Errors.h"
+#include "EasyEvent/Common/Error.h"
 #include "EasyEvent/Common/Task.h"
 #include "EasyEvent/Common/TaskPool.h"
 #include "EasyEvent/Common/Time.h"

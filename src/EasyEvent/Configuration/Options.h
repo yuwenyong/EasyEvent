@@ -6,7 +6,7 @@
 #define EASYEVENT_CONFIGURATION_OPTIONS_H
 
 #include "EasyEvent/Common/Config.h"
-#include "EasyEvent/Common/Errors.h"
+#include "EasyEvent/Common/Error.h"
 #include "EasyEvent/Common/Utility.h"
 
 namespace EasyEvent {

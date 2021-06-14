@@ -2,7 +2,7 @@
 // Created by yuwenyong on 2020/10/26.
 //
 
-#include "EasyEvent/Common/Errors.h"
+#include "EasyEvent/Common/Error.h"
 
 const char * EasyEvent::UserErrorCategory::name() const noexcept {
     return "user error";
