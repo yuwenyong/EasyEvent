@@ -4,9 +4,10 @@
 
 #include "EasyEvent/Ssl/SslContext.h"
 
-EasyEvent::SslContext::SslContext(SslProtoVersion protoVersion)
+EasyEvent::SslContext::SslContext(SslProtoVersion protoVersion, MakeSharedTag tag)
         : _handle(nullptr) {
 
+    UnusedParameter(tag);
     ::ERR_clear_error();
 
     switch (protoVersion) {
@@ -18,7 +19,7 @@ EasyEvent::SslContext::SslContext(SslProtoVersion protoVersion)
             throwError(UserErrors::InvalidArgument, "SslContext");
             break;
 #else // (OPENSSL_VERSION_NUMBER >= 0x10100000L) || defined(OPENSSL_NO_SSL2)
-            case SslProtoVersion::SslV2:
+        case SslProtoVersion::SslV2:
             _handle = ::SSL_CTX_new(::SSLv2_method());
             break;
         case SslProtoVersion::SslV2Client:
@@ -29,9 +30,9 @@ EasyEvent::SslContext::SslContext(SslProtoVersion protoVersion)
             break;
 #endif // (OPENSSL_VERSION_NUMBER >= 0x10100000L) || defined(OPENSSL_NO_SSL2)
 
-            // SSL v3.
+        // SSL v3.
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
-            case SslProtoVersion::SslV3:
+        case SslProtoVersion::SslV3:
             _handle = ::SSL_CTX_new(::TLS_method());
             if (_handle) {
                 SSL_CTX_set_min_proto_version(_handle, SSL3_VERSION);
@@ -53,7 +54,7 @@ EasyEvent::SslContext::SslContext(SslProtoVersion protoVersion)
             }
             break;
 #elif defined(OPENSSL_NO_SSL3)
-            case SslProtoVersion::SslV3:
+        case SslProtoVersion::SslV3:
         case SslProtoVersion::SslV3Client:
         case SslProtoVersion::SslV3Server:
             throwError(UserErrors::InvalidArgument, "SslContext");
@@ -70,9 +71,9 @@ EasyEvent::SslContext::SslContext(SslProtoVersion protoVersion)
             break;
 #endif // defined(OPENSSL_NO_SSL3)
 
-            // TLS v1.0.
+        // TLS v1.0.
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
-            case SslProtoVersion::TlsV1:
+        case SslProtoVersion::TlsV1:
             _handle = ::SSL_CTX_new(::TLS_method());
             if (_handle) {
                 SSL_CTX_set_min_proto_version(_handle, TLS1_VERSION);
@@ -104,16 +105,16 @@ EasyEvent::SslContext::SslContext(SslProtoVersion protoVersion)
             _handle = ::SSL_CTX_new(::TLSv1_server_method());
             break;
 #else // defined(SSL_TXT_TLSV1)
-            case SslProtoVersion::TlsV1:
+        case SslProtoVersion::TlsV1:
         case SslProtoVersion::TlsV1Client:
         case SslProtoVersion::TlsV1Server:
             throwError(UserErrors::InvalidArgument, "SslContext");
             break;
 #endif // defined(SSL_TXT_TLSV1)
 
-            // TLS v1.1.
+        // TLS v1.1.
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
-            case SslProtoVersion::TlsV11:
+        case SslProtoVersion::TlsV11:
             _handle = ::SSL_CTX_new(::TLS_method());
             if (_handle) {
                 SSL_CTX_set_min_proto_version(_handle, TLS1_1_VERSION);
@@ -145,16 +146,16 @@ EasyEvent::SslContext::SslContext(SslProtoVersion protoVersion)
             _handle = ::SSL_CTX_new(::TLSv1_1_server_method());
             break;
 #else // defined(SSL_TXT_TLSV1_1)
-            case SslProtoVersion::TlsV11:
+        case SslProtoVersion::TlsV11:
         case SslProtoVersion::TlsV11Client:
         case SslProtoVersion::TlsV11Server:
             throwError(UserErrors::InvalidArgument, "SslContext");
             break;
 #endif // defined(SSL_TXT_TLSV1_1)
 
-            // TLS v1.2.
+        // TLS v1.2.
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
-            case SslProtoVersion::TlsV12:
+        case SslProtoVersion::TlsV12:
             _handle = ::SSL_CTX_new(::TLS_method());
             if (_handle) {
                 SSL_CTX_set_min_proto_version(_handle, TLS1_2_VERSION);
@@ -186,16 +187,16 @@ EasyEvent::SslContext::SslContext(SslProtoVersion protoVersion)
             _handle = ::SSL_CTX_new(::TLSv1_2_server_method());
             break;
 #else // defined(SSL_TXT_TLSV1_2)
-            case SslProtoVersion::TlsV12:
+        case SslProtoVersion::TlsV12:
         case SslProtoVersion::TlsV12Client:
         case SslProtoVersion::TlsV12Server:
             throwError(UserErrors::InvalidArgument, "SslContext");
             break;
 #endif // defined(SSL_TXT_TLSV1_2)
 
-            // TLS v1.3.
+        // TLS v1.3.
 #if (OPENSSL_VERSION_NUMBER >= 0x10101000L) && !defined(LIBRESSL_VERSION_NUMBER)
-            case SslProtoVersion::TlsV13:
+        case SslProtoVersion::TlsV13:
             _handle = ::SSL_CTX_new(::TLS_method());
             if (_handle) {
                 SSL_CTX_set_min_proto_version(_handle, TLS1_3_VERSION);
@@ -224,7 +225,7 @@ EasyEvent::SslContext::SslContext(SslProtoVersion protoVersion)
             break;
 #endif // (OPENSSL_VERSION_NUMBER >= 0x10101000L) && !defined(LIBRESSL_VERSION_NUMBER)
 
-            // Any supported SSL/TLS version.
+        // Any supported SSL/TLS version.
         case SslProtoVersion::SslV23:
             _handle = ::SSL_CTX_new(::SSLv23_method());
             break;
@@ -235,9 +236,9 @@ EasyEvent::SslContext::SslContext(SslProtoVersion protoVersion)
             _handle = ::SSL_CTX_new(::SSLv23_server_method());
             break;
 
-            // Any supported TLS version.
+        // Any supported TLS version.
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
-            case SslProtoVersion::Tls:
+        case SslProtoVersion::Tls:
             _handle = ::SSL_CTX_new(::TLS_method());
             if (_handle)
                 SSL_CTX_set_min_proto_version(_handle, TLS1_VERSION);
@@ -515,4 +516,52 @@ int EasyEvent::SslContext::passwordCallbackFunction(char *buf, int size, int pur
     }
 
     return 0;
+}
+
+std::shared_ptr<EasyEvent::SslContext> EasyEvent::SslContext::createDefaultContext(
+        SslServerOrClient socketType, const std::string &caFile, const std::string& certFile, const std::string& keyFile) {
+    if (socketType == SslServerOrClient::Server) {
+        if (certFile.empty()) {
+            throwError(UserErrors::InvalidArgument, "SslContext", "Cert file is required in server mode");
+        }
+    }
+
+    if (!caFile.empty()) {
+        if (!std::filesystem::exists(caFile)) {
+            throwError(UserErrors::NotFound, "SslContext", "CA file \"" + caFile + "\" does not exist");
+        }
+    }
+
+    if (!certFile.empty()) {
+        if (!std::filesystem::exists(certFile)) {
+            throwError(UserErrors::NotFound, "SslContext", "Cert file \"" + certFile + "\" does not exist");
+        }
+    }
+
+    if (!keyFile.empty()) {
+        if (!std::filesystem::exists(keyFile)) {
+            throwError(UserErrors::NotFound, "SslContext", "Key file \"" + keyFile + "\" does not exist");
+        }
+    }
+
+    auto context = createContext(SslProtoVersion::SslV23);
+
+    if (socketType == SslServerOrClient::Client) {
+        context->setVerifyMode(SslVerifyMode::CertRequired);
+    }
+
+    if (!caFile.empty()) {
+        context->loadVerifyFile(caFile);
+    } else if (socketType == SslServerOrClient::Client) {
+        context->setDefaultVerifyPaths();
+    }
+
+    if (!certFile.empty()) {
+        context->useCertificateChainFile(certFile);
+    }
+
+    if (!keyFile.empty()) {
+        context->usePrivateKeyFile(keyFile);
+    }
+    return context;
 }

@@ -9,7 +9,7 @@ void EasyEvent::Options::addOpt(const std::string &shortOpt, const std::string &
                                 const std::string &dflt, bool repeat) {
     std::lock_guard<std::mutex> lock(_mutex);
     if (_parsed) {
-        throwError(UserErrors::BadState, "Options","cannot add options after parse() was called");
+        throwError(UserErrors::BadState, "Options", "cannot add options after parse() was called");
     }
     checkArgs(shortOpt, longOpt, needArg, dflt);
     addValidOpt(shortOpt, longOpt, needArg, dflt, repeat);
@@ -18,7 +18,7 @@ void EasyEvent::Options::addOpt(const std::string &shortOpt, const std::string &
 std::vector<std::string> EasyEvent::Options::parse(const std::vector<std::string> &args) {
     std::lock_guard<std::mutex> lock(_mutex);
     if (_parsed) {
-        throwError(UserErrors::BadState, "Options","cannot call parse() more than once on the same Option instance");
+        throwError(UserErrors::BadState, "Options", "cannot call parse() more than once on the same Option instance");
     }
 
     std::set<std::string> seenNonRepeatOpts;

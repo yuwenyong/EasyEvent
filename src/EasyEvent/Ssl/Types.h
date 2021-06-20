@@ -24,7 +24,9 @@
 namespace EasyEvent {
 
     enum class SslErrors {
-
+        WantWrite = SSL_ERROR_WANT_WRITE,
+        WantRead = SSL_ERROR_WANT_READ,
+        ErrorZeroReturn = SSL_ERROR_ZERO_RETURN,
     };
 
     class EASY_EVENT_API SslErrorCategory: public std::error_category {
@@ -38,6 +40,30 @@ namespace EasyEvent {
 
     inline std::error_code make_error_code(SslErrors err) {
         return {static_cast<int>(err), getSslErrorCategory()};
+    }
+
+    enum class SslStreamErrors {
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) && !defined(OPENSSL_IS_BORINGSSL)
+        StreamTruncated = ERR_PACK(ERR_LIB_SSL, 0, SSL_R_SHORT_READ),
+#else
+        StreamTruncated = 1,
+#endif
+        UnspecifiedSystemError = 2,
+        UnexpectedResult = 3,
+        ConnectionReset = 4,
+    };
+
+    class EASY_EVENT_API SslStreamErrorCategory: public std::error_category {
+    public:
+        [[nodiscard]] const char* name() const noexcept override;
+        [[nodiscard]] std::string message(int ev) const override;
+    };
+
+    EASY_EVENT_API const std::error_category& getSslStreamErrorCategory();
+
+
+    inline std::error_code make_error_code(SslStreamErrors err) {
+        return {static_cast<int>(err), getSslStreamErrorCategory()};
     }
 
     enum class SslProtoVersion {
@@ -235,6 +261,11 @@ namespace EasyEvent {
         PasswordCallback _callback;
     };
 
+    enum class SslServerOrClient {
+        Client,
+        Server
+    };
+
 }
 
 namespace std {
@@ -242,6 +273,8 @@ namespace std {
     template <>
     struct is_error_code_enum<EasyEvent::SslErrors>: public true_type {};
 
+    template <>
+    struct is_error_code_enum<EasyEvent::SslStreamErrors>: public true_type {};
 }
 
 #endif //EASYEVENT_SSL_TYPES_H

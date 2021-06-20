@@ -12,8 +12,13 @@
 namespace EasyEvent {
 
     class EASY_EVENT_API SslContext: NonCopyable {
+    private:
+        struct MakeSharedTag {};
+
     public:
         typedef SSL_CTX* NativeHandleType;
+
+        explicit SslContext(SslProtoVersion protoVersion, MakeSharedTag tag);
 
         SslContext(SslContext&& other) noexcept {
             _handle = other._handle;
@@ -110,9 +115,23 @@ namespace EasyEvent {
         void setVerifyHostName(const std::string& hostName, std::error_code& ec) {
             setVerifyCallback(HostNameVerification(hostName), ec);
         }
-    private:
-        explicit SslContext(SslProtoVersion protoVersion);
 
+        static std::shared_ptr<SslContext> createContext(SslProtoVersion protoVersion=SslProtoVersion::SslV23) {
+            return std::make_shared<SslContext>(protoVersion, MakeSharedTag{});
+        }
+
+        static std::shared_ptr<SslContext> createDefaultContext(
+                SslServerOrClient socketType, const std::string& caFile="", const std::string& certFile="",
+                const std::string& keyFile="");
+
+        static std::shared_ptr<SslContext> createDefaultClientContext() {
+            return createDefaultContext(SslServerOrClient::Client);
+        }
+
+        static std::shared_ptr<SslContext> createDefaultServerContext() {
+            return createDefaultContext(SslServerOrClient::Server);
+        }
+    protected:
         void doSetVerifyCallback(SslVerifyCallbackBase* callback, std::error_code& ec);
 
         static int verifyCallbackFunction(int preverified, X509_STORE_CTX* ctx);
@@ -124,6 +143,8 @@ namespace EasyEvent {
         NativeHandleType _handle;
         SslInit _init;
     };
+
+    using SslContextPtr = std::shared_ptr<SslContext>;
 
 }
 

@@ -21,6 +21,29 @@ const std::error_category& EasyEvent::getSslErrorCategory() {
     return errCategory;
 }
 
+const char * EasyEvent::SslStreamErrorCategory::name() const noexcept {
+    return "ssl stream error";
+}
+
+std::string EasyEvent::SslStreamErrorCategory::message(int ev) const {
+    switch (static_cast<SslStreamErrors>(ev)) {
+        case SslStreamErrors::StreamTruncated:
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) && !defined(OPENSSL_IS_BORINGSSL)
+            return ::ERR_reason_error_string(ev);
+#else
+            return "stream truncated";
+#endif
+        case SslStreamErrors::UnspecifiedSystemError:
+            return "unspecified system error";
+        case SslStreamErrors::UnexpectedResult:
+            return "unexpected result";
+        case SslStreamErrors::ConnectionReset:
+            return "connection reset";
+        default:
+            return "ssl stream error";
+    }
+}
+
 
 bool EasyEvent::HostNameVerification::operator()(bool preverified, SslVerifyContext &ctx) const {
     if (!preverified) {
