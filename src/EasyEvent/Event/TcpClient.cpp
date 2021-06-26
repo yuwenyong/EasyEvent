@@ -3,6 +3,7 @@
 //
 
 #include "EasyEvent/Event/TcpClient.h"
+#include "EasyEvent/Event/TcpConnection.h"
 
 
 void EasyEvent::TcpConnector::start(Task<void(ConnectionPtr, const std::error_code &)> &&callback,
@@ -168,5 +169,5 @@ EasyEvent::ConnectionPtr EasyEvent::TcpClient::createConnection(const Address &a
         }
         SocketOps::Bind(socket.get(), sourceAddr);
     }
-    return Connection::create(_ioLoop, socket.release(), _maxBufferSize);
+    return TcpConnection::create(_ioLoop, socket.release(), _maxBufferSize);
 }

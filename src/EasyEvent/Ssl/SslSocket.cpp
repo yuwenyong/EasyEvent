@@ -6,9 +6,10 @@
 #include "EasyEvent/Event/SocketOps.h"
 
 
-EasyEvent::SslSocket::SslSocket(SslContextPtr context, SocketType socket, SslServerOrClient socketType)
+EasyEvent::SslSocket::SslSocket(SslContextPtr context, SocketType socket, bool owned, SslServerOrClient socketType)
     : _context(std::move(context))
-    , _socket(socket) {
+    , _socket(socket)
+    , _owned(owned) {
 
     ERR_clear_error();
 
@@ -44,7 +45,7 @@ EasyEvent::SslSocket::~SslSocket() noexcept {
     if (_ssl) {
         ::SSL_free(_ssl);
     }
-    if (_socket != InvalidSocket) {
+    if (_socket != InvalidSocket && _owned) {
         std::error_code ignoredError;
         SocketOps::Close(_socket, true, ignoredError);
     }
@@ -154,7 +155,7 @@ void EasyEvent::SslSocket::close(std::error_code &ec) {
         ::SSL_free(_ssl);
         _ssl = nullptr;
     }
-    if (_socket != InvalidSocket) {
+    if (_socket != InvalidSocket && _owned) {
         SocketOps::Close(_socket, false, ec);
         if (!ec) {
             _socket = InvalidSocket;

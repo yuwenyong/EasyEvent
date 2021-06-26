@@ -14,7 +14,7 @@ namespace EasyEvent {
 
     class EASY_EVENT_API SslSocket: NonCopyable {
     public:
-        SslSocket(SslContextPtr context, SocketType socket, SslServerOrClient socketType);
+        SslSocket(SslContextPtr context, SocketType socket, bool owned, SslServerOrClient socketType);
 
         SslSocket(SslSocket&& other) noexcept {
             _context = std::move(other._context);
@@ -22,6 +22,8 @@ namespace EasyEvent {
             other._socket = InvalidSocket;
             _ssl = other._ssl;
             other._ssl = nullptr;
+            _owned = other._owned;
+            other._owned = false;
         }
 
         SslSocket& operator=(SslSocket&& other) noexcept {
@@ -31,6 +33,8 @@ namespace EasyEvent {
             other._socket = InvalidSocket;
             _ssl = other._ssl;
             other._ssl = nullptr;
+            _owned = other._owned;
+            other._owned = false;
             return *this;
         }
 
@@ -99,6 +103,7 @@ namespace EasyEvent {
         SslContextPtr _context;
         SocketType _socket;
         SSL* _ssl{nullptr};
+        bool _owned;
     };
 
 }

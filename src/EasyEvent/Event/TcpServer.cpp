@@ -4,6 +4,7 @@
 
 #include "EasyEvent/Event/TcpServer.h"
 #include "EasyEvent/Event/Resolver.h"
+#include "EasyEvent/Event/TcpConnection.h"
 #include "EasyEvent/Logging/LogStream.h"
 
 
@@ -142,7 +143,7 @@ void EasyEvent::TcpServer::addSockets(std::vector<SocketHolder> &&sockets) {
 
 void EasyEvent::TcpServer::handleIncomingConnection(SocketType socket, const Address &address) {
     try {
-        auto connection = Connection::create(_ioLoop, socket, _maxBufferSize);
+        auto connection = TcpConnection::create(_ioLoop, socket, _maxBufferSize);
         handleConnection(std::move(connection), address);
     } catch (std::exception& e) {
         LOG_ERROR(getLogger()) << "Error in connection callback: " << e.what();

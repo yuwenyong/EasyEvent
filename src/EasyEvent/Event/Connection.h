@@ -7,26 +7,21 @@
 
 #include "EasyEvent/Event/Event.h"
 #include "EasyEvent/Event/IOLoop.h"
-#include "EasyEvent/Event/SocketOps.h"
 #include "EasyEvent/Common/Buffer.h"
 
 
 namespace EasyEvent {
 
     class EASY_EVENT_API Connection: public Selectable, public std::enable_shared_from_this<Connection> {
-    private:
+    protected:
         struct MakeSharedTag {};
     public:
-        Connection(IOLoop* ioLoop, SocketType socket, size_t maxReadBufferSize, size_t maxWriteBufferSize,
-                   MakeSharedTag tag)
-            : Connection(ioLoop, socket, maxReadBufferSize, maxWriteBufferSize) {
-            UnusedParameter(tag);
-        }
+        Connection(IOLoop* ioLoop, size_t maxReadBufferSize, size_t maxWriteBufferSize, MakeSharedTag tag);
 
         Connection(const Connection&) = delete;
         Connection& operator=(const Connection&) = delete;
 
-        ~Connection() noexcept override;
+        virtual ~Connection() noexcept = default;
 
         Logger* getLogger()
         {
@@ -35,11 +30,10 @@ namespace EasyEvent {
 
         void handleEvents(IOEvents events) override;
 
-        SocketType getFD() const override;
-
-        void closeFD() override;
-
-        void connect(const Address& address, Task<void(std::error_code)>&& callback);
+        void connect(const Address& address, Task<void(std::error_code)>&& callback,
+                     const std::string& serverHostname={}) {
+            doConnect(address, std::move(callback), serverHostname);
+        }
 
         void readUntilRegex(const std::string& regex, Task<void(std::string)>&& callback, size_t maxBytes=0);
 
@@ -78,62 +72,28 @@ namespace EasyEvent {
 
         void close(const std::error_code& error={});
 
-        bool reading() const {
-            return (bool)_readCallback;
-        }
+        virtual bool reading() const;
 
-        bool writing() const {
-            return !_writeBuffer.empty();
-        }
+        virtual bool writing() const;
 
         bool closed() const {
             return _closed;
         }
 
-        void setNoDelay(bool value) {
-            SocketOps::SetTcpNoDelay(_socket, value);
-        }
+        virtual void setNoDelay(bool value) = 0;
 
-        std::string getLocalIP() const {
-            Address address;
-            SocketOps::GetSockName(_socket, address);
-            return address.getAddrString();
-        }
+        virtual std::string getLocalIP() const = 0;
 
-        unsigned short getLocalPort() const {
-            Address address;
-            SocketOps::GetSockName(_socket, address);
-            return address.getPort();
-        }
+        virtual unsigned short getLocalPort() const = 0;
 
-        Address getLocalAddress() const {
-            Address address;
-            SocketOps::GetSockName(_socket, address);
-            return address;
-        }
+        virtual Address getLocalAddress() const = 0;
 
-        std::string getRemoteIP() const {
-            Address address;
-            SocketOps::GetPeerName(_socket, address);
-            return address.getAddrString();
-        }
+        virtual std::string getRemoteIP() const = 0;
 
-        unsigned short getRemotePort() const {
-            Address address;
-            SocketOps::GetPeerName(_socket, address);
-            return address.getPort();
-        }
+        virtual unsigned short getRemotePort() const = 0;
 
-        Address getRemoteAddress() const {
-            Address address;
-            SocketOps::GetPeerName(_socket, address);
-            return address;
-        }
+        virtual Address getRemoteAddress() const = 0;
 
-        static std::shared_ptr<Connection> create(IOLoop* ioLoop, SocketType socket, size_t maxReadBufferSize=0,
-                                                  size_t maxWriteBufferSize=0) {
-            return std::make_shared<Connection>(ioLoop, socket, maxReadBufferSize, maxWriteBufferSize, MakeSharedTag{});
-        }
 
         static constexpr size_t DefaultMaxReadBufferSize = 104857600;
         static constexpr size_t DefaultReadBufferCapacity = 8192;
@@ -141,7 +101,6 @@ namespace EasyEvent {
         static constexpr size_t InitialWriteBufferSize = 4096;
 
     protected:
-
         class LocalAddErrorListener {
         public:
             LocalAddErrorListener(Connection* conn)
@@ -156,27 +115,18 @@ namespace EasyEvent {
             Connection* _conn;
         };
 
-         int getFdError(std::error_code& ec) {
-            int error = 0;
-            SocketOps::GetSockError(_socket, error, ec);
-            return error;
-        }
+        virtual ssize_t writeToFd(const void* data, size_t size, std::error_code& ec) = 0;
 
-        Connection(IOLoop* ioLoop, SocketType socket, size_t maxReadBufferSize, size_t maxWriteBufferSize);
+        virtual ssize_t readFromFd(void* buf, size_t size, std::error_code& ec) = 0;
 
-        ssize_t writeToFd(const void* data, size_t size, std::error_code& ec) {
-            return SocketOps::Send(_socket, data, size, 0, ec);
-        }
+        virtual int getFdError(std::error_code& ec) = 0;
 
-        ssize_t readFromFd(void* buf, size_t size, std::error_code& ec) {
-            return SocketOps::Recv(_socket, buf, size, 0, ec);
-        }
 
         void maybeRunCloseCallback();
 
         size_t readToBufferLoop();
 
-        void handleRead();
+        virtual void handleRead();
 
         void setReadCallback(Task<void(std::string)>&& task);
 
@@ -197,7 +147,7 @@ namespace EasyEvent {
             }
         }
 
-        void handleWrite();
+        virtual void handleWrite();
 
         std::string consume(size_t size) {
             if (size == 0) {
@@ -220,9 +170,10 @@ namespace EasyEvent {
 
         void addIOState(IOEvents state);
 
-        void runConnectCallback(std::error_code ec);
+        virtual void doConnect(const Address& address, Task<void(std::error_code)>&& callback,
+                               const std::string& serverHostname) = 0;
 
-        void handleConnect();
+        virtual void handleConnect() = 0;
 
         bool isWouldBlock(const std::error_code& ec) const {
             return ec == SocketErrors::WouldBlock || ec == SocketErrors::TryAgain;
@@ -247,7 +198,6 @@ namespace EasyEvent {
         }
 
         IOLoop* _ioLoop;
-        SocketType _socket;
         size_t _maxReadBufferSize;
         size_t _maxWriteBufferSize;
         std::error_code _error;
