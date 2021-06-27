@@ -1,0 +1,3 @@
+add_executable(EchoClientSecure EchoClientSecure.cpp)
+add_dependencies(EchoClientSecure EasyEvent)
+target_link_libraries(EchoClientSecure EasyEvent)

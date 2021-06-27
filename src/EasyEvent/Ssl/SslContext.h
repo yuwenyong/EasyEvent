@@ -124,12 +124,14 @@ namespace EasyEvent {
                 SslServerOrClient socketType, const std::string& caFile="", const std::string& certFile="",
                 const std::string& keyFile="");
 
-        static std::shared_ptr<SslContext> createDefaultClientContext() {
-            return createDefaultContext(SslServerOrClient::Client);
+        static std::shared_ptr<SslContext> createDefaultClientContext(
+                const std::string& caFile="", const std::string& certFile="", const std::string& keyFile="") {
+            return createDefaultContext(SslServerOrClient::Client, caFile, certFile, keyFile);
         }
 
-        static std::shared_ptr<SslContext> createDefaultServerContext() {
-            return createDefaultContext(SslServerOrClient::Server);
+        static std::shared_ptr<SslContext> createDefaultServerContext(
+                const std::string& certFile="", const std::string& keyFile="") {
+            return createDefaultContext(SslServerOrClient::Server, "", certFile, keyFile);
         }
     protected:
         void doSetVerifyCallback(SslVerifyCallbackBase* callback, std::error_code& ec);

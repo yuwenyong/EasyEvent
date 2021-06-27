@@ -22,6 +22,8 @@ namespace EasyEvent {
 
         void closeFD() override;
 
+        void connect(const Address& address, Task<void(std::error_code)>&& callback) override;
+
         void setNoDelay(bool value) override;
 
         std::string getLocalIP() const override;
@@ -36,8 +38,8 @@ namespace EasyEvent {
 
         Address getRemoteAddress() const override;
 
-        static std::shared_ptr<Connection> create(IOLoop* ioLoop, SocketType socket, size_t maxReadBufferSize=0,
-                                                  size_t maxWriteBufferSize=0) {
+        static std::shared_ptr<TcpConnection> create(IOLoop* ioLoop, SocketType socket, size_t maxReadBufferSize=0,
+                                                     size_t maxWriteBufferSize=0) {
             return std::make_shared<TcpConnection>(ioLoop, socket, maxReadBufferSize, maxWriteBufferSize, MakeSharedTag{});
         }
     protected:
@@ -46,9 +48,6 @@ namespace EasyEvent {
         ssize_t readFromFd(void* buf, size_t size, std::error_code& ec) override;
 
         int getFdError(std::error_code& ec) override;
-
-        void doConnect(const Address& address, Task<void(std::error_code)>&& callback,
-                       const std::string& serverHostname) override;
 
         void runConnectCallback(std::error_code ec);
 

@@ -9,6 +9,7 @@
 #include "EasyEvent/Event/SocketOps.h"
 #include "EasyEvent/Event/Connection.h"
 #include "EasyEvent/Common/Task.h"
+#include "EasyEvent/Ssl/SslContext.h"
 
 
 namespace EasyEvent {
@@ -61,10 +62,7 @@ namespace EasyEvent {
         TcpServer(const TcpServer&) = delete;
         TcpServer& operator=(const TcpServer&) = delete;
 
-        explicit TcpServer(IOLoop* ioLoop, size_t maxBufferSize, MakeSharedTag tag)
-                : TcpServer(ioLoop, maxBufferSize) {
-            UnusedParameter(tag);
-        }
+        TcpServer(IOLoop* ioLoop, SslContextPtr sslContext, size_t maxBufferSize, MakeSharedTag tag);
 
         virtual ~TcpServer() noexcept = default;
 
@@ -87,15 +85,11 @@ namespace EasyEvent {
 
         virtual void handleConnection(ConnectionPtr connection, const Address& address);
 
-        static std::shared_ptr<TcpServer> create(IOLoop* ioLoop, size_t maxBufferSize=0) {
-            return std::make_shared<TcpServer>(ioLoop, maxBufferSize, MakeSharedTag{});
+        static std::shared_ptr<TcpServer> create(IOLoop* ioLoop, SslContextPtr sslContext= nullptr,
+                                                 size_t maxBufferSize=0) {
+            return std::make_shared<TcpServer>(ioLoop, std::move(sslContext), maxBufferSize, MakeSharedTag{});
         }
     protected:
-        explicit TcpServer(IOLoop* ioLoop, size_t maxBufferSize)
-                : _ioLoop(ioLoop ? ioLoop : IOLoop::current())
-                , _maxBufferSize(maxBufferSize) {
-
-        }
 
         std::vector<SocketHolder> bindSockets(unsigned short port, const std::string& address="",
                                               ProtocolSupport protocol=EnableBoth, int backlog=DefaultBacklog);
@@ -111,6 +105,7 @@ namespace EasyEvent {
         void handleIncomingConnection(SocketType socket, const Address& address);
 
         IOLoop* _ioLoop;
+        SslContextPtr _sslContext{nullptr};
         std::map<SocketType, TcpListenerHolder> _handlers;
         std::vector<SocketHolder> _pendingSockets;
         bool _started{false};

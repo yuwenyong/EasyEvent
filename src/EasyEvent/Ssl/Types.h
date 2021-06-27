@@ -26,6 +26,8 @@ namespace EasyEvent {
     enum class SslErrors {
         WantWrite = SSL_ERROR_WANT_WRITE,
         WantRead = SSL_ERROR_WANT_READ,
+        WantConnect = SSL_ERROR_WANT_CONNECT,
+        WantX509Lookup = SSL_ERROR_WANT_X509_LOOKUP,
         ErrorZeroReturn = SSL_ERROR_ZERO_RETURN,
     };
 

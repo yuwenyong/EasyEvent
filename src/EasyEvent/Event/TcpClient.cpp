@@ -4,6 +4,7 @@
 
 #include "EasyEvent/Event/TcpClient.h"
 #include "EasyEvent/Event/TcpConnection.h"
+#include "EasyEvent/Event/SslConnection.h"
 
 
 void EasyEvent::TcpConnector::start(Task<void(ConnectionPtr, const std::error_code &)> &&callback,
@@ -109,8 +110,8 @@ void EasyEvent::TcpConnector::runConnectCallback(ConnectionPtr connection, const
 
 
 void EasyEvent::TcpClient::connect(Task<void(ConnectionPtr, const std::error_code &)> &&callback,
-                                   std::string host, unsigned short port, ProtocolSupport protocol,
-                                   Time timeout, size_t maxBufferSize,
+                                   std::string host, unsigned short port, SslContextPtr sslContext,
+                                   ProtocolSupport protocol, Time timeout, size_t maxBufferSize,
                                    std::string sourceIP, unsigned short sourcePort) {
     if (_connecting) {
         std::error_code ec = EventErrors::AlreadyConnecting;
@@ -118,12 +119,14 @@ void EasyEvent::TcpClient::connect(Task<void(ConnectionPtr, const std::error_cod
     }
     _connecting = true;
     _callback = std::move(callback);
+    _host = std::move(host);
+    _sslContext = std::move(sslContext);
     _timeout = timeout;
     _maxBufferSize = maxBufferSize;
     _sourceIP = std::move(sourceIP);
     _sourcePort = sourcePort;
 
-    _ioLoop->resolve(std::move(host), port, protocol, false,
+    _ioLoop->resolve(_host, port, protocol, false,
                      [this, self=shared_from_this()](std::vector<Address> addresses, std::error_code ec) {
                         onResolved(addresses, ec);
                     });
@@ -155,6 +158,10 @@ void EasyEvent::TcpClient::runConnectCallback(ConnectionPtr connection, const st
     auto callback = std::move(_callback);
     _callback = nullptr;
     _connecting = false;
+    if (connection && _sslContext) {
+        std::shared_ptr<SslConnection> sslConn = std::static_pointer_cast<SslConnection>(connection);
+        sslConn->startTls(false, _sslContext, _host);
+    }
     callback(std::move(connection), ec);
 }
 
@@ -169,5 +176,11 @@ EasyEvent::ConnectionPtr EasyEvent::TcpClient::createConnection(const Address &a
         }
         SocketOps::Bind(socket.get(), sourceAddr);
     }
-    return TcpConnection::create(_ioLoop, socket.release(), _maxBufferSize);
+    ConnectionPtr connection;
+    if (_sslContext) {
+        connection = SslConnection::create(_ioLoop, socket.release(), _maxBufferSize);
+    } else {
+        connection = TcpConnection::create(_ioLoop, socket.release(), _maxBufferSize);
+    }
+    return connection;
 }

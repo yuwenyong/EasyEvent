@@ -30,10 +30,7 @@ namespace EasyEvent {
 
         void handleEvents(IOEvents events) override;
 
-        void connect(const Address& address, Task<void(std::error_code)>&& callback,
-                     const std::string& serverHostname={}) {
-            doConnect(address, std::move(callback), serverHostname);
-        }
+        virtual void connect(const Address& address, Task<void(std::error_code)>&& callback) = 0;
 
         void readUntilRegex(const std::string& regex, Task<void(std::string)>&& callback, size_t maxBytes=0);
 
@@ -170,16 +167,13 @@ namespace EasyEvent {
 
         void addIOState(IOEvents state);
 
-        virtual void doConnect(const Address& address, Task<void(std::error_code)>&& callback,
-                               const std::string& serverHostname) = 0;
-
         virtual void handleConnect() = 0;
 
         bool isWouldBlock(const std::error_code& ec) const {
             return ec == SocketErrors::WouldBlock || ec == SocketErrors::TryAgain;
         }
 
-        bool isConnReset(const std::error_code& ec) const {
+        virtual bool isConnReset(const std::error_code& ec) const {
             return ec == SocketErrors::ConnectionReset ||
                 ec == SocketErrors::ConnectionAborted ||
                 ec == SocketErrors::BrokenPipe ||

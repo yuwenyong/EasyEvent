@@ -13,7 +13,7 @@ EasyEvent::SslSocket::SslSocket(SslContextPtr context, SocketType socket, bool o
 
     ERR_clear_error();
 
-    _ssl = ::SSL_new(context->nativeHandle());
+    _ssl = ::SSL_new(_context->nativeHandle());
     if (!_ssl) {
         std::error_code ec(static_cast<int>(::ERR_get_error()), getSslErrorCategory());
         throwError(ec, "SslSocket");
@@ -193,11 +193,23 @@ void EasyEvent::SslSocket::setErrorCode(int result, std::error_code &ec) {
             if (result == 0) {
                 ec = SslStreamErrors::ConnectionReset;
             } else if (result == -1) {
+                int errCode;
+#if EASY_EVENT_PLATFORM == EASY_EVENT_PLATFORM_WINDOWS
+                errCode = WSAGetLastErrorCode();
+                if (errCode != 0) {
+                    ec = std::error_code(errCode, getSocketErrorCategory());
+                    return;
+                }
+#endif
+                errCode = errno;
+                if (errCode != 0) {
+                    ec = std::error_code(errCode, getSocketErrorCategory());
+                    return;
+                }
                 ec = SslStreamErrors::UnspecifiedSystemError;
             } else {
                 ec = SslStreamErrors::UnexpectedResult;
             }
-
         } else {
             ec = std::error_code(sysError, getSslErrorCategory());
         }
@@ -205,6 +217,10 @@ void EasyEvent::SslSocket::setErrorCode(int result, std::error_code &ec) {
         ec = SslErrors::WantWrite;
     } else if (sslError == SSL_ERROR_WANT_READ) {
         ec = SslErrors::WantRead;
+    } else if (sslError == SSL_ERROR_WANT_X509_LOOKUP) {
+        ec = SslErrors::WantX509Lookup;
+    } else if (sslError == SSL_ERROR_WANT_CONNECT) {
+        ec = SslErrors::WantConnect;
     } else if (sslError == SSL_ERROR_ZERO_RETURN) {
         ec = SslErrors::ErrorZeroReturn;
     } else {

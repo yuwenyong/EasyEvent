@@ -44,6 +44,11 @@ std::string EasyEvent::SslStreamErrorCategory::message(int ev) const {
     }
 }
 
+const std::error_category& EasyEvent::getSslStreamErrorCategory() {
+    static const SslStreamErrorCategory errCategory{};
+    return errCategory;
+}
+
 
 bool EasyEvent::HostNameVerification::operator()(bool preverified, SslVerifyContext &ctx) const {
     if (!preverified) {

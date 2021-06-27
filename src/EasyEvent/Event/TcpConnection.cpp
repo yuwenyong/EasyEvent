@@ -36,6 +36,19 @@ void EasyEvent::TcpConnection::closeFD() {
     }
 }
 
+void EasyEvent::TcpConnection::connect(const Address &address, Task<void(std::error_code)> &&callback) {
+    _connecting = true;
+    _connectCallback = std::move(callback);
+
+    std::error_code ec;
+    SocketOps::Connect(_socket, address, ec);
+    if (ec && !isInProgress(ec) && !isWouldBlock(ec)) {
+        runConnectCallback(ec);
+    } else {
+        addIOState(IO_EVENT_WRITE);
+    }
+}
+
 void EasyEvent::TcpConnection::setNoDelay(bool value) {
     SocketOps::SetTcpNoDelay(_socket, value);
 }
@@ -88,21 +101,6 @@ int EasyEvent::TcpConnection::getFdError(std::error_code &ec) {
     int error = 0;
     SocketOps::GetSockError(_socket, error, ec);
     return error;
-}
-
-void EasyEvent::TcpConnection::doConnect(const Address &address, Task<void(std::error_code)> &&callback,
-                                         const std::string &serverHostname) {
-    UnusedParameter(serverHostname);
-    _connecting = true;
-    _connectCallback = std::move(callback);
-
-    std::error_code ec;
-    SocketOps::Connect(_socket, address, ec);
-    if (ec && !isInProgress(ec) && !isWouldBlock(ec)) {
-        runConnectCallback(ec);
-    } else {
-        addIOState(IO_EVENT_WRITE);
-    }
 }
 
 void EasyEvent::TcpConnection::runConnectCallback(std::error_code ec) {
