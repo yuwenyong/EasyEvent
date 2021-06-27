@@ -40,7 +40,8 @@ public:
 
     void onConnect(ConnectionPtr conn, const std::error_code& ec) {
         if (ec) {
-            onConnectFailed(ec);        } else {
+            onConnectFailed(ec);
+        } else {
             onConnectSuccess(std::move(conn));
         }
     }
