@@ -2,8 +2,8 @@
 // Created by yuwenyong on 2020/10/26.
 //
 
-#ifndef EASYEVENT_COMMON_ERRORS_H
-#define EASYEVENT_COMMON_ERRORS_H
+#ifndef EASYEVENT_COMMON_ERROR_H
+#define EASYEVENT_COMMON_ERROR_H
 
 #include "EasyEvent/Common/Config.h"
 
@@ -81,4 +81,4 @@ namespace std {
 
 }
 
-#endif //EASYEVENT_COMMON_ERRORS_H
+#endif //EASYEVENT_COMMON_ERROR_H

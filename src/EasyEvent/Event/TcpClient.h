@@ -9,6 +9,8 @@
 #include "EasyEvent/Event/SocketOps.h"
 #include "EasyEvent/Event/Connection.h"
 #include "EasyEvent/Common/Task.h"
+#include "EasyEvent/Ssl/SslContext.h"
+
 
 namespace EasyEvent {
 
@@ -106,8 +108,8 @@ namespace EasyEvent {
         }
 
         void connect(Task<void(ConnectionPtr, const std::error_code&)>&& callback,
-                     std::string host, unsigned short port, ProtocolSupport protocol=EnableBoth,
-                     Time timeout={}, size_t maxBufferSize=0,
+                     std::string host, unsigned short port, SslContextPtr sslContext= nullptr,
+                     ProtocolSupport protocol=EnableBoth, Time timeout={}, size_t maxBufferSize=0,
                      std::string sourceIP="", unsigned short sourcePort=0);
 
         static std::shared_ptr<TcpClient> create(IOLoop* ioLoop) {
@@ -133,6 +135,8 @@ namespace EasyEvent {
         bool _connecting{false};
 
         Task<void(ConnectionPtr, const std::error_code&)> _callback;
+        std::string _host;
+        SslContextPtr _sslContext;
         Time _timeout;
         size_t _maxBufferSize{0};
         std::string _sourceIP;

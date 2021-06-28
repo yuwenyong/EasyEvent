@@ -6,7 +6,7 @@
 #define EASYEVENT_LOGGING_LOGCOMMON_H
 
 #include "EasyEvent/Common/Config.h"
-#include "EasyEvent/Common/Errors.h"
+#include "EasyEvent/Common/Error.h"
 
 namespace EasyEvent {
 

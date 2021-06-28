@@ -1,4 +1,8 @@
 //
+// Created by yuwenyong.vincent on 2021/6/27.
+//
+
+//
 // Created by yuwenyong on 2020/12/25.
 //
 
@@ -16,7 +20,8 @@ public:
     void start(IOLoop* ioLoop, Logger* logger) {
         _ioLoop = ioLoop;
         _logger = logger;
-
+        _context = SslContext::createDefaultClientContext();
+        _context->setVerifyMode(SslVerifyMode::CertNone);
         tryConnect();
     }
 
@@ -24,7 +29,7 @@ public:
         auto client = TcpClient::create(_ioLoop);
         client->connect([this] (ConnectionPtr conn, const std::error_code& ec) {
             onConnect(std::move(conn), ec);
-        }, "127.0.0.1", 12345);
+        }, "127.0.0.1", 22345, _context);
     }
 
     void tryRead() {
@@ -53,7 +58,7 @@ public:
     void onConnectFailed(const std::error_code& ec) {
         LOG_ERROR(_logger) << "On connect failed: " << ec << " [" << ec.message() << "]";
         _ioLoop->callLater(Time::seconds(3), [this]() {
-           tryConnect();
+            tryConnect();
         });
     }
 
@@ -89,13 +94,14 @@ protected:
 
     IOLoop* _ioLoop{nullptr};
     Logger* _logger{nullptr};
+    SslContextPtr _context;
     ConnectionPtr _conn;
 };
 
 int main (int argc, char **argv) {
     UnusedParameter(argc);
     UnusedParameter(argv);
-    Logger* logger = Log::instance().getLogger("EchoClient");
+    Logger* logger = Log::instance().getLogger("EchoClientSecure");
 
     IOLoop ioLoop(logger, false);
     Session::getInstance().start(&ioLoop, logger);

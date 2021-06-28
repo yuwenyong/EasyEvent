@@ -4,6 +4,7 @@
 
 
 #include "EasyEvent/EasyEvent.h"
+#include "EasyEvent/Ssl/SslInit.h"
 
 using namespace EasyEvent;
 
@@ -58,6 +59,7 @@ void testJson(Logger* logger) {
 }
 
 int main (int argc, char **argv) {
+    SslInit sslInit;
     UnusedParameter(argc);
     UnusedParameter(argv);
 //    Log::instance().configure("/home/yuwenyong/docs/logconf.json");
@@ -79,7 +81,7 @@ int main (int argc, char **argv) {
 
     LOG_INFO(logger) << "Thread Id:" << std::this_thread::get_id();
 
-    IOLoop ioLoop(true, true);
+    IOLoop ioLoop(logger, true, true);
     ioLoop.addCallback([logger]() {
         int i = 1;
         LOG_DEBUG(logger) << "Task " << i;

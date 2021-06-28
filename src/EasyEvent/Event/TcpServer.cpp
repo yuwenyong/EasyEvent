@@ -4,6 +4,8 @@
 
 #include "EasyEvent/Event/TcpServer.h"
 #include "EasyEvent/Event/Resolver.h"
+#include "EasyEvent/Event/TcpConnection.h"
+#include "EasyEvent/Event/SslConnection.h"
 #include "EasyEvent/Logging/LogStream.h"
 
 
@@ -67,6 +69,15 @@ void EasyEvent::TcpListener::close() {
     }
 }
 
+
+EasyEvent::TcpServer::TcpServer(IOLoop *ioLoop, SslContextPtr sslContext, size_t maxBufferSize,
+                                MakeSharedTag tag)
+    : _ioLoop(ioLoop ? ioLoop : IOLoop::current())
+    , _sslContext(std::move(sslContext))
+    , _maxBufferSize(maxBufferSize) {
+    UnusedParameter(tag);
+
+}
 
 void EasyEvent::TcpServer::bind(unsigned short port, const std::string &address, ProtocolSupport protocol, int backlog) {
     auto sockets = bindSockets(port, address, protocol, backlog);
@@ -142,7 +153,14 @@ void EasyEvent::TcpServer::addSockets(std::vector<SocketHolder> &&sockets) {
 
 void EasyEvent::TcpServer::handleIncomingConnection(SocketType socket, const Address &address) {
     try {
-        auto connection = Connection::create(_ioLoop, socket, _maxBufferSize);
+        ConnectionPtr connection;
+        if (_sslContext) {
+            auto sslConn = SslConnection::create(_ioLoop, socket, _maxBufferSize);
+            sslConn->startTls(true, _sslContext);
+            connection = std::move(sslConn);
+        } else {
+            connection = TcpConnection::create(_ioLoop, socket, _maxBufferSize);
+        }
         handleConnection(std::move(connection), address);
     } catch (std::exception& e) {
         LOG_ERROR(getLogger()) << "Error in connection callback: " << e.what();

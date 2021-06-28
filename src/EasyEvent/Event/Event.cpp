@@ -69,6 +69,10 @@ std::string EasyEvent::EventErrorCategory::message(int ev) const {
             return "connect timeout";
         case EventErrors::ConnectCallbackFailed:
             return "connect callback failed";
+        case EventErrors::SslConnectCallbackFailed:
+            return "Ssl connect callback failed";
+        case EventErrors::AlreadyWaiting:
+            return "already waiting";
         default:
             return "(unrecognized error)";
     }
