@@ -2,7 +2,7 @@
 // Created by yuwenyong.vincent on 2021/6/6.
 //
 
-#include "EasyEvent/Ssl/Types.h"
+#include "EasyEvent/Ssl/SslBase.h"
 #include "EasyEvent/Ssl/SslInit.h"
 #include "EasyEvent/Event/Address.h"
 

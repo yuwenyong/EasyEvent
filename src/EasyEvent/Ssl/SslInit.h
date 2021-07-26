@@ -5,7 +5,7 @@
 #ifndef EASYEVENT_SSL_SSLINIT_H
 #define EASYEVENT_SSL_SSLINIT_H
 
-#include "EasyEvent/Ssl/Types.h"
+#include "EasyEvent/Ssl/SslBase.h"
 
 
 namespace EasyEvent {

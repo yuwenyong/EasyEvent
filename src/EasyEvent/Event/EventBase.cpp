@@ -2,7 +2,7 @@
 // Created by yuwenyong on 2020/11/23.
 //
 
-#include "EasyEvent/Event/Event.h"
+#include "EasyEvent/Event/EventBase.h"
 
 
 const char * EasyEvent::SocketErrorCategory::name() const noexcept {

@@ -5,7 +5,7 @@
 #ifndef EASYEVENT_EVENT_TIMERQUEUE_H
 #define EASYEVENT_EVENT_TIMERQUEUE_H
 
-#include "EasyEvent/Event/Event.h"
+#include "EasyEvent/Event/EventBase.h"
 #include "EasyEvent/Common/Task.h"
 #include "EasyEvent/Common/Time.h"
 

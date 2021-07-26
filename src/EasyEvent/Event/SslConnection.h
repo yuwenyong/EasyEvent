@@ -5,7 +5,7 @@
 #ifndef EASYEVENT_EVENT_SSLCONNECTION_H
 #define EASYEVENT_EVENT_SSLCONNECTION_H
 
-#include "EasyEvent/Event/Event.h"
+#include "EasyEvent/Event/EventBase.h"
 #include "EasyEvent/Event/TcpConnection.h"
 #include "EasyEvent/Ssl/SslContext.h"
 #include "EasyEvent/Ssl/SslSocket.h"

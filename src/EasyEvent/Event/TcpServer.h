@@ -5,7 +5,7 @@
 #ifndef EASYEVENT_EVENT_TCPSERVER_H
 #define EASYEVENT_EVENT_TCPSERVER_H
 
-#include "EasyEvent/Event/Event.h"
+#include "EasyEvent/Event/EventBase.h"
 #include "EasyEvent/Event/SocketOps.h"
 #include "EasyEvent/Event/Connection.h"
 #include "EasyEvent/Common/Task.h"

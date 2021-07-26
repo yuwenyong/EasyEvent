@@ -5,9 +5,9 @@
 #ifndef EASYEVENT_SSL_SSLSOCKET_H
 #define EASYEVENT_SSL_SSLSOCKET_H
 
-#include "EasyEvent/Ssl/Types.h"
+#include "EasyEvent/Ssl/SslBase.h"
 #include "EasyEvent/Ssl/SslContext.h"
-#include "EasyEvent/Event/Event.h"
+#include "EasyEvent/Event/EventBase.h"
 
 
 namespace EasyEvent {
@@ -74,9 +74,7 @@ namespace EasyEvent {
             throwError(ec, "setVerifyHostName");
         }
 
-        void setVerifyHostName(const std::string& hostName, std::error_code& ec) {
-            setVerifyCallback(HostNameVerification(hostName), ec);
-        }
+        void setVerifyHostName(const std::string& hostName, std::error_code& ec);
 
         void doHandshake();
 

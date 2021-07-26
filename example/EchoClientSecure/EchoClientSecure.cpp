@@ -26,10 +26,9 @@ public:
     }
 
     void tryConnect() {
-        auto client = TcpClient::create(_ioLoop);
-        client->connect([this] (ConnectionPtr conn, const std::error_code& ec) {
+        TcpClient::connect(_ioLoop, "127.0.0.1", 22345, [this] (ConnectionPtr conn, const std::error_code& ec) {
             onConnect(std::move(conn), ec);
-        }, "127.0.0.1", 22345, _context);
+        }, _context);
     }
 
     void tryRead() {

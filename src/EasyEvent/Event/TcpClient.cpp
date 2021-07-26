@@ -109,17 +109,17 @@ void EasyEvent::TcpConnector::runConnectCallback(ConnectionPtr connection, const
 }
 
 
-void EasyEvent::TcpClient::connect(Task<void(ConnectionPtr, const std::error_code &)> &&callback,
-                                   std::string host, unsigned short port, SslContextPtr sslContext,
-                                   ProtocolSupport protocol, Time timeout, size_t maxBufferSize,
-                                   std::string sourceIP, unsigned short sourcePort) {
+void EasyEvent::TcpClient::connect(std::string host, unsigned short port,
+                                   Task<void(ConnectionPtr, const std::error_code &)> &&callback,
+                                   SslContextPtr sslContext, ProtocolSupport protocol, Time timeout,
+                                   size_t maxBufferSize, std::string sourceIP, unsigned short sourcePort) {
     if (_connecting) {
         std::error_code ec = EventErrors::AlreadyConnecting;
         throwError(ec, "TcpClient");
     }
     _connecting = true;
-    _callback = std::move(callback);
     _host = std::move(host);
+    _callback = std::move(callback);
     _sslContext = std::move(sslContext);
     _timeout = timeout;
     _maxBufferSize = maxBufferSize;

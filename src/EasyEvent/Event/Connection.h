@@ -5,7 +5,7 @@
 #ifndef EASYEVENT_EVENT_CONNECTION_H
 #define EASYEVENT_EVENT_CONNECTION_H
 
-#include "EasyEvent/Event/Event.h"
+#include "EasyEvent/Event/EventBase.h"
 #include "EasyEvent/Event/IOLoop.h"
 #include "EasyEvent/Common/Buffer.h"
 

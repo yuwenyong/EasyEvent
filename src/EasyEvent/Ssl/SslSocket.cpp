@@ -3,6 +3,7 @@
 //
 
 #include "EasyEvent/Ssl/SslSocket.h"
+#include "EasyEvent/Event/Address.h"
 #include "EasyEvent/Event/SocketOps.h"
 
 
@@ -71,6 +72,16 @@ void EasyEvent::SslSocket::doSetVerifyCallback(SslVerifyCallbackBase *callback, 
 
     ::SSL_set_verify(_ssl, ::SSL_get_verify_mode(_ssl), &SslSocket::verifyCallbackFunction);
     ec = std::error_code();
+}
+
+void EasyEvent::SslSocket::setVerifyHostName(const std::string &hostName, std::error_code &ec) {
+    if (!Address::isAddress(hostName.c_str())) {
+        if (!::SSL_set_tlsext_host_name(_ssl, hostName.c_str())) {
+            ec = std::error_code(static_cast<int>(::ERR_get_error()), getSslErrorCategory());
+            return;
+        }
+    }
+    setVerifyCallback(HostNameVerification(hostName), ec);
 }
 
 void EasyEvent::SslSocket::doHandshake() {
