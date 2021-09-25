@@ -17,7 +17,7 @@ int main (int argc, char **argv) {
     auto server = HttpServer::create(&ioLoop, [](HttpServerRequestPtr request) {
         ResponseStartLine startLine("HTTP/1.1", 200, "OK");
         HttpHeaders headers;
-        headers["Content-Type"] = std::string("text/html");
+        headers["Content-Type"] = "text/html";
         request->getConnection()->writeHeaders(startLine, headers);
         request->getConnection()->write("<html><body>Hello world!");
         request->getConnection()->write("Hello world!");

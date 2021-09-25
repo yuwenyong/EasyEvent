@@ -35,6 +35,11 @@ namespace EasyEvent {
                 return *this;
             }
 
+            HttpHeadersSetter& operator=(const char* value) {
+                *this = std::string(value);
+                return *this;
+            }
+
             explicit operator std::string_view () const {
                 return *_value;
             }
