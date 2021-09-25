@@ -4,27 +4,25 @@
 
 #include "EasyEvent/Http/HttpBase.h"
 
-const char * EasyEvent::HttpHeaderErrorCategory::name() const noexcept {
-    return "http header error";
+
+const char * EasyEvent::HttpConnectionErrorCategory::name() const noexcept {
+    return "http connection error";
 }
 
-std::string EasyEvent::HttpHeaderErrorCategory::message(int ev) const {
-    switch (static_cast<HttpHeaderErrors>(ev)) {
-        case HttpHeaderErrors::EmptyHeaderLine:
-            return "empty header line";
-        case HttpHeaderErrors::NoColonInHeaderLine:
-            return "no colon in header line";
-        case HttpHeaderErrors::FirstHeaderLineStartWithWhitespace:
-            return "first header line start with whitespace";
+std::string EasyEvent::HttpConnectionErrorCategory::message(int ev) const {
+    switch (static_cast<HttpConnectionErrors>(ev)) {
+        case HttpConnectionErrors::ReadHttpHeaderTimeout:
+            return "read http header timeout";
+        case HttpConnectionErrors::ReadHttpBodyTimeout:
+            return "read http body timeout";
         default:
-            return "unknown http header error";
+            return "unknown http connection error";
     }
 }
 
-const std::error_category& EasyEvent::getHttpHeaderErrorCategory() {
-    static const HttpHeaderErrorCategory errCategory{};
+const std::error_category& EasyEvent::getHttpConnectionErrorCategory() {
+    static const HttpConnectionErrorCategory errCategory{};
     return errCategory;
 }
 
 
-const EasyEvent::HttpConnectionOptions EasyEvent::HttpConnectionOptions::Default;

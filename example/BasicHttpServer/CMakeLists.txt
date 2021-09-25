@@ -1,0 +1,4 @@
+
+add_executable(BasicHttpServer BasicHttpServer.cpp)
+add_dependencies(BasicHttpServer EasyEvent)
+target_link_libraries(BasicHttpServer EasyEvent)

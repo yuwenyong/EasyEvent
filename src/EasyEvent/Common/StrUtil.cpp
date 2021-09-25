@@ -19,7 +19,7 @@ const char * EasyEvent::StrUtil::find(const char *s1, size_t len1, const char *s
 }
 
 std::string_view EasyEvent::StrUtil::trimLeftCopy(const std::string_view &input, const std::function<bool(char)>& isSpace) {
-    for (ssize_t pos = 0; pos != (ssize_t)input.size(); ++pos) {
+    for (size_t pos = 0; pos != input.size(); ++pos) {
         if (!isSpace(input[pos])) {
             return input.substr(pos);
         }
@@ -29,8 +29,8 @@ std::string_view EasyEvent::StrUtil::trimLeftCopy(const std::string_view &input,
 
 std::string_view EasyEvent::StrUtil::trimRightCopy(const std::string_view &input, const std::function<bool(char)>& isSpace) {
     for (ssize_t pos = (ssize_t)input.size() - 1; pos >= 0; --pos) {
-        if (!isSpace(input[pos])) {
-            return input.substr(0, pos + 1);
+        if (!isSpace(input[(size_t)pos])) {
+            return input.substr(0, (size_t)pos + 1);
         }
     }
     return {};
@@ -39,25 +39,25 @@ std::string_view EasyEvent::StrUtil::trimRightCopy(const std::string_view &input
 std::string_view EasyEvent::StrUtil::trimCopy(const std::string_view &input, const std::function<bool(char)> &isSpace) {
     ssize_t beg = 0, end = (ssize_t)input.size() - 1;
     for (; beg != (ssize_t)input.size(); ++beg) {
-        if (!isSpace(input[beg])) {
+        if (!isSpace(input[(size_t)beg])) {
             break;
         }
     }
     for (; end >= beg; --end) {
-        if (!isSpace(input[end])) {
+        if (!isSpace(input[(size_t)end])) {
             end += 1;
             break;
         }
     }
     if (end > beg) {
-        return input.substr(beg, end - beg);
+        return input.substr((size_t)beg, (size_t)(end - beg));
     } else {
         return {};
     }
 }
 
 std::string EasyEvent::StrUtil::trimLeftCopy(const std::string &input, const std::function<bool(char)> &isSpace) {
-    for (ssize_t pos = 0; pos != (ssize_t)input.size(); ++pos) {
+    for (size_t pos = 0; pos != input.size(); ++pos) {
         if (!isSpace(input[pos])) {
             return input.substr(pos);
         }
@@ -67,8 +67,8 @@ std::string EasyEvent::StrUtil::trimLeftCopy(const std::string &input, const std
 
 std::string EasyEvent::StrUtil::trimRightCopy(const std::string &input, const std::function<bool(char)> &isSpace) {
     for (ssize_t pos = (ssize_t)input.size() - 1; pos >= 0; --pos) {
-        if (!isSpace(input[pos])) {
-            return input.substr(0, pos + 1);
+        if (!isSpace(input[(size_t)pos])) {
+            return input.substr(0, (size_t)pos + 1);
         }
     }
     return {};
@@ -77,18 +77,18 @@ std::string EasyEvent::StrUtil::trimRightCopy(const std::string &input, const st
 std::string EasyEvent::StrUtil::trimCopy(const std::string &input, const std::function<bool(char)> &isSpace) {
     ssize_t beg = 0, end = (ssize_t)input.size() - 1;
     for (; beg != (ssize_t)input.size(); ++beg) {
-        if (!isSpace(input[beg])) {
+        if (!isSpace(input[(size_t)beg])) {
             break;
         }
     }
     for (; end >= beg; --end) {
-        if (!isSpace(input[end])) {
+        if (!isSpace(input[(size_t)end])) {
             end += 1;
             break;
         }
     }
     if (end > beg) {
-        return input.substr(beg, end - beg);
+        return input.substr((size_t)beg, (size_t)end - (size_t)beg);
     } else {
         return {};
     }
@@ -147,7 +147,7 @@ StringViewVec EasyEvent::StrUtil::split(const std::string_view &s, const std::st
     std::string_view ::const_iterator beg = s.begin(), end;
     while (true) {
         end = std::search(beg, s.end(), delim.begin(), delim.end());
-        std::string_view temp(&(*beg), end - beg);
+        std::string_view temp(&(*beg), (size_t)(end - beg));
         if (keepEmpty || !temp.empty()) {
             result.push_back(temp);
         }
@@ -270,3 +270,150 @@ std::string EasyEvent::StrUtil::join(const StringVec &input, const std::string_v
     return result;
 }
 
+bool EasyEvent::StrUtil::startsWith(const std::string_view &input, const std::string_view &test) {
+    auto inputIter = input.begin();
+    auto inputEnd = input.end();
+    auto testIter = test.begin();
+    auto testEnd = test.end();
+
+    for (; inputIter != inputEnd && testIter != testEnd; ++inputIter, ++testIter) {
+        if (*inputIter != *testIter) {
+            return false;
+        }
+    }
+    return testIter == testEnd;
+}
+
+bool EasyEvent::StrUtil::endsWith(const std::string_view &input, const std::string_view &test) {
+    auto inputIter = input.rbegin();
+    auto inputEnd = input.rend();
+    auto testIter = test.rbegin();
+    auto testEnd = test.rend();
+
+    for (; inputIter != inputEnd && testIter != testEnd; ++inputIter, ++testIter) {
+        if (*inputIter != *testIter) {
+            return false;
+        }
+    }
+    return testIter == testEnd;
+}
+
+bool EasyEvent::StrUtil::contains(const std::string_view &input, const std::string_view &test) {
+    if (test.empty()) {
+        return true;
+    }
+    if (test.size() > input.size()) {
+        return false;
+    }
+    const size_t len = input.size() - test.size();
+    for (size_t i = 0; i <= len; ++i) {
+        if (memcmp(input.data() + i, test.data(), test.size()) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void EasyEvent::StrUtil::replaceAll(std::string &s, const std::string_view &search, const std::string_view &replace) {
+    size_t pos = 0;
+    const char* ptr;
+    while (pos < s.size()) {
+        ptr = find(s.data() + pos, s.size() - pos, search.data(), search.size());
+        if (ptr == nullptr) {
+            break;
+        }
+        pos = (size_t)(ptr - s.data());
+        s.replace(pos, search.size(), replace.data(), replace.size());
+        pos += replace.size();
+    }
+}
+
+size_t EasyEvent::StrUtil::count(const std::string_view &s, char c, size_t start, size_t len) {
+    size_t e = len ? std::min(start + len, s.size()) : s.size();
+    if (start >= e) {
+        return 0;
+    }
+    size_t i = start, r = 0;
+    while ((i = s.find(c, i)) != std::string_view::npos) {
+        if (i + 1 > e) {
+            break;
+        }
+        ++i;
+        ++r;
+    }
+    return r;
+}
+
+size_t EasyEvent::StrUtil::count(const std::string_view &s, const std::string_view &sub, size_t start, size_t len) {
+    size_t e = len ? std::min(start + len, s.size()) : s.size();
+    if (start >= e) {
+        return 0;
+    }
+    size_t i = start, r = 0, m = sub.size();
+    while ((i = s.find(sub, i)) != std::string_view::npos) {
+        if (i + m > e) {
+            break;
+        }
+        i += m;
+        ++r;
+    }
+    return r;
+}
+
+size_t EasyEvent::StrUtil::count(const std::string_view &s, const std::function<bool(char)>& pred) {
+    size_t r = 0;
+    for (char c: s) {
+        if (pred(c)) {
+            ++r;
+        }
+    }
+    return r;
+}
+
+std::tuple<std::string, std::string, std::string> EasyEvent::StrUtil::partition(
+        const std::string &s, const std::string &sep) {
+    auto pos = s.find(sep);
+    if (pos == std::string::npos) {
+        return std::make_tuple(s, "", "");
+    } else {
+        auto offset = pos + sep.size();
+        std::string before(s.data(), pos), after(s.data() + offset, s.size() - offset);
+        return std::make_tuple(before, sep, after);
+    }
+}
+
+std::tuple<std::string_view, std::string_view, std::string_view> EasyEvent::StrUtil::partition(
+        const std::string_view &s, const std::string_view &sep) {
+    auto pos = s.find(sep);
+    if (pos == std::string_view::npos) {
+        return std::make_tuple(s, std::string_view(), std::string_view());
+    } else {
+        auto offset = pos + sep.size();
+        std::string_view before(s.data(), pos), after(s.data() + offset, s.size() - offset);
+        return std::make_tuple(before, sep, after);
+    }
+}
+
+std::tuple<std::string, std::string, std::string> EasyEvent::StrUtil::rpartition(
+        const std::string &s, const std::string &sep) {
+    auto pos = s.rfind(sep);
+    if (pos == std::string::npos) {
+        return std::make_tuple("", "", s);
+    } else {
+        auto offset = pos + sep.size();
+        std::string before(s.data(), pos), after(s.data() + offset, s.size() - offset);
+        return std::make_tuple(before, sep, after);
+    }
+}
+
+std::tuple<std::string_view, std::string_view, std::string_view> EasyEvent::StrUtil::rpartition(
+        const std::string_view &s, const std::string_view &sep) {
+    auto pos = s.rfind(sep);
+    if (pos == std::string_view::npos) {
+        return std::make_tuple(std::string_view(), std::string_view(), s);
+    } else {
+        auto offset = pos + sep.size();
+        std::string_view before(s.data(), pos), after(s.data() + offset, s.size() - offset);
+        return std::make_tuple(before, sep, after);
+    }
+}

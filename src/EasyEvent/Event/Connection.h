@@ -23,9 +23,20 @@ namespace EasyEvent {
 
         virtual ~Connection() noexcept = default;
 
-        Logger* getLogger()
-        {
+        IOLoop* getIOLoop() {
+            return _ioLoop;
+        }
+
+        Logger* getLogger() {
             return _ioLoop->getLogger();
+        }
+
+        size_t getMaxReadBufferSize() const {
+            return _maxReadBufferSize;
+        }
+
+        size_t getMaxWriteBufferSize() const {
+            return _maxWriteBufferSize;
         }
 
         void handleEvents(IOEvents events) override;

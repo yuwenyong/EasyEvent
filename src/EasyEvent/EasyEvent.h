@@ -7,6 +7,7 @@
 
 #include "EasyEvent/Common/Buffer.h"
 #include "EasyEvent/Common/Error.h"
+#include "EasyEvent/Common/OrderedDict.h"
 #include "EasyEvent/Common/StrUtil.h"
 #include "EasyEvent/Common/Task.h"
 #include "EasyEvent/Common/TaskPool.h"
@@ -31,6 +32,8 @@
 #include "EasyEvent/Logging/RotatingFileSink.h"
 #include "EasyEvent/Logging/TimedRotatingFileSink.h"
 
-
+#include "EasyEvent/Http/HttpConnection.h"
+#include "EasyEvent/Http/HttpServer.h"
+#include "EasyEvent/Http/HttpServerRequest.h"
 
 #endif //EASYEVENT_EASYEVENT_H

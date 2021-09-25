@@ -51,22 +51,19 @@ const std::error_category& EasyEvent::getUserErrorCategory() {
 }
 
 void EasyEvent::doThrowError(const std::error_code &err) {
-    std::system_error e(err);
-    throw e;
+    throw std::system_error(err);
 }
 
 void EasyEvent::doThrowError(const std::error_code &err, const char *location) {
     std::string whatMsg = location;
     whatMsg += ": ";
     whatMsg += err.message();
-    std::system_error e(err, whatMsg);
-    throw e;
+    throw std::system_error(err, whatMsg);
 }
 
 void EasyEvent::doThrowError(const std::error_code &err, const char *location, const char *what) {
     std::string whatMsg = location;
     whatMsg += ": ";
     whatMsg += what;
-    std::system_error e(err, whatMsg);
-    throw e;
+    throw std::system_error(err, whatMsg);
 }

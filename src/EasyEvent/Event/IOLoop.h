@@ -29,8 +29,7 @@ namespace EasyEvent {
 
         ~IOLoop() noexcept;
 
-        Logger* getLogger()
-        {
+        Logger* getLogger() {
             return _logger;
         }
 

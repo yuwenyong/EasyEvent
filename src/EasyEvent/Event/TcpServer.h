@@ -56,7 +56,7 @@ namespace EasyEvent {
     using TcpListenerHolder = Holder<TcpListener>;
 
     class EASY_EVENT_API TcpServer: public std::enable_shared_from_this<TcpServer> {
-    private:
+    protected:
         struct MakeSharedTag {};
     public:
         TcpServer(const TcpServer&) = delete;

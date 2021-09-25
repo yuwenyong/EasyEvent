@@ -90,6 +90,7 @@ EasyEvent::Address EasyEvent::TcpConnection::getRemoteAddress() const {
 }
 
 ssize_t EasyEvent::TcpConnection::writeToFd(const void *data, size_t size, std::error_code &ec) {
+    std::string t((char *)data, (char *)data + size);
     return SocketOps::Send(_socket, data, size, 0, ec);
 }
 

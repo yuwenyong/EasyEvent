@@ -5,8 +5,11 @@
 
 #include "EasyEvent/EasyEvent.h"
 #include "EasyEvent/Ssl/SslInit.h"
+#include "EasyEvent/HttpUtil/UrlParse.h"
+#include "EasyEvent/HttpUtil/HttpParse.h"
 
 using namespace EasyEvent;
+using namespace std::literals::string_view_literals;
 
 void test(IOLoop* ioLoop, Logger* logger) {
     static int i = 0;
@@ -59,6 +62,8 @@ void testJson(Logger* logger) {
 }
 
 int main (int argc, char **argv) {
+
+
     SslInit sslInit;
     UnusedParameter(argc);
     UnusedParameter(argv);
@@ -74,12 +79,17 @@ int main (int argc, char **argv) {
 
 //    testJson(logger);
 
+    Time ts = Time::now();
+    LOG_ERROR(logger) << HttpParse::formatTimestamp(ts);
+
     auto addrs = Resolver::getAddresses("", 2, EnableBoth, false, true);
     for (auto& addr: addrs) {
         LOG_INFO(logger) << addr;
     }
 
-    LOG_INFO(logger) << "Thread Id:" << std::this_thread::get_id();
+    LOG_INFO(logger) << "Thread Id:" << std::this_thread::get_id() << " value: " << std::numeric_limits<size_t>::max();
+
+
 
     IOLoop ioLoop(logger, true, true);
     ioLoop.addCallback([logger]() {
