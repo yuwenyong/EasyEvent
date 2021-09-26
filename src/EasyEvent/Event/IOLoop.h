@@ -5,7 +5,7 @@
 #ifndef EASYEVENT_EVENT_IOLOOP_H
 #define EASYEVENT_EVENT_IOLOOP_H
 
-#include "EasyEvent/Event/Event.h"
+#include "EasyEvent/Event/EventBase.h"
 #include "EasyEvent/Common/Time.h"
 #include "EasyEvent/Common/Task.h"
 #include "EasyEvent/Common/ConcurrentQueue.h"
@@ -29,8 +29,7 @@ namespace EasyEvent {
 
         ~IOLoop() noexcept;
 
-        Logger* getLogger()
-        {
+        Logger* getLogger() {
             return _logger;
         }
 

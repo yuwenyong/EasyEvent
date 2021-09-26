@@ -5,7 +5,7 @@
 #ifndef EASYEVENT_EVENT_TCPSERVER_H
 #define EASYEVENT_EVENT_TCPSERVER_H
 
-#include "EasyEvent/Event/Event.h"
+#include "EasyEvent/Event/EventBase.h"
 #include "EasyEvent/Event/SocketOps.h"
 #include "EasyEvent/Event/Connection.h"
 #include "EasyEvent/Common/Task.h"
@@ -56,7 +56,7 @@ namespace EasyEvent {
     using TcpListenerHolder = Holder<TcpListener>;
 
     class EASY_EVENT_API TcpServer: public std::enable_shared_from_this<TcpServer> {
-    private:
+    protected:
         struct MakeSharedTag {};
     public:
         TcpServer(const TcpServer&) = delete;

@@ -5,7 +5,7 @@
 #ifndef EASYEVENT_EVENT_CONNECTION_H
 #define EASYEVENT_EVENT_CONNECTION_H
 
-#include "EasyEvent/Event/Event.h"
+#include "EasyEvent/Event/EventBase.h"
 #include "EasyEvent/Event/IOLoop.h"
 #include "EasyEvent/Common/Buffer.h"
 
@@ -23,9 +23,20 @@ namespace EasyEvent {
 
         virtual ~Connection() noexcept = default;
 
-        Logger* getLogger()
-        {
+        IOLoop* getIOLoop() {
+            return _ioLoop;
+        }
+
+        Logger* getLogger() {
             return _ioLoop->getLogger();
+        }
+
+        size_t getMaxReadBufferSize() const {
+            return _maxReadBufferSize;
+        }
+
+        size_t getMaxWriteBufferSize() const {
+            return _maxWriteBufferSize;
         }
 
         void handleEvents(IOEvents events) override;

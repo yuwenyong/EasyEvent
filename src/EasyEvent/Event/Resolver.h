@@ -5,7 +5,7 @@
 #ifndef EASYEVENT_EVENT_RESOLVER_H
 #define EASYEVENT_EVENT_RESOLVER_H
 
-#include "EasyEvent/Event/Event.h"
+#include "EasyEvent/Event/EventBase.h"
 #include "EasyEvent/Event/Address.h"
 #include "EasyEvent/Common/Task.h"
 

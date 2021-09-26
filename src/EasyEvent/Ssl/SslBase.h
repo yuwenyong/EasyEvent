@@ -2,8 +2,8 @@
 // Created by yuwenyong.vincent on 2021/6/6.
 //
 
-#ifndef EASYEVENT_SSL_TYPES_H
-#define EASYEVENT_SSL_TYPES_H
+#ifndef EASYEVENT_SSL_BASE_H
+#define EASYEVENT_SSL_BASE_H
 
 #include "EasyEvent/Common/Config.h"
 #include "EasyEvent/Common/Error.h"
@@ -279,4 +279,4 @@ namespace std {
     struct is_error_code_enum<EasyEvent::SslStreamErrors>: public true_type {};
 }
 
-#endif //EASYEVENT_SSL_TYPES_H
+#endif //EASYEVENT_SSL_BASE_H

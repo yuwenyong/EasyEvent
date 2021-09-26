@@ -286,4 +286,18 @@ inline unsigned long long atoull(char const* str) {
 #define M_PI            3.14159265358979323846
 #endif
 
+using ByteArray = std::vector<std::byte>;
+
+using StringPair = std::pair<std::string, std::string>;
+using StringVec = std::vector<std::string>;
+using StringList = std::list<std::string>;
+using StringMap = std::map<std::string, std::string>;
+using StringSet = std::set<std::string>;
+using StringVecMap = std::map<std::string, StringVec>;
+
+using StringViewVec = std::vector<std::string_view>;
+using StringViewList = std::list<std::string_view>;
+using StringViewSet = std::set<std::string_view>;
+
+
 #endif //EASYEVENT_COMMON_CONFIG_H

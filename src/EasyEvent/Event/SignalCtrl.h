@@ -5,7 +5,7 @@
 #ifndef EASYEVENT_EVENT_SIGNALCTRL_H
 #define EASYEVENT_EVENT_SIGNALCTRL_H
 
-#include "EasyEvent/Event/Event.h"
+#include "EasyEvent/Event/EventBase.h"
 #include "EasyEvent/Common/Task.h"
 
 

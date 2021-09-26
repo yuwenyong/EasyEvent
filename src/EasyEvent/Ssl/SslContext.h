@@ -5,7 +5,7 @@
 #ifndef EASYEVENT_SSL_SSLCONTEXT_H
 #define EASYEVENT_SSL_SSLCONTEXT_H
 
-#include "EasyEvent/Ssl/Types.h"
+#include "EasyEvent/Ssl/SslBase.h"
 #include "EasyEvent/Ssl/SslInit.h"
 
 

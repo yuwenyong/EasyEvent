@@ -5,7 +5,7 @@
 #ifndef EASYEVENT_EVENT_TCPCLIENT_H
 #define EASYEVENT_EVENT_TCPCLIENT_H
 
-#include "EasyEvent/Event/Event.h"
+#include "EasyEvent/Event/EventBase.h"
 #include "EasyEvent/Event/SocketOps.h"
 #include "EasyEvent/Event/Connection.h"
 #include "EasyEvent/Common/Task.h"
@@ -107,13 +107,22 @@ namespace EasyEvent {
             UnusedParameter(tag);
         }
 
-        void connect(Task<void(ConnectionPtr, const std::error_code&)>&& callback,
-                     std::string host, unsigned short port, SslContextPtr sslContext= nullptr,
-                     ProtocolSupport protocol=EnableBoth, Time timeout={}, size_t maxBufferSize=0,
-                     std::string sourceIP="", unsigned short sourcePort=0);
+        void connect(std::string host, unsigned short port,
+                     Task<void(ConnectionPtr, const std::error_code&)>&& callback,
+                     SslContextPtr sslContext= nullptr, ProtocolSupport protocol=EnableBoth, Time timeout={},
+                     size_t maxBufferSize=0, std::string sourceIP="", unsigned short sourcePort=0);
 
         static std::shared_ptr<TcpClient> create(IOLoop* ioLoop) {
             return std::make_shared<TcpClient>(ioLoop, MakeSharedTag{});
+        }
+
+        static void connect(IOLoop* ioLoop, std::string host, unsigned short port,
+                            Task<void(ConnectionPtr, const std::error_code&)>&& callback,
+                            SslContextPtr sslContext= nullptr, ProtocolSupport protocol=EnableBoth, Time timeout={},
+                            size_t maxBufferSize=0, std::string sourceIP="", unsigned short sourcePort=0) {
+            auto client = create(ioLoop);
+            client->connect(std::move(host), port, std::move(callback), std::move(sslContext), protocol,
+                            timeout, maxBufferSize, std::move(sourceIP), sourcePort);
         }
     protected:
         explicit TcpClient(IOLoop* ioLoop)
@@ -134,8 +143,8 @@ namespace EasyEvent {
         IOLoop* _ioLoop;
         bool _connecting{false};
 
-        Task<void(ConnectionPtr, const std::error_code&)> _callback;
         std::string _host;
+        Task<void(ConnectionPtr, const std::error_code&)> _callback;
         SslContextPtr _sslContext;
         Time _timeout;
         size_t _maxBufferSize{0};
